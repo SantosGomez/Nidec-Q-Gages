@@ -1,0 +1,12 @@
+-Backend-
+json web token
+cors
+bodyparser
+express
+MySQL2
+dotevn
+socket.io
+
+-Frontend-
+jspdf jspdf-autotable
+socket.io-client

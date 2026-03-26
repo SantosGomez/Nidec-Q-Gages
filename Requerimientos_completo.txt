@@ -1,0 +1,52 @@
+ -en todas las patallas con formularios. 
+-tener un boton de busqueda/fltro para buscar un gage (que contenga busqueda por id, descripcion y/o locacion)
+
+	-GAGE master-
+-GAGE ID
+-descripcion
+-tipo (Digital/Mecanico/Electrico)
+-Estatus
+-location
+-vendedor
+-fecha de compra
+-comentarios/Informacion de gage
+-frecuencia de calibracion
+-siguiente calibracion
+-si la calibracion es interno o externo
+-una opcion para cambiar el status (activo/inactivo) y que despligue una ventana para confirmar y motivo por la que se inactiva el GAGE
+-no se puede modificar el numero de ID todo lo demas si
+-una tabla que trae informacion del historial del gage.
+-un boton para añadir un nuevo gage pero utilizando de base uno que ya existe para solo cambiar un par de datos necesarios y registarlo con un nuevo id
+
+
+
+	-Calibracion de GAGE-
+
+- solo mostrar los datos de GAGE Master (datos del GAGE) sin posibilidad de modificar la informacion.
+- una tabla de historial de las calibraciones de los gage.
+- actualmente se usa el boton new para dar de alta un gage nuevo. y para añadir una calibracion nueva de un gage existente se utiliza el boton de copy para acceder a una pantalla y registrar la calibracion de la fecha actual.
+y el boton de editar edita la informacion de la calibracion seleccionada.
+
+- en user defined se pone el area/linea donde sera usado el gage.
+- en owner se pone la persona que dio de alta el gage.
+- desde la pantalla principal de calibracion tener un boton que te abrir a procedimiento.
+- en el apartado de calibracion cambiar comments y poner informacion del gage y dentro de informacion poner 3 inputs input 1 es temperatura y humeda:, input 2 patrones usados: e  input 3 informacion:
+-‎ Para las calibraciones externas que pida el nombre del proveedor de calibración que hizo la calibración y opcion de guardar el certificado de calibración.
+- ‎Una opción para que imprima los certificados de calibración externa (lo intentaré).
+‎
+
+	-Reportes-
+- ‎Que tenga opciones de filtros para poder imprimir reportes más exactos.
+- si deja la fecha en blanco cuando se mande a imprimir la ultima fecha de calibracion cuando se pone solo el id.
+- cuando deja una fecha traer todos los id de la fecha escrita.
+
+
+	-Procedimiento-
+‎- Es todo lo que debe de hacer para hacer una calibración.
+‎- Hacer un filtro para ver los diferentes tipos de procedimientos.
+‎- Añadir imágenes para los procedimientos (ejemplos ilustrados).
+
+	
+‎Nuevo apartado
+	-Historial de prestamo de gages-
+‎- Prestamo o historia de gages entregados en linea
