@@ -36,7 +36,7 @@
         <router-link to="calibracion">
           <q-item clickable v-ripple>
             <q-item-section top avatar>
-              <q-img src="src\assets\iconosGAGES\calibracion.png" alt="Gage Master Icon" style="width: 100%; height: auto;"/>
+              <q-img src="src\assets\iconosGAGES\calibracion.png" alt="Calibracion Icon" style="width: 100%; height: auto;"/>
             </q-item-section>
             <q-item-section>
               <q-item-label>Calibracion</q-item-label>
@@ -48,7 +48,7 @@
         <router-link to="reporte">
           <q-item clickable v-ripple>
             <q-item-section top avatar>
-              <q-img src="src\assets\iconosGAGES\reporte.png" alt="Gage Master Icon" style="width: 100%; height: auto;"/>
+              <q-img src="src\assets\iconosGAGES\reporte.png" alt="Reportes Icon" style="width: 100%; height: auto;"/>
             </q-item-section>
             <q-item-section>
               <q-item-label>Reportes</q-item-label>
@@ -59,7 +59,7 @@
         <router-link to="procedimientos">
           <q-item clickable v-ripple>
             <q-item-section top avatar>
-              <q-img src="src\assets\iconosGAGES\Procedimiento.png" alt="Gage Master Icon" style="width: 100%; height: auto;"/>
+              <q-img src="src\assets\iconosGAGES\Procedimiento.png" alt="Procedimientos Icon" style="width: 100%; height: auto;"/>
             </q-item-section>
             <q-item-section>
               <q-item-label>Procedimientos</q-item-label>
@@ -70,7 +70,7 @@
         <router-link to="checout">          
           <q-item clickable v-ripple>
             <q-item-section top avatar>
-              <q-img src="src\assets\iconosGAGES\registro.png" alt="Gage Master Icon" style="width: 100%; height: auto;"/>
+              <q-img src="src\assets\iconosGAGES\registro.png" alt="Gage Checkout Icon" style="width: 100%; height: auto;"/>
             </q-item-section>
             <q-item-section>
               <q-item-label>Gage Checkout</q-item-label>
