@@ -1,25 +1,14 @@
 <template>
-    <q-btn label="Menú" color="primary" class="flex flex q-ma-md" @click="principal" />
-    <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
-        <q-input filled v-model="name" label="Name" />
-        
-        <div>
-            <q-btn label="Submit" type="submit" color="primary"/>
-            <q-btn label="Reset" type="reset" color="primary" flat class="q-ml-sm" />
-        </div>
-    </q-form>
+    <div>
+        <q-card class="my-card">
+            <img src="https://cdn.quasar.dev/img/mountains.jpg">
+            <q-card-section>
+                <div class="text-h6">Our Changing Planet</div>
+                <div class="text-subtitle2">by John Doe</div>
+            </q-card-section>
+            <q-card-section>
+                Lorem ipsum dolor sit amet, consectetur adipiscing elit
+            </q-card-section>
+        </q-card>
+    </div>
 </template>
-
-<script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
-
-function principal() {
-    router.push('index')
-}
-
-
-</script>
-
-
-

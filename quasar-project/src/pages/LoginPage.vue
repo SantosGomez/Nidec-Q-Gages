@@ -12,11 +12,11 @@
                 <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">                
                     <div class="q-pa-md q-gutter-md">
                         
-                        <div class="text-h5" style="">
+                        <div class="text-h5" style="margin-top: 20px;">
                             Usuario 
                             <q-input filled v-model="ph" placeholder="Nombre de usuario"  :dense="dense"/>
                         </div>
-                        <div class="text-h5" style="">
+                        <div class="text-h5" style="margin-top: 20px;">
                             Contraseña 
                             <q-input filled v-model="ph" placeholder="Contraseña"  :dense="dense"/>
                         </div>
