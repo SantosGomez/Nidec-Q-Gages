@@ -1,7 +1,7 @@
 <template>
-    <q-card class="my-card" style="max-width: 600px; margin: 0 auto; margin-top: 100px;">
+    <q-card class="my-card" style="max-width: 600px; margin: 0 auto; margin-top: 20px;">
         <div class="flex flex-center">
-            <img style="width: 450px; height: auto;" src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_Original Version.png">
+            <img style="width: 350px; height: auto;" src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_Original Version.png">
             <div class="text-h2" style="text-align: center; padding-left: 10px; padding-right: 10px; padding-bottom: 20px; font-weight: bold;">
                 Q-Gages
             </div>
@@ -25,7 +25,7 @@
             </div>
             </q-card-section>
             <q-card-section class="flex flex-center q-mt-md q-mb-md">
-                <div>
+                <div style="margin-bottom: 10px;">
                     <q-btn size="18px" style="width: 250px;" label="Entrar" type="submit" color="primary" @click="inicio"/>
                 </div>
             </q-card-section>
