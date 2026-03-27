@@ -1,7 +1,12 @@
 <template>
   <q-page>
-    <div class="q-pa-md row items-start q-gutter-md">
-      <div class="col-2">
+    <q-card rd class="my-card row q-col-gutter-md" style="max-width: 1200px; height: auto; margin: auto; margin-top: 20px;">
+      <q-card-section class="flex flex-center">
+        <div class="text-h4">Bienvenido a Nidec Q-Gages</div>
+      </q-card-section>
+     
+    <div class="row q-col-gutter-md">
+      <div class="col-4">
         <q-card class="my-card" style="max-width: 300px; height: auto;" clickable v-ripple @click="Master">
           <q-card-section class="flex flex-center">
             <img
@@ -17,7 +22,7 @@
         </q-card>
       </div>
 
-      <div class="col-2">
+      <div class="col-4">
         <q-card class="my-card" style="max-width: 300px; height: auto;">
           <q-card-section class="flex flex-center">
             <img
@@ -34,7 +39,7 @@
         </q-card>
       </div>
 
-      <div class="col-2">
+      <div class="col-4">
         <q-card class="my-card" style="max-width: 300px; height: auto;">
           <q-card-section class="flex flex-center">
             <div class="flex flex-center">
@@ -53,7 +58,7 @@
         </q-card>
       </div>
 
-      <div class="col-2">
+      <div class="col-4">
         <q-card class="my-card" style="max-width: 300px; height: auto;">
           <q-card-section class="flex flex-center">
             <img
@@ -70,7 +75,7 @@
         </q-card>
       </div>
 
-      <div class="col-2">
+      <div class="col-4">
         <q-card class="my-card" style="max-width: 300px; height: auto;">
           <q-card-section class="flex flex-center">
             <img
@@ -86,7 +91,26 @@
           </q-card-section>
         </q-card>
       </div>
+
+      <div class="col-4">
+        <q-card class="my-card" style="max-width: 300px; height: auto;">
+          <q-card-section class="flex flex-center">
+            <img
+              src="src\assets\iconosGAGES\usuario.png"
+              alt="Usuarios Icon"
+              style="width: 50px; height: auto"
+            />
+            <!-- <div class="text-h6" style="text-align: center; padding-left: 10px; padding-right: 10px;">Procedimientos</div> -->
+          </q-card-section>
+          <q-separator style="margin-left: 10px; margin-right: 10px;" />
+          <q-card-section>
+            <q-btn style="width: 100%" color="primary" label="Usuarios" @click="Checkout" />
+          </q-card-section>
+        </q-card>
+      </div>
+
     </div>
+    </q-card>
   </q-page>
 </template>
 
