@@ -1,9 +1,9 @@
 <template>
   <div>
-    <q-btn label="Volver" color="primary" class="q-ma-md" @click="principal" icon="arrow_back" />
+    <q-btn label="Volver" color="primary" class="q-ma-md" @click="back" icon="arrow_back" />
   </div>
 
-  <q-card class="my-card" style="max-width: 1450px; margin: 20px auto">
+  <q-card class="my-card" style="max-width: 1450px; margin: 0 auto; margin-top: 20px;">
     <q-card-section>
       <div class="text-h4">Gage Master</div>
     </q-card-section>
@@ -98,9 +98,8 @@ import { useRouter } from 'vue-router'
 // Configuración del Router
 const router = useRouter()
 
-function principal() {
-  // Nota: Asegúrate de que 'index' sea el NAME o la PATH correcta en tu router
-  router.push('index')
+function back() {
+  router.push('GageMaster')
 }
 
 
