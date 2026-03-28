@@ -1,4 +1,8 @@
 <template>
+  <div style="margin: 20px ">
+    <q-btn color="primary" icon="home" label="Inicio" @click="index" />
+  </div>
+
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <q-card class="my-card" style="max-width: 1450px; margin: 0 auto; margin-top: 20px">
       <q-card-section class="flex flex-center">
@@ -72,5 +76,9 @@ const search = ref('')
 
 function Form() {
   router.push('GageForm')
+}
+
+function index() {
+  router.push('index')
 }
 </script>
