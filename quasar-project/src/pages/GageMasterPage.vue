@@ -1,5 +1,5 @@
 <template>
-  <div style="margin: 20px ">
+  <div style="margin: 20px">
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
 
@@ -15,15 +15,7 @@
       </q-card-section>
       <q-separator />
       <q-card-section>
-        <div>Buscar</div>
         <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-6">
-            <q-input v-model="search" filled placeholder="BUSCAR">
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </div>
           <div class="col-12 col-md-6">
             <q-btn
               icon="add"
@@ -32,6 +24,13 @@
               label="Agregar Gage"
               @click="Form"
             />
+          </div>
+          <div class="col-12 col-md-6">
+            <q-input v-model="search" filled placeholder="BUSCAR">
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
           </div>
         </div>
       </q-card-section>
@@ -50,18 +49,18 @@
         </q-list>
       </q-card-section>
       <q-card-section>
-          <div class="q-pa-lg flex flex-center">
-            <q-pagination
-              v-model="current"
-              :max="5"
-              direction-links
-              boundary-links
-              icon-first="skip_previous"
-              icon-last="skip_next"
-              icon-prev="fast_rewind"
-              icon-next="fast_forward"
-            />
-          </div>
+        <div class="q-pa-lg flex flex-center">
+          <q-pagination
+            v-model="current"
+            :max="5"
+            direction-links
+            boundary-links
+            icon-first="skip_previous"
+            icon-last="skip_next"
+            icon-prev="fast_rewind"
+            icon-next="fast_forward"
+          />
+        </div>
       </q-card-section>
     </q-card>
   </div>
