@@ -3,7 +3,7 @@
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
 
-  <div class="row q-col-gutter-md flex flex-center" style="margin-top: 20px">
+  <div class="row q-col-gutter-md" style="margin-top: 20px">
     <q-card class="my-card" style="width: 1250px; margin: 0 auto; margin-top: 20px">
       <q-card-section class="flex flex-center">
         <div class="text-h3" style="font-weight: bold">Gages</div>
