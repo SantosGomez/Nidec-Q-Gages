@@ -2,11 +2,10 @@
   <div style="margin: 20px">
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
-  <div></div>
+  <div class="text-h2 flex flex-center" style="font-weight: bold">Usuarios</div>
+
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <q-card class="my-card" style="width: 850px; margin: 0 auto; margin-top: 20px; padding: 20px">
-      <h1>Usuarios</h1>
-      <q-separator style="margin: 10px" />
       <div class="col-12 col-md-6">
         <q-input v-model="search" filled placeholder="BUSCAR">
           <template v-slot:append>
