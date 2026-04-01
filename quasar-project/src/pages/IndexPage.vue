@@ -34,6 +34,7 @@
           </q-card-section>
           <q-separator style="margin-left: 10px; margin-right: 10px;" />      
           <q-card-section>
+            <!-- <div class="text-h6 flex flex-center" >Calibracion</div> -->
             <q-btn style="width: 100%" color="primary" label="Calibracion" @click="Calibracion" />
           </q-card-section>
         </q-card>
