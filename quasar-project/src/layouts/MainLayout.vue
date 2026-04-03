@@ -24,14 +24,30 @@
 
     <q-space />
 
-    <div class="row items-center cursor-pointer" @click="login">
-      <div class="text-subtitle1 q-mr-sm gt-xs">
-        Nombre Usuario
-      </div>
-      <q-avatar size="45px">
-        <q-icon name="account_circle" size="45px" />
-      </q-avatar>
-    </div>
+  <div class="q-pa-md">
+    <q-btn color="white" flat label="Account Settings">
+      <q-menu>
+        <div class="row no-wrap q-pa-md">
+          <div class="column flex flex-center">
+            <q-btn flat color="primary" label="Configuraciones" v-close-popup @click="user" />
+            <q-btn flat color="negative" label="Logout" v-close-popup @click="login"/>
+          </div>
+
+          <q-separator vertical inset class="q-mx-lg" />
+
+          <div class="column items-center">
+            <q-avatar size="72px">
+              <img src="src\assets\iconosGAGES\usuario.png" />
+            </q-avatar>
+
+            <div class="text-subtitle1 q-mt-md q-mb-xs">Usuario</div>
+
+            
+          </div>
+        </div>
+      </q-menu>
+    </q-btn>
+  </div>
   </q-toolbar>
 </q-header>
 
@@ -129,6 +145,10 @@ function procedimientos() {
 }
 function checkout() {
   router.push('checkout')
+}
+
+function user() {
+  router.push('usuarios')
 }
 import { ref } from 'vue'
 

@@ -1,45 +1,76 @@
 <template>
-    <q-card class="my-card" style="max-width: 600px; margin: 0 auto; margin-top: 20px;">
-        <div class="flex flex-center">
-            <img style="width: 350px; height: auto;" src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_Original Version.png">
-            <div class="text-h2" style="text-align: center; padding-left: 10px; padding-right: 10px; padding-bottom: 20px; font-weight: bold;">
-                Q-Gages
+  <q-card class="my-card" style="max-width: 600px; margin: 0 auto; margin-top: 20px">
+    <div class="flex flex-center">
+      <img
+        style="width: 350px; height: auto"
+        src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_Original Version.png"
+      />
+      <div
+        class="text-h2"
+        style="
+          text-align: center;
+          padding-left: 10px;
+          padding-right: 10px;
+          padding-bottom: 20px;
+          font-weight: bold;
+        "
+      >
+        Q-Gages
+      </div>
+    </div>
+    <q-card-section>
+      <div class="flex flex-center">
+        <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
+          <div class="row q-col-gutter-md">
+            <div class="col-12 text-h5" style="margin-top: 20px">
+              Usuario
+              <q-input filled v-model="username" placeholder="Nombre de usuario" />
             </div>
-        </div>
-        <q-card-section>
-            <div class="flex flex-center">
-
-                <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">                
-                    <div class="row q-col-gutter-md">
-                        
-                        <div class="col-12 text-h5" style="margin-top: 20px;">
-                            Usuario 
-                            <q-input filled v-model="ph" placeholder="Nombre de usuario"  :dense="dense"/>
-                        </div>
-                        <div class="col-12 text-h5" style="margin-top: 20px;">
-                            Contraseña 
-                            <q-input filled v-model="ph" placeholder="Contraseña"  :dense="dense"/>
-                        </div>
-                    </div>
-                </q-form>
+            <div class="col-12 text-h5" style="margin-top: 20px">
+              Contraseña
+              <q-input
+                v-model="password"
+                filled
+                :type="isPwd ? 'password' : 'text'"
+              >
+                <template v-slot:append>
+                  <q-icon
+                    :name="isPwd ? 'visibility_off' : 'visibility'"
+                    class="cursor-pointer"
+                    @click="isPwd = !isPwd"
+                  />
+                </template>
+              </q-input>
             </div>
-            </q-card-section>
-            <q-card-section class="flex flex-center q-mt-md q-mb-md">
-                <div style="margin-bottom: 10px;">
-                    <q-btn size="18px" style="width: 250px;" label="Entrar" type="submit" color="primary" @click="inicio"/>
-                </div>
-            </q-card-section>
-    </q-card>
-        
+          </div>
+        </q-form>
+      </div>
+    </q-card-section>
+    <q-card-section class="flex flex-center q-mt-md q-mb-md">
+      <div style="margin-bottom: 10px">
+        <q-btn
+          size="18px"
+          style="width: 250px"
+          label="Entrar"
+          type="submit"
+          color="primary"
+          @click="inicio"
+        />
+      </div>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup>
-
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function inicio() {
-    router.push('index')
+  router.push('index')
 }
-</script>
 
+import { ref } from 'vue'
+const username = ref('')
+const password = ref('')
+const isPwd = ref(true)
+</script>
