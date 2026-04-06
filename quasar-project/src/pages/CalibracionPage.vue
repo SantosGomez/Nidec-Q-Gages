@@ -2,7 +2,7 @@
   <div style="margin: 20px">
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
-  <div class="text-h2 flex flex-center" style="font-weight: bold">Calibracion De Gages</div>
+  <div class="text-h3 flex flex-center" style="font-weight: bold">Calibracion De Gages</div>
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <div class="col-12 col-md-12">
@@ -12,7 +12,7 @@
             Bienvenido al sistema de calibración de Gages. Seleccione una opción.
           </div>
         </q-card-section>
-        <q-separator  />
+        <q-separator />
         <q-card-section>
           <div class="row q-col-gutter-md text-right">
             <div class="col-12 col-md-3">
@@ -27,7 +27,7 @@
                 "
                 color="primary"
                 label="Calibrar Nuevo Gage"
-                @click="Form = true"
+                @click="abrirFormulario()"
               />
             </div>
             <div class="col-12 col-md-3">
@@ -57,15 +57,30 @@
         </q-card-section>
         <q-card-section>
           <!--Tabla con la informacion de las calibraciones de los gages-->
-          <q-table :rows="rows" :columns="columns" row-key="idGage" flat bordered>
-
+          <q-table :rows="rows" :columns="columns" :filter="search" row-key="idGage" flat bordered>
             <template v-slot:top-right>
-          <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
-            <template v-slot:append>
-              <q-icon name="search" />
+              <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
+                <template v-slot:append>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
             </template>
-          </q-input>
-        </template>
+             <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="q-gutter-sm">
+              <q-btn 
+                outline round color="warning" icon="edit" 
+                @click="prepararEdicion(props.row)"
+              >
+                <q-tooltip>Editar</q-tooltip>
+              </q-btn>
+              <q-btn 
+                outline round color="info" icon="visibility" 
+                @click="verDetalles(props.row)"
+              >
+                <q-tooltip>Ver Detalles</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
           </q-table>
         </q-card-section>
       </q-card>
@@ -74,27 +89,28 @@
 
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-    <q-card class="my-card" style="width: 1450px">
+    <q-card class="my-card" style="max-width: 1450px">
       <q-card-section class="bg-primary text-white">
-        <div class="text-h4">Calibración Nueva de Gage</div>
+        <div class="text-h4">{{ modoEdicion ? 'Editar calibracion' : 'Nueva Calibracion' }}</div>
       </q-card-section>
 
       <q-card-section>
         <q-form @submit="onSubmit" @reset="onReset">
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
-              <q-input filled v-model="gageId" label="GageID" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.gageId" label="GageID" />
             </div>
             <div class="col-12 col-md-6">
-              <q-input filled v-model="description" label="Nombre del Gage" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.description" label="Nombre del Gage" />
             </div>
 
             <div class="col-12 col-md-6">
-              <q-select filled v-model="tipoSeleccionado" :options="opcionesTipo" label="Tipo" />
+              <q-select filled :readonly="soloLectura" v-model="formModel.tipo" :options="opcionesTipo" label="Tipo" />
             </div>
             <div class="col-12 col-md-6">
               <q-select
                 filled
+                :readonly="soloLectura"
                 v-model="estadoSeleccionado"
                 :options="opcionesEstado"
                 label="Estado"
@@ -102,18 +118,18 @@
             </div>
 
             <div class="col-12 col-md-6">
-              <q-input filled v-model="localizacion" label="Localización" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.localizacion" label="Localización" />
             </div>
             <div class="col-12 col-md-6">
-              <q-input filled v-model="vendedor" label="Vendedor" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.vendedor" label="Vendedor" />
             </div>
 
             <div class="col-12 col-md-6">
-              <q-input filled v-model="fechaCompra" mask="date" label="Fecha de Compra">
+              <q-input filled :readonly="soloLectura" v-model="formModel.fechaCompra" mask="date" label="Fecha de Compra">
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
                     <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="fechaCompra">
+                      <q-date v-model="formModel.fechaCompra">
                         <div class="row items-center justify-end">
                           <q-btn v-close-popup label="Close" color="primary" flat />
                         </div>
@@ -125,11 +141,11 @@
             </div>
 
             <div class="col-12 col-md-6">
-              <q-input filled v-model="fechaProxima" mask="date" label="Próxima Calibración">
+              <q-input filled :readonly="soloLectura" v-model="formModel.fechaProxima" mask="date" label="Próxima Calibración">
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
                     <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="fechaProxima">
+                      <q-date v-model="formModel.fechaProxima">
                         <div class="row items-center justify-end">
                           <q-btn v-close-popup label="Close" color="primary" flat />
                         </div>
@@ -143,7 +159,8 @@
             <div class="col-12 col-md-6">
               <q-select
                 filled
-                v-model="frecuencia"
+                :readonly="soloLectura"
+                v-model="formModel.frecuencia"
                 :options="opcionesFrecuencias"
                 label="Frequencia de calibración"
               />
@@ -151,26 +168,20 @@
             <div class="col-12 col-md-6">
               <q-select
                 filled
-                v-model="calibracionTipo"
+                :readonly="soloLectura"
+                v-model="formModel.calibracionTipo"
                 :options="opcionesCalibracion"
                 label="Calibración Int/Ext."
               />
             </div>
 
             <div class="col-12">
-              <q-input filled v-model="infoExtra" type="textarea" label="Información adicional" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.infoExtra" type="textarea" label="Información adicional" />
             </div>
 
             <div class="col-12 q-mt-lg">
-              <q-btn label="REGISTRAR" type="submit" color="primary" />
-              <q-btn
-                label="CANCELAR"
-                type="reset"
-                color="negative"
-                flat
-                class="q-ml-sm"
-                v-close-popup
-              />
+              <q-btn v-if="!soloLectura" :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'" type="submit" color="primary" />
+              <q-btn :label="soloLectura ? 'Cerrar' : 'CANCELAR'" flat color="negative" v-close-popup class="q-ml-sm" />
             </div>
           </div>
         </q-form>
@@ -180,7 +191,7 @@
 
   <!-- dialog de procedimientos de calibracion -->
   <q-dialog v-model="procedimientos">
-    <q-card style="min-width: 900px">
+    <q-card style="max-width: 900px; width: 100%;">
       <q-toolbar class="bg-primary text-white rounded-borders">
         <q-toolbar-title> Procedimientos de Calibración </q-toolbar-title>
 
@@ -229,8 +240,76 @@ function index() {
 import { ref } from 'vue'
 
 const procedimientos = ref(false)
-const Form = ref(false)
+const Form = ref(false)         // Controla el diálogo de Agregar/Editar
+const modoEdicion = ref(false)  // Switch para saber si estamos editando o creando
+const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
 const text = ref('')
+const search = ref('')
+const backdropFilter = 'blur(5px)'
+
+const formModel = ref({
+  gageId: '',
+  description: '',
+  tipo: null,
+  estado: null,
+  localizacion: '',
+  vendedor: '',
+  fechaCompra: '',
+  fechaProxima: '',
+  infoExtra: '',
+  activo: true
+})
+
+const abrirFormulario = () => {
+  soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
+  modoEdicion.value = false
+  onReset()
+  Form.value = true
+}
+
+// Prepara el formulario con los datos de la fila seleccionada
+const prepararEdicion = (row) => {
+  soloLectura.value = false // IMPORTANTE: Desbloquear para editar
+  modoEdicion.value = true
+  formModel.value = { ...row }
+  Form.value = true
+}
+
+
+const verDetalles = (row) => {
+  soloLectura.value = true // Activamos el bloqueo de inputs
+  modoEdicion.value = false
+  formModel.value = { ...row } // Pasamos los datos al formModel
+  Form.value = true // Abrimos el diálogo
+}
+
+const onReset = () => {
+  formModel.value = {
+    gageId: '',
+    description: '',
+    tipo: null,
+    estado: null,
+    localizacion: '',
+    vendedor: '',
+    fechaCompra: '',
+    fechaProxima: '',
+    infoExtra: ''
+  }
+}
+
+const onSubmit = () => {
+  if (modoEdicion.value) {
+    // Lógica para actualizar en la tabla (buscar por ID y reemplazar)
+    const index = rows.value.findIndex(r => r.gageId === formModel.value.gageId)
+    if (index !== -1) rows.value[index] = { ...formModel.value }
+    alert('Gage actualizado con éxito')
+  } else {
+    // Lógica para agregar nuevo
+    rows.value.push({ ...formModel.value, activo: true })
+    alert('Gage registrado con éxito')
+  }
+  Form.value = false
+}
 
 const columns = [
   {
@@ -260,7 +339,7 @@ const columns = [
     format: (val) => `${val}`,
     sortable: true,
   },
-    {
+  {
     name: 'Estado',
     required: true,
     label: 'Estado',
@@ -287,42 +366,8 @@ const columns = [
     format: (val) => `${val}`,
     sortable: true,
   },
-  {
-    name: 'frecuencia',
-    required: true,
-    label: 'Frecuencia de Calibración',
-    align: 'left',
-    field: (row) => row.frecuencia,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'calibracionTipo',
-    required: true,
-    label: 'Calibración Int/Ext.',
-    align: 'left',
-    field: (row) => row.calibracionTipo,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'Editar',
-    required: true,
-    label: 'Editar',
-    align: 'left',
-    field: (row) => row.Editar,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'ver',
-    required: true,
-    label: 'Ver Detalles',
-    align: 'left',
-    field: (row) => row.ver,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
+
+  { name: 'actions', label: 'Acciones', align: 'center' }
 ]
 const rows = [
   {
@@ -334,9 +379,6 @@ const rows = [
     fechaProxima: '2023-01-15',
     frecuencia: 'Anual',
     calibracionTipo: 'Interna',
-    Editar: 'Editar',
-    ver: 'Ver Detalles',
-    
   },
   {
     idGage: 'G002',
@@ -347,9 +389,6 @@ const rows = [
     fechaProxima: '2022-06-10',
     frecuencia: 'Anual',
     calibracionTipo: 'Externa',
-    Editar: 'Editar',
-    ver: 'Ver Detalles',
-
   },
   {
     idGage: 'G003',
@@ -360,8 +399,10 @@ const rows = [
     fechaProxima: '2021-11-05',
     frecuencia: 'Anual',
     calibracionTipo: 'Interna',
-    Editar: 'Editar',
-    ver: 'Ver Detalles',
   },
 ]
+
+
+const opcionesEstado = ['Aprobado', 'Rechazado']
+const opcionesTipo = ['Mecánico', 'Eléctrico', 'Digital']
 </script>

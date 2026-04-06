@@ -50,3 +50,4 @@ y el boton de editar edita la informacion de la calibracion seleccionada.
 ‎Nuevo apartado
 	-Historial de prestamo de gages-
 ‎- Prestamo o historia de gages entregados en linea
+- Poner el campo de gages para llevar más de 1 Y que también se registre el usuario que hizo el registro
