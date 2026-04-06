@@ -220,7 +220,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function index() {
-  router.push('index')
+  router.push('/')
 }
 
 //para el dialog de procedimientos

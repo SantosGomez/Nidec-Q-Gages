@@ -103,6 +103,6 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function index() {
-  router.push('index')
+  router.push('/')
 }
 </script>

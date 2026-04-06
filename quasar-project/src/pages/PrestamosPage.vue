@@ -111,7 +111,7 @@ const Area = ref('')
 const HoraPrestamo = ref('')
 
 function index() {
-  router.push('index')
+  router.push('/')
 }
 
 const list = ['blur(4px)', 'brightness(0.7)', 'contrast(1.2)']
