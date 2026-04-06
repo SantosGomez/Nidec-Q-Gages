@@ -6,15 +6,15 @@
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <div class="col-12 col-md-12">
-      <q-card class="my-card" style="width: 1250px; margin: 0 auto; margin-top: 20px">
-        <q-card-section class="flex flex-center">
+      <q-card class="my-card" style="max-width: 1250px; margin: 0 auto; margin-top: 20px">
+        <q-card-section>
           <div class="text-h5">
             Bienvenido al sistema de calibración de Gages. Seleccione una opción.
           </div>
         </q-card-section>
-        <q-separator />
+        <q-separator  />
         <q-card-section>
-          <div class="row q-col-gutter-md">
+          <div class="row q-col-gutter-md text-right">
             <div class="col-12 col-md-3">
               <q-btn
                 icon="add"
@@ -45,26 +45,28 @@
                 "
               />
             </div>
-            <div class="col-12 col-md-6">
-              <q-input v-model="search" filled placeholder="BUSCAR">
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-            </div>
           </div>
         </q-card-section>
       </q-card>
     </div>
 
     <div class="col-12 col-md-12">
-      <q-card class="my-card" style="width: 1250px; margin: 0 auto">
+      <q-card class="my-card" style="max-width: 1250px; margin: 0 auto">
         <q-card-section>
           <div class="text-h6">Calibraciones</div>
         </q-card-section>
         <q-card-section>
           <!--Tabla con la informacion de las calibraciones de los gages-->
-          <q-table title="Treats" :rows="rows" :columns="columns" row-key="idGage" />
+          <q-table :rows="rows" :columns="columns" row-key="idGage" flat bordered>
+
+            <template v-slot:top-right>
+          <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </template>
+          </q-table>
         </q-card-section>
       </q-card>
     </div>
@@ -73,8 +75,8 @@
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
     <q-card class="my-card" style="width: 1450px">
-      <q-card-section>
-        <div class="text-h4">Gage Master</div>
+      <q-card-section class="bg-primary text-white">
+        <div class="text-h4">Calibración Nueva de Gage</div>
       </q-card-section>
 
       <q-card-section>

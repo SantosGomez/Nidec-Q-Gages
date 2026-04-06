@@ -36,7 +36,7 @@
           bordered
         >
           <template v-slot:top-right>
-            <q-input v-model="search" borderless dense debounce="300" placeholder="Buscar Gage">
+            <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
@@ -78,7 +78,7 @@
 
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
     <q-card style="width: 900px; max-width: 90vw;">
-      <q-card-section>
+      <q-card-section class="bg-primary text-white">
         <div class="text-h4">{{ modoEdicion ? 'Editar Gage' : 'Nuevo Gage' }}</div>
       </q-card-section>
 

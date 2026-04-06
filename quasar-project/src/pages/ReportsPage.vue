@@ -3,8 +3,8 @@
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
   <div class="q-pa-md">
+    <div class="text-h2 flex flex-center" style="font-weight: bold; margin: 20px;">Reportes</div>
     <q-card style="padding: 10px; max-width: 900px; margin: 0 auto;">
-      <h4 style="margin: 10px">Reportes</h4>
       <q-card-section>
         <div class="text-h6">Selecciona el tipo de reporte:</div>
         <div class="row">

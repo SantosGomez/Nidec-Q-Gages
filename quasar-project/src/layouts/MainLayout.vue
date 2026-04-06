@@ -25,12 +25,12 @@
     <q-space />
 
   <div class="q-pa-md">
-    <q-btn color="white" flat label="Account Settings">
+    <q-btn color="white" flat label="Account Settings" icon="settings">
       <q-menu>
         <div class="row no-wrap q-pa-md">
           <div class="column flex flex-center">
-            <q-btn flat color="primary" label="Configuraciones" v-close-popup @click="user" />
-            <q-btn flat color="negative" label="Logout" v-close-popup @click="login"/>
+            <q-btn flat color="primary" label="Configuraciones" v-close-popup @click="user" icon="settings" />
+            <q-btn flat color="negative" label="Logout" v-close-popup @click="login" icon="logout"/>
           </div>
 
           <q-separator vertical inset class="q-mx-lg" />
@@ -122,7 +122,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function index() {
-  router.push('index')
+  router.push('/')
 }
 
 function login() {
@@ -137,7 +137,7 @@ function calibracion() {
 }
 
 function reportes() {
-  router.push('reportes')
+  router.push('Reports')
 }
 
 function procedimientos() {
