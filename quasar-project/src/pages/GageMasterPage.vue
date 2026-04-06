@@ -4,376 +4,268 @@
   </div>
   <div class="text-h2 flex flex-center" style="font-weight: bold">Gages</div>
 
-  <div class="row q-col-gutter-md" style="margin-top: 20px">
-    <q-card class="my-card" style="width: 1250px; margin: 0 auto; margin-top: 20px">
-      <q-card-section class="flex flex-center">
-      
-        <div class="text-h5" style="margin-bottom: 20px">
-          Bienvenido al sistema de gestión de Gages. Seleccione una opción para comenzar.
+  <div class="row q-col-gutter-md q-px-md flex flex-center" style="margin-top: 20px">
+    <q-card class="my-card full-width" style="max-width: 1250px; margin: 0 auto">
+      <q-card-section>
+        <div class="row items-center q-col-gutter-md">
+          <div class="col-12 col-md-6">
+            <div class="text-h5">Gestion de Gages</div>
+          </div>
+          <div class="col-12 col-md-6 text-right">
+          <q-btn
+          icon="add"
+          color="primary"
+          label="Agregar Gage"
+          @click="abrirFormulario()"
+          class="q-px-lg"
+          size="large"
+          />
+          </div>
         </div>
       </q-card-section>
+
       <q-separator />
+
       <q-card-section>
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-6">
-            <q-btn
-              icon="add"
-              style="font-size: 18px; width: 300px; height: 40px; margin-top: 5px"
-              color="primary"
-              label="Agregar Gage"
-              @click="Form = true"
-            />
-            <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-              <q-card class="my-card" style="width: 1450px">
-                <q-card-section>
-                  <div class="text-h4">Gage Master</div>
-                </q-card-section>
-
-                <q-card-section>
-                  <q-form @submit="onSubmit" @reset="onReset">
-                    <div class="row q-col-gutter-md">
-                      <div class="col-12 col-md-6">
-                        <q-input filled v-model="gageId" label="GageID" />
-                      </div>
-                      <div class="col-12 col-md-6">
-                        <q-input filled v-model="description" label="Nombre del Gage" />
-                      </div>
-
-                      <div class="col-12 col-md-6">
-                        <q-select
-                          filled
-                          v-model="tipoSeleccionado"
-                          :options="opcionesTipo"
-                          label="Tipo"
-                        />
-                      </div>
-                      <div class="col-12 col-md-6">
-                        <q-select
-                          filled
-                          v-model="estadoSeleccionado"
-                          :options="opcionesEstado"
-                          label="Estado"
-                        />
-                      </div>
-
-                      <div class="col-12 col-md-6">
-                        <q-input filled v-model="localizacion" label="Localización" />
-                      </div>
-                      <div class="col-12 col-md-6">
-                        <q-input filled v-model="vendedor" label="Vendedor" />
-                      </div>
-
-                      <div class="col-12 col-md-6">
-                        <q-input filled v-model="fechaCompra" mask="date" label="Fecha de Compra">
-                          <template v-slot:append>
-                            <q-icon name="event" class="cursor-pointer">
-                              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                                <q-date v-model="fechaCompra">
-                                  <div class="row items-center justify-end">
-                                    <q-btn v-close-popup label="Close" color="primary" flat />
-                                  </div>
-                                </q-date>
-                              </q-popup-proxy>
-                            </q-icon>
-                          </template>
-                        </q-input>
-                      </div>
-
-                      <div class="col-12 col-md-6">
-                        <q-input
-                          filled
-                          v-model="fechaProxima"
-                          mask="date"
-                          label="Próxima Calibración"
-                        >
-                          <template v-slot:append>
-                            <q-icon name="event" class="cursor-pointer">
-                              <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                                <q-date v-model="fechaProxima">
-                                  <div class="row items-center justify-end">
-                                    <q-btn v-close-popup label="Close" color="primary" flat />
-                                  </div>
-                                </q-date>
-                              </q-popup-proxy>
-                            </q-icon>
-                          </template>
-                        </q-input>
-                      </div>
-
-                      <div class="col-12 col-md-6">
-                        <q-select
-                          filled
-                          v-model="frecuencia"
-                          :options="opcionesFrecuencias"
-                          label="Frequencia de calibración"
-                        />
-                      </div>
-                      <div class="col-12 col-md-6">
-                        <q-select
-                          filled
-                          v-model="calibracionTipo"
-                          :options="opcionesCalibracion"
-                          label="Calibración Int/Ext."
-                        />
-                      </div>
-
-                      <div class="col-12">
-                        <q-input
-                          filled
-                          v-model="infoExtra"
-                          type="textarea"
-                          label="Información adicional"
-                        />
-                      </div>
-
-                      <div class="col-12 q-mt-lg">
-                        <q-btn label="REGISTRAR" type="submit" color="primary" />
-                        <q-btn
-                          label="CANCELAR"
-                          type="reset"
-                          color="negative"
-                          flat
-                          class="q-ml-sm"
-                          v-close-popup
-                        />
-                      </div>
-                    </div>
-                  </q-form>
-                </q-card-section>
-              </q-card>
-            </q-dialog>
-          </div>
-          <div class="col-12 col-md-6">
-            <q-input v-model="search" filled placeholder="BUSCAR">
+        <q-table
+          :rows="rows"
+          :columns="columns"
+          :filter="search"
+          row-key="gageId"
+          flat
+          bordered
+        >
+          <template v-slot:top-right>
+            <q-input v-model="search" borderless dense debounce="300" placeholder="Buscar Gage">
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
             </q-input>
-          </div>
-        </div>
-      </q-card-section>
-      <q-separator />
-      <q-card-section>
-        <q-list bordered>
-          <q-item v-for="(item, index) in 5" :key="index" style="margin-bottom: 5px;">
-            <q-item-section avatar>
-              <div style="font-weight: bold; font-size: 18px">Id del Gage</div>
-            </q-item-section>
-            <q-item-section style="margin: 15px">Nombre del Gage</q-item-section>
-            
-            <q-item-section style="font-size: 18px;">Estado
-                <div class="col-6">
-                  <q-btn  color="primary" icon="check" label="Activo" v-model="activo" @click="confirm = true" />
-                </div>
-                <q-dialog v-model="confirm" persistent>
-                  <q-card>
-                    <q-card-section class="row items-center">
-                      <q-avatar icon="design_services" color="primary" text-color="white" />
-                      <span class="q-ml-sm">¿Seguro que quieres continuar e inactivar el Gage?</span>
-                    </q-card-section>
-                    <q-card-actions align="right">
-                      <q-btn flat label="Cancel" color="negative" v-close-popup />
-                      <q-btn flat label="Continuar" color="primary" v-close-popup />
-                    </q-card-actions>
-                  </q-card>
-                </q-dialog>
-              </q-item-section>
-              
-            <q-item-section side style="font-weight: bold; font-size: 18px;">
-              Acciones
-              <div class="col-6">
-                <q-btn
-                size="17px"
-                icon="edit"
-                color="warning"
-                label="Editar"
-                @click="editar = true"
-                />
-              </div>
-              <q-dialog v-model="editar" persistent :backdrop-filter="backdropFilter">
-                <q-card class="my-card" style="width: 1250px; margin: 0 auto;">
-                  <q-card-section>
-                    <div class="text-h4">Editar Gage</div>
-                  </q-card-section>
+          </template>
 
-                  <q-card-section>
-                    <q-form @submit="onSubmit" @reset="onReset">
-                      
-                      <div class="row q-col-gutter-md">
-                        <div class="col-12 col-md-6">
-                          <q-input filled v-model="gageId" label="GageID" />
-                        </div>
-                        <div class="col-12 col-md-6">
-                          <q-input filled v-model="description" label="Nombre del Gage" />
-                        </div>
+          <template v-slot:body-cell-estado="props">
+            <q-td :props="props">
+              <q-btn 
+                :color="props.row.activo ? 'primary' : 'grey-7'" 
+                :icon="props.row.activo ? 'check' : 'block'" 
+                :label="props.row.activo ? 'Activo' : 'Inactivo'"
+                size="sm"
+                @click="confirmarInactivar(props.row)"
+              />
+            </q-td>
+          </template>
 
-                        <div class="col-12 col-md-6">
-                          <q-select
-                            filled
-                            v-model="tipoSeleccionado"
-                            :options="opcionesTipo"
-                            label="Tipo"
-                          />
-                        </div>
-                        <div class="col-12 col-md-6">
-                          <q-select
-                            filled
-                            v-model="estadoSeleccionado"
-                            :options="opcionesEstado"
-                            label="Estado"
-                          />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                          <q-input filled v-model="localizacion" label="Localización" />
-                        </div>
-                        <div class="col-12 col-md-6">
-                          <q-input filled v-model="vendedor" label="Vendedor" />
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                          <q-input filled v-model="fechaCompra" mask="date" label="Fecha de Compra">
-                            <template v-slot:append>
-                              <q-icon name="event" class="cursor-pointer">
-                                <q-popup-proxy
-                                  cover
-                                  transition-show="scale"
-                                  transition-hide="scale"
-                                >
-                                  <q-date v-model="fechaCompra">
-                                    <div class="row items-center justify-end">
-                                      <q-btn v-close-popup label="Close" color="primary" flat />
-                                    </div>
-                                  </q-date>
-                                </q-popup-proxy>
-                              </q-icon>
-                            </template>
-                          </q-input>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                          <q-input
-                            filled
-                            v-model="fechaProxima"
-                            mask="date"
-                            label="Próxima Calibración"
-                          >
-                            <template v-slot:append>
-                              <q-icon name="event" class="cursor-pointer">
-                                <q-popup-proxy
-                                  cover
-                                  transition-show="scale"
-                                  transition-hide="scale"
-                                >
-                                  <q-date v-model="fechaProxima">
-                                    <div class="row items-center justify-end">
-                                      <q-btn v-close-popup label="Close" color="primary" flat />
-                                    </div>
-                                  </q-date>
-                                </q-popup-proxy>
-                              </q-icon>
-                            </template>
-                          </q-input>
-                        </div>
-
-                        <div class="col-12 col-md-6">
-                          <q-select
-                            filled
-                            v-model="frecuencia"
-                            :options="opcionesFrecuencias"
-                            label="Frequencia de calibración"
-                          />
-                        </div>
-                        <div class="col-12 col-md-6">
-                          <q-select
-                            filled
-                            v-model="calibracionTipo"
-                            :options="opcionesCalibracion"
-                            label="Calibración Int/Ext."
-                          />
-                        </div>
-
-                        <div class="col-12">
-                          <q-input
-                            filled
-                            v-model="infoExtra"
-                            type="textarea"
-                            label="Información adicional"
-                          />
-                        </div>
-
-                        <div class="col-12 q-mt-lg">
-                          <q-btn label="Editar" type="submit" color="warning"  />
-                          <q-btn
-                            label="CANCELAR"
-                            type="reset"
-                            color="negative"
-                            flat
-                            class="q-ml-sm"
-                            v-close-popup
-                          />
-                        </div>
-                      </div>
-                    </q-form>
-                  </q-card-section>
-                </q-card>
-              </q-dialog>
-            </q-item-section>
-          </q-item>
-        </q-list>
-      </q-card-section>
-      <q-card-section>
-        <div class="q-pa-lg flex flex-center">
-          <q-pagination
-            v-model="current"
-            :max="5"
-            direction-links
-            boundary-links
-            icon-first="skip_previous"
-            icon-last="skip_next"
-            icon-prev="fast_rewind"
-            icon-next="fast_forward"
-          />
-        </div>
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="q-gutter-sm">
+              <q-btn 
+                outline round color="warning" icon="edit" 
+                @click="prepararEdicion(props.row)"
+              >
+                <q-tooltip>Editar</q-tooltip>
+              </q-btn>
+              <q-btn 
+                outline round color="info" icon="visibility" 
+                @click="verDetalles(props.row)"
+              >
+                <q-tooltip>Ver Detalles</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+        </q-table>
       </q-card-section>
     </q-card>
   </div>
+
+  <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
+    <q-card style="width: 900px; max-width: 90vw;">
+      <q-card-section>
+        <div class="text-h4">{{ modoEdicion ? 'Editar Gage' : 'Nuevo Gage' }}</div>
+      </q-card-section>
+
+      <q-card-section>
+        <q-form @submit="onSubmit" @reset="onReset">
+          <div class="row q-col-gutter-md">
+            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.gageId" label="GageID" /></div>
+            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.description" label="Nombre del Gage" /></div>
+            <div class="col-12 col-md-6"><q-select filled :readonly="soloLectura" v-model="formModel.tipo" :options="opcionesTipo" label="Tipo" /></div>
+            <div class="col-12 col-md-6"><q-select filled :readonly="soloLectura" v-model="formModel.estado" :options="opcionesEstado" label="Estado" /></div>
+            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.localizacion" label="Localización" /></div>
+            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.vendedor" label="Vendedor" /></div>
+            
+            <div class="col-12 col-md-6">
+              <q-input filled :readonly="soloLectura" v-model="formModel.fechaCompra" mask="date" label="Fecha de Compra">
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer"><q-popup-proxy><q-date v-model="formModel.fechaCompra" /></q-popup-proxy></q-icon>
+                </template>
+              </q-input>
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input filled :readonly="soloLectura" v-model="formModel.fechaProxima" mask="date" label="Próxima Calibración">
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer"><q-popup-proxy><q-date v-model="formModel.fechaProxima" /></q-popup-proxy></q-icon>
+                </template>
+              </q-input>
+            </div>
+
+            <div class="col-12"><q-input filled :readonly="soloLectura" v-model="formModel.infoExtra" type="textarea" label="Información adicional" /></div>
+
+            <div class="col-12 q-mt-lg">
+              <q-btn v-if="!soloLectura" :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'" type="submit" color="primary" />
+              <q-btn :label="soloLectura ? 'Cerrar' : 'CANCELAR'" flat color="negative" v-close-popup class="q-ml-sm" />
+            </div>
+          </div>
+        </q-form>
+      </q-card-section>
+    </q-card>
+  </q-dialog>
+
+  <q-dialog v-model="confirm" persistent>
+    <q-card>
+      <q-card-section class="row items-center">
+        <q-avatar icon="warning" color="warning" text-color="white" />
+        <span class="q-ml-sm">¿Deseas cambiar el estado de este Gage?</span>
+      </q-card-section>
+      <q-card-actions align="right">
+        <q-btn flat label="No" color="primary" v-close-popup />
+        <q-btn flat label="Sí, cambiar" color="negative" @click="toggleEstado" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
-import { useRouter } from 'vue-router'
-const router = useRouter()
 import { ref } from 'vue'
+import { useRouter } from 'vue-router'
 
-const search = ref('')
+const router = useRouter()
+const index = () => router.push('/') // Redirige a la raíz
 
-const Form = ref(false)
-const editar = ref(false)
-const confirm = ref(false) 
+// --- ESTADOS DE CONTROL ---
+const search = ref('')         // Para el buscador de la tabla
+const Form = ref(false)         // Controla el diálogo de Agregar/Editar
+const confirm = ref(false)      // Controla el diálogo de Inactivar
+const modoEdicion = ref(false)  // Switch para saber si estamos editando o creando
+const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
+const itemSeleccionado = ref(null) // Guarda el objeto que vamos a inactivar
+const backdropFilter = ref('blur(4px)')
 
-function index() {
-  router.push('index')
+// --- MODELO ÚNICO PARA EL FORMULARIO ---
+// En lugar de 10 variables sueltas, usamos un solo objeto. Es más limpio.
+const formModel = ref({
+  gageId: '',
+  description: '',
+  tipo: null,
+  estado: null,
+  localizacion: '',
+  vendedor: '',
+  fechaCompra: '',
+  fechaProxima: '',
+  infoExtra: '',
+  activo: true
+})
+
+// --- CONFIGURACIÓN DE LA TABLA ---
+const columns = [
+  { name: 'gageId', label: 'GageID', field: 'gageId', align: 'left', sortable: true },
+  { name: 'description', label: 'Nombre del Gage', field: 'description', align: 'left' },
+  { name: 'estado', label: 'Estado', field: 'activo', align: 'center' },
+  { name: 'actions', label: 'Acciones', align: 'center' }
+]
+
+// Datos de prueba (Aquí llegarán los datos de tu base de datos después)
+const rows = ref([
+  { 
+    gageId: 'NID-001', 
+    description: 'Micrómetro Digital 0-25mm', 
+    activo: true, 
+    tipo: 'Digital',
+    estado: 'Aprobado',
+    localizacion: 'Lab A',
+    vendedor: 'Mitutoyo',
+    fechaCompra: '2024/01/01',
+    fechaProxima: '2025/01/01',
+    infoExtra: 'Calibración inicial ok'
+  },
+  { 
+    gageId: 'NID-002', 
+    description: 'Vernier Analógico', 
+    activo: false, 
+    tipo: 'Mecánico',
+    estado: 'Rechazado'
+  }
+])
+
+// --- FUNCIONES / MÉTODOS ---
+
+// Prepara el formulario para un registro nuevo
+const abrirFormulario = () => {
+  soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
+  modoEdicion.value = false
+  onReset()
+  Form.value = true
 }
 
-const gageId = ref('')
-const description = ref('')
-const tipoSeleccionado = ref(null) // Para el primer select
-const estadoSeleccionado = ref(null) // Para el segundo select
-const localizacion = ref('')
-const vendedor = ref('')
-const fechaCompra = ref('') // Fecha 1
-const frecuencia = ref(null) // Para el tercer select
-const fechaProxima = ref('') // Fecha 2
-const calibracionTipo = ref(null) // Para el cuarto select
-const infoExtra = ref('')
-const activo = ref(true) // Para el estado del Gage
-// --- OPCIONES DE LOS SELECTS ---
+// Prepara el formulario con los datos de la fila seleccionada
+const prepararEdicion = (row) => {
+  soloLectura.value = false // IMPORTANTE: Desbloquear para editar
+  modoEdicion.value = true
+  formModel.value = { ...row }
+  Form.value = true
+}
+
+
+const verDetalles = (row) => {
+  soloLectura.value = true // Activamos el bloqueo de inputs
+  modoEdicion.value = false
+  formModel.value = { ...row } // Pasamos los datos al formModel
+  Form.value = true // Abrimos el diálogo
+}
+
+
+
+// Abre el mini-diálogo de confirmación
+const confirmarInactivar = (row) => {
+  itemSeleccionado.value = row
+  confirm.value = true
+}
+
+// Cambia el estado Activo/Inactivo
+const toggleEstado = () => {
+  if (itemSeleccionado.value) {
+    itemSeleccionado.value.activo = !itemSeleccionado.value.activo
+    // Aquí podrías hacer un update a tu base de datos en el futuro
+  }
+}
+
+const onSubmit = () => {
+  if (modoEdicion.value) {
+    // Lógica para actualizar en la tabla (buscar por ID y reemplazar)
+    const index = rows.value.findIndex(r => r.gageId === formModel.value.gageId)
+    if (index !== -1) rows.value[index] = { ...formModel.value }
+    alert('Gage actualizado con éxito')
+  } else {
+    // Lógica para agregar nuevo
+    rows.value.push({ ...formModel.value, activo: true })
+    alert('Gage registrado con éxito')
+  }
+  Form.value = false
+}
+
+const onReset = () => {
+  formModel.value = {
+    gageId: '',
+    description: '',
+    tipo: null,
+    estado: null,
+    localizacion: '',
+    vendedor: '',
+    fechaCompra: '',
+    fechaProxima: '',
+    infoExtra: ''
+  }
+}
+
+// Opciones para los Selects
 const opcionesEstado = ['Aprobado', 'Rechazado']
 const opcionesTipo = ['Mecánico', 'Eléctrico', 'Digital']
-const opcionesFrecuencias = ['Mensual', 'Trimestral', 'Semestral', 'Anual']
-const opcionesCalibracion = ['Interna', 'Externa']
-
-const current = ref(1) // Para la paginación
-const list = ['blur(4px)', 'brightness(0.7)', 'contrast(1.2)']
-const backdropFilter = ref(list[0])
 </script>
