@@ -1,5 +1,5 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
+  <q-layout view="hHh lpR fFf">
     <q-header elevated class="bg-primary text-white">
   <q-toolbar>
     <q-btn 
@@ -51,7 +51,7 @@
   </q-toolbar>
 </q-header>
 
-    <q-drawer v-model="leftDrawerOpen" show-if-above bordered>
+    <q-drawer v-model="leftDrawerOpen" side="left" overlay elevated>
       <q-list>
         <q-item-label header> Modulos Nidec Q-Gages </q-item-label>
         <!-- <EssentialLink v-for="link in linksList" :key="link.title" v-bind="link" /> -->
@@ -126,7 +126,7 @@ function index() {
 }
 
 function login() {
-  router.push('login')
+  router.push({ name: 'login' })
 }
 function master() {
   router.push('GageMaster')
@@ -154,7 +154,7 @@ import { ref } from 'vue'
 
 const leftDrawerOpen = ref(false)
 
-function toggleLeftDrawer() {
+function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
 }
 </script>

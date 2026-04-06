@@ -1,4 +1,5 @@
 <template>
+  <div class="flex flex-center">
   <q-card class="my-card" style="max-width: 600px; margin: 0 auto; margin-top: 20px">
     <div class="flex flex-center">
       <img
@@ -59,6 +60,7 @@
       </div>
     </q-card-section>
   </q-card>
+</div>
 </template>
 
 <script setup>
@@ -66,7 +68,7 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 
 function inicio() {
-  router.push('index')
+  router.push('/')
 }
 
 import { ref } from 'vue'
