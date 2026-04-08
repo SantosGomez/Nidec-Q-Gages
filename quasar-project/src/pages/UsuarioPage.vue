@@ -36,7 +36,7 @@
                 <q-item-label>{{ user.Usuario }}</q-item-label>
               </q-item-section>
               <q-item-section>
-                <q-badge color="secondary" :label="user.Rol" style="width: 50px;"/>
+                <q-badge color="secondary" :label="user.Rol"  style="width: 50px;"/>
               </q-item-section>
             </q-item>
 
