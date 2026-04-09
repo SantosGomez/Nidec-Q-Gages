@@ -12,14 +12,14 @@
             <div class="text-h5">Gestion de Gages</div>
           </div>
           <div class="col-12 col-md-6 text-right">
-          <q-btn
-          icon="add"
-          color="primary"
-          label="Agregar Gage"
-          @click="abrirFormulario()"
-          class="q-px-lg"
-          size="large"
-          />
+            <q-btn
+              icon="add"
+              color="primary"
+              label="Agregar Gage"
+              @click="abrirFormulario"
+              class="q-px-lg"
+              size="large"
+            />
           </div>
         </div>
       </q-card-section>
@@ -28,28 +28,36 @@
 
       <q-card-section>
         <q-table
-          :rows="rows"
+          :rows="gagesFiltrados"
           :columns="columns"
-          :filter="search"
+          :loading="loading"
           row-key="gageId"
           flat
           bordered
         >
           <template v-slot:top-right>
-            <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
+            <q-input
+              v-model="search"
+              dense
+              filled
+              debounce="300"
+              placeholder="Buscar por ID o Nombre"
+              style="width: 300px"
+            >
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
             </q-input>
           </template>
 
-          <template v-slot:body-cell-estado="props">
+         <template v-slot:body-cell-estado="props">
             <q-td :props="props">
               <q-btn 
-                :color="props.row.activo ? 'primary' : 'grey-7'" 
-                :icon="props.row.activo ? 'check' : 'block'" 
-                :label="props.row.activo ? 'Activo' : 'Inactivo'"
+                :color="props.row.Act_Inact == 1 ? 'positive' : 'grey-7'" 
+                :icon="props.row.Act_Inact == 1 ? 'check_circle' : 'cancel'" 
+                :label="props.row.Act_Inact == 1 ? 'Activo' : 'Inactivo'"
                 size="sm"
+                unelevated
                 @click="confirmarInactivar(props.row)"
               />
             </q-td>
@@ -57,19 +65,35 @@
 
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="q-gutter-sm">
-              <q-btn 
-                outline round color="warning" icon="edit" 
+              <q-btn
+                outline
+                round
+                color="warning"
+                icon="edit"
+                size="sm"
                 @click="prepararEdicion(props.row)"
               >
                 <q-tooltip>Editar</q-tooltip>
               </q-btn>
-              <q-btn 
-                outline round color="info" icon="visibility" 
+
+              <q-btn
+                outline
+                round
+                color="info"
+                icon="visibility"
+                size="sm"
                 @click="verDetalles(props.row)"
               >
-                <q-tooltip>Ver Detalles</q-tooltip>
+                <q-tooltip>Ver ficha técnica</q-tooltip>
               </q-btn>
             </q-td>
+          </template>
+
+          <template v-slot:no-data>
+            <div class="full-width row flex-center text-grey-8 q-gutter-sm">
+              <q-icon size="2em" name="sentiment_dissatisfied" />
+              <span>No se encontraron gages que coincidan con "{{ search }}"</span>
+            </div>
           </template>
         </q-table>
       </q-card-section>
@@ -77,7 +101,7 @@
   </div>
 
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-    <q-card style="width: 900px; max-width: 90vw;">
+    <q-card style="width: 900px; max-width: 90vw">
       <q-card-section class="bg-primary text-white">
         <div class="text-h4">{{ modoEdicion ? 'Editar Gage' : 'Nuevo Gage' }}</div>
       </q-card-section>
@@ -85,33 +109,118 @@
       <q-card-section>
         <q-form @submit="onSubmit" @reset="onReset">
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.gageId" label="GageID" /></div>
-            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.description" label="Nombre del Gage" /></div>
-            <div class="col-12 col-md-6"><q-select filled :readonly="soloLectura" v-model="formModel.tipo" :options="opcionesTipo" label="Tipo" /></div>
-            <div class="col-12 col-md-6"><q-select filled :readonly="soloLectura" v-model="formModel.estado" :options="opcionesEstado" label="Estado" /></div>
-            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.localizacion" label="Localización" /></div>
-            <div class="col-12 col-md-6"><q-input  filled :readonly="soloLectura" v-model="formModel.vendedor" label="Vendedor" /></div>
-            
             <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.fechaCompra" mask="date" label="Fecha de Compra">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer"><q-popup-proxy><q-date v-model="formModel.fechaCompra" /></q-popup-proxy></q-icon>
-                </template>
-              </q-input>
+              <q-input filled :readonly="soloLectura" v-model="formModel.GageSerie" label="Gage Serie" />
             </div>
             <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.fechaProxima" mask="date" label="Próxima Calibración">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer"><q-popup-proxy><q-date v-model="formModel.fechaProxima" /></q-popup-proxy></q-icon>
-                </template>
-              </q-input>
+              <q-input
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Descripcion"
+                label="Nombre del Gage"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Tipo"
+                :options="opcionesTipo"
+                label="Tipo"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Estado"
+                :options="opcionesEstado"
+                label="Estado"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Locacion"
+                label="Localización"
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-input
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Vendedor"
+                label="Vendedor"
+              />
             </div>
 
-            <div class="col-12"><q-input filled :readonly="soloLectura" v-model="formModel.infoExtra" type="textarea" label="Información adicional" /></div>
+            <div class="col-12 col-md-6">
+              <q-input
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.FechaCompra"
+                mask="date"
+                label="Fecha de Compra"
+              >
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer"
+                    ><q-popup-proxy><q-date v-model="formModel.FechaCompra" /></q-popup-proxy
+                  ></q-icon>
+                </template>
+              </q-input>
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Frecuencia"
+                :options="opcionesFrecuencias"
+                label="Frequencia de calibración"
+                emit-value
+                map-options
+              />
+            </div>
+            <div class="col-12 col-md-6">
+              <q-select
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Nombre_extint"
+                :options="opcionesCalibracion"
+                label="Calibración Int/Ext."
+                emit-value
+                map-options
+              />
+            </div>
+
+            <div class="col-12">
+              <q-input
+                filled
+                :readonly="soloLectura"
+                v-model="formModel.Informacion"
+                type="textarea"
+                label="Información adicional"
+              />
+            </div>
 
             <div class="col-12 q-mt-lg">
-              <q-btn v-if="!soloLectura" :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'" type="submit" color="primary" />
-              <q-btn :label="soloLectura ? 'Cerrar' : 'CANCELAR'" flat color="negative" v-close-popup class="q-ml-sm" />
+              <q-btn
+                v-if="!soloLectura"
+                :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
+                type="submit"
+                color="primary"
+              />
+              <q-btn
+                :label="soloLectura ? 'Cerrar' : 'CANCELAR'"
+                flat
+                color="negative"
+                v-close-popup
+                class="q-ml-sm"
+              />
             </div>
           </div>
         </q-form>
@@ -134,138 +243,194 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from 'boot/axios'
 
 const router = useRouter()
 const index = () => router.push('/') // Redirige a la raíz
 
 // --- ESTADOS DE CONTROL ---
-const search = ref('')         // Para el buscador de la tabla
-const Form = ref(false)         // Controla el diálogo de Agregar/Editar
-const confirm = ref(false)      // Controla el diálogo de Inactivar
-const modoEdicion = ref(false)  // Switch para saber si estamos editando o creando
-const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
-const itemSeleccionado = ref(null) // Guarda el objeto que vamos a inactivar
+const search = ref('')
+const rows = ref([]) // <--- FALTABA DECLARAR
+const loading = ref(false) // <--- FALTABA DECLARAR
+const Form = ref(false)
+const confirm = ref(false)
+const modoEdicion = ref(false)
+const soloLectura = ref(false)
+const GageSeleccionado = ref(null)
 const backdropFilter = ref('blur(4px)')
 
-// --- MODELO ÚNICO PARA EL FORMULARIO ---
-// En lugar de 10 variables sueltas, usamos un solo objeto. Es más limpio.
+// --- MODELO DEL FORMULARIO ---
 const formModel = ref({
-  gageId: '',
-  description: '',
-  tipo: null,
-  estado: null,
-  localizacion: '',
-  vendedor: '',
-  fechaCompra: '',
-  fechaProxima: '',
-  infoExtra: '',
-  activo: true
+  GageID: '',         // Antes gageId
+  GageSerie: '',     // Nuevo campo para el número de serie
+  Descripcion: '',    // Antes description
+  Tipo: null,         // Antes tipo
+  Estado: null,       // Antes estado
+  Locacion: '',       // Antes localizacion (revisa si es Locacion o LocacionId)
+  Vendedor: '',       // Antes vendedor
+  FechaCompra: '',    // Antes fechaCompra
+  Frecuencia: null, // Antes frecuencia
+  Nombre_extint: null,       // Antes calibracionTipo
+  Informacion: '',    // Antes infoExtra
+  Act_Inact: 1        // Antes activo
 })
 
-// --- CONFIGURACIÓN DE LA TABLA ---
+// Opciones para los selects
+const opcionesTipo = [
+  { label: 'Mecanico', value: 1 },
+  { label: 'Digital', value: 2 },
+  { label: 'Electrico', value: 3 },
+];
+const opcionesEstado = [
+  { label: 'Aprobado', value: '1' },
+  { label: 'Rechazado', value: '2' },
+];
+const opcionesFrecuencias = [
+  { label: '1 meses', value: '1' },
+  { label: '3 meses', value: '2' },
+  { label: '6 meses', value: '3' },
+  { label: '12 meses', value: '4' },
+];
+const opcionesCalibracion = [
+  { label: 'Interna', value: '1' },
+  { label: 'Externa', value: '2' }
+];
+
+// --- CONFIGURACIÓN DE TABLA ---
 const columns = [
-  { name: 'gageId', label: 'GageID', field: 'gageId', align: 'left', sortable: true },
-  { name: 'description', label: 'Nombre del Gage', field: 'description', align: 'left' },
-  { name: 'estado', label: 'Estado', field: 'activo', align: 'center' },
-  { name: 'actions', label: 'Acciones', align: 'center' }
+  { name: 'GageId', label: '#', field: 'GageID', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  { name: 'description', label: 'Nombre del Gage', field: 'Descripcion', align: 'left' }, // Era 'Descripcion', no 'description'
+  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center' }, // 'Act_Inact' es el campo de tu DB
+  { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 
-// Datos de prueba (Aquí llegarán los datos de tu base de datos después)
-const rows = ref([
-  { 
-    gageId: 'NID-001', 
-    description: 'Micrómetro Digital 0-25mm', 
-    activo: true, 
-    tipo: 'Digital',
-    estado: 'Aprobado',
-    localizacion: 'Lab A',
-    vendedor: 'Mitutoyo',
-    fechaCompra: '2024/01/01',
-    fechaProxima: '2025/01/01',
-    infoExtra: 'Calibración inicial ok'
-  },
-  { 
-    gageId: 'NID-002', 
-    description: 'Vernier Analógico', 
-    activo: false, 
-    tipo: 'Mecánico',
-    estado: 'Rechazado'
-  }
-])
+// logica para el filtrado de gages en la tabla
+const gagesFiltrados = computed(() => {
+  if (!search.value) return rows.value
+  const s = search.value.toLowerCase()
+  return rows.value.filter(
+    (g) => g.GageID?.toLowerCase().includes(s) || g.Descripcion?.toLowerCase().includes(s),
+  )
+})
 
-// --- FUNCIONES / MÉTODOS ---
-
-// Prepara el formulario para un registro nuevo
-const abrirFormulario = () => {
-  soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
-  modoEdicion.value = false
-  onReset()
-  Form.value = true
-}
-
-// Prepara el formulario con los datos de la fila seleccionada
-const prepararEdicion = (row) => {
-  soloLectura.value = false // IMPORTANTE: Desbloquear para editar
-  modoEdicion.value = true
-  formModel.value = { ...row }
-  Form.value = true
-}
-
-
-const verDetalles = (row) => {
-  soloLectura.value = true // Activamos el bloqueo de inputs
-  modoEdicion.value = false
-  formModel.value = { ...row } // Pasamos los datos al formModel
-  Form.value = true // Abrimos el diálogo
-}
-
-
-
-// Abre el mini-diálogo de confirmación
-const confirmarInactivar = (row) => {
-  itemSeleccionado.value = row
-  confirm.value = true
-}
-
-// Cambia el estado Activo/Inactivo
-const toggleEstado = () => {
-  if (itemSeleccionado.value) {
-    itemSeleccionado.value.activo = !itemSeleccionado.value.activo
-    // Aquí podrías hacer un update a tu base de datos en el futuro
+// --- Funciones de la API ---
+// API para obtener los gages desde el backend
+const obtenerGages = async () => {
+  loading.value = true
+  try {
+    const respuesta = await api.get('/api/gages')
+    rows.value = respuesta.data
+  } catch (error) {
+    console.error('Error al traer gages:', error)
+  } finally {
+    loading.value = false
   }
 }
 
 const onSubmit = () => {
   if (modoEdicion.value) {
-    // Lógica para actualizar en la tabla (buscar por ID y reemplazar)
-    const index = rows.value.findIndex(r => r.gageId === formModel.value.gageId)
-    if (index !== -1) rows.value[index] = { ...formModel.value }
-    alert('Gage actualizado con éxito')
+    actualizarGage()
   } else {
-    // Lógica para agregar nuevo
-    rows.value.push({ ...formModel.value, activo: true })
-    alert('Gage registrado con éxito')
+    insertarGage()
   }
-  Form.value = false
+}
+
+const insertarGage = async () => {
+  try {
+    await api.post('/api/gages', formModel.value)
+    Form.value = false
+    obtenerGages()
+    alert('Gage registrado con éxito')
+  } catch (error) {
+    console.error(error)
+    alert('Error al registrar el gage')
+  }
+}
+
+const actualizarGage = async () => {
+  try {
+    // Usamos el ID que está en el modelo para la ruta
+    await api.put(`/api/gages/${formModel.value.GageID}`, formModel.value)
+    Form.value = false
+    obtenerGages()
+    alert('Gage actualizado con éxito')
+  } catch (error) {
+    console.error(error)
+    alert('Error al actualizar los datos')
+  }
+}
+
+// --- FUNCIONES DE CONTROL DEL FORMULARIO ---
+
+function abrirFormulario() {
+  soloLectura.value = false
+  modoEdicion.value = false
+  // Resetear el modelo
+  formModel.value = {
+    GageID: '',         // Antes gageId
+    GageSerie: '',     // Nuevo campo para el número de serie
+    Descripcion: '',    // Antes description
+    Tipo: null,         // Antes tipo
+    Estado: null,       // Antes estado
+    Locacion: '',       // Antes localizacion (revisa si es Locacion o LocacionId)
+    Vendedor: '',       // Antes vendedor
+    FechaCompra: '',    // Antes fechaCompra
+    Frecuencia: null, // Antes frecuencia
+    Nombre_extint: null,       // Antes calibracionTipo
+    Informacion: '',    // Antes infoExtra
+    Act_Inact: true 
+  }
+  Form.value = true
+}
+
+function prepararEdicion(row) {
+  soloLectura.value = false
+  modoEdicion.value = true
+  formModel.value = { ...row } // Copia los datos de la fila al formulario
+  Form.value = true
+}
+
+function verDetalles(row) {
+  soloLectura.value = true
+  modoEdicion.value = false
+  formModel.value = { ...row }
+  Form.value = true
+}
+
+// Abre el mini-diálogo de confirmación
+const confirmarInactivar = (row) => {
+  GageSeleccionado.value = row
+  confirm.value = true
+}
+
+const toggleEstado = async () => {
+  if (!GageSeleccionado.value) return
+  
+  try {
+    // Si el ID actual es 1 (Activo), mandamos 2 (Inactivo). Si no, mandamos 1.
+    const nuevoValor = GageSeleccionado.value.Act_Inact == 1 ? 2 : 1;
+
+    // Llamamos a la nueva ruta /status/
+    await api.put(`/api/gages/status/${GageSeleccionado.value.GageID}`, { 
+      activo: nuevoValor 
+    });
+
+    obtenerGages(); // Refrescamos la tabla para que el JOIN traiga los nombres nuevos
+    confirm.value = false; // Cerramos el modal de confirmación
+  } catch (error) {
+    console.error(error);
+    alert('No se pudo cambiar el estado');
+  }
 }
 
 const onReset = () => {
-  formModel.value = {
-    gageId: '',
-    description: '',
-    tipo: null,
-    estado: null,
-    localizacion: '',
-    vendedor: '',
-    fechaCompra: '',
-    fechaProxima: '',
-    infoExtra: ''
-  }
+  abrirFormulario()
 }
 
-// Opciones para los Selects
-const opcionesEstado = ['Aprobado', 'Rechazado']
-const opcionesTipo = ['Mecánico', 'Eléctrico', 'Digital']
+onMounted(() => {
+  obtenerGages()
+})
 </script>
