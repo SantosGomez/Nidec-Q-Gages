@@ -31,7 +31,7 @@
           :rows="gagesFiltrados"
           :columns="columns"
           :loading="loading"
-          row-key="gageId"
+          row-key="GageId"
           flat
           bordered
         >
@@ -127,6 +127,8 @@
                 v-model="formModel.Tipo"
                 :options="opcionesTipo"
                 label="Tipo"
+                option-value="value"
+                option-label="label"
                 emit-value
                 map-options
               />
@@ -138,6 +140,8 @@
                 v-model="formModel.Estado"
                 :options="opcionesEstado"
                 label="Estado"
+                option-value="value"
+                option-label="label"
                 emit-value
                 map-options
               />
@@ -181,6 +185,8 @@
                 v-model="formModel.Frecuencia"
                 :options="opcionesFrecuencias"
                 label="Frequencia de calibración"
+                option-value="value"
+                option-label="label"
                 emit-value
                 map-options
               />
@@ -192,6 +198,8 @@
                 v-model="formModel.Nombre_extint"
                 :options="opcionesCalibracion"
                 label="Calibración Int/Ext."
+                option-value="value"
+                option-label="label"
                 emit-value
                 map-options
               />
@@ -263,7 +271,7 @@ const backdropFilter = ref('blur(4px)')
 
 // --- MODELO DEL FORMULARIO ---
 const formModel = ref({
-  GageID: '',         // Antes gageId
+  GageId: '',         // Antes gageId
   GageSerie: '',     // Nuevo campo para el número de serie
   Descripcion: '',    // Antes description
   Tipo: null,         // Antes tipo
@@ -284,26 +292,26 @@ const opcionesTipo = [
   { label: 'Electrico', value: 3 },
 ];
 const opcionesEstado = [
-  { label: 'Aprobado', value: '1' },
-  { label: 'Rechazado', value: '2' },
+  { label: 'Aprobado', value: 1 },
+  { label: 'Rechazado', value: 2 },
 ];
 const opcionesFrecuencias = [
-  { label: '1 meses', value: '1' },
-  { label: '3 meses', value: '2' },
-  { label: '6 meses', value: '3' },
-  { label: '12 meses', value: '4' },
+  { label: '1 meses', value: 1 },
+  { label: '3 meses', value: 2 },
+  { label: '6 meses', value: 3 },
+  { label: '12 meses', value: 4 },
 ];
 const opcionesCalibracion = [
-  { label: 'Interna', value: '1' },
-  { label: 'Externa', value: '2' }
+  { label: 'Interna', value: 1 },
+  { label: 'Externa', value: 2 }
 ];
 
 // --- CONFIGURACIÓN DE TABLA ---
 const columns = [
-  { name: 'GageId', label: '#', field: 'GageID', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  { name: 'GageId', label: '#', field: 'GageId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
   { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
-  { name: 'description', label: 'Nombre del Gage', field: 'Descripcion', align: 'left' }, // Era 'Descripcion', no 'description'
-  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center' }, // 'Act_Inact' es el campo de tu DB
+  { name: 'description', label: 'Nombre del Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
+  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
   { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 
@@ -312,7 +320,10 @@ const gagesFiltrados = computed(() => {
   if (!search.value) return rows.value
   const s = search.value.toLowerCase()
   return rows.value.filter(
-    (g) => g.GageID?.toLowerCase().includes(s) || g.Descripcion?.toLowerCase().includes(s),
+    (g) => 
+      String(g.GageId).toLowerCase().includes(s) || 
+      g.Descripcion?.toLowerCase().includes(s) ||
+      g.GageSerie?.toLowerCase().includes(s) // Agregué GageSerie también
   )
 })
 
@@ -340,28 +351,72 @@ const onSubmit = () => {
 
 const insertarGage = async () => {
   try {
-    await api.post('/api/gages', formModel.value)
-    Form.value = false
-    obtenerGages()
-    alert('Gage registrado con éxito')
+    const p = formModel.value; // Usamos un alias corto para limpiar el código
+
+    const bodyEnvio = {
+      // Nombres exactos según tu tabla 'gage_master'
+      GageSerie: p.GageSerie,
+      Descripcion: p.Descripcion,
+      Usuario: 1, // ID fijo de prueba o dinámico
+      Tipo: Number(p.Tipo) || 1,
+      Estado: Number(p.Estado) || 1,
+      Act_Inact: 1,
+      Ex_Int: Number(p.Nombre_extint) || 1,
+      Vendedor: p.Vendedor,
+      FechaCompra: p.FechaCompra,
+      FreqCalibracion: Number(p.Frecuencia) || 1,
+      Locacion: p.Locacion,
+      Informacion: p.Informacion,
+      ProcedimientoId: Number(p.ProcedimientoId) || 1
+    };
+
+
+    await api.post('/api/gages', bodyEnvio);
+    Form.value = false;
+    obtenerGages();
+    alert('¡Registrado con éxito!');
   } catch (error) {
-    console.error(error)
-    alert('Error al registrar el gage')
+    // Si el error persiste aquí, el problema está en el req.body del backend
+    console.error("Error detallado:", error.response?.data);
+    alert('Error 500: Revisa que el backend use los mismos nombres de campo.');
   }
-}
+};
 
 const actualizarGage = async () => {
   try {
-    // Usamos el ID que está en el modelo para la ruta
-    await api.put(`/api/gages/${formModel.value.GageID}`, formModel.value)
-    Form.value = false
-    obtenerGages()
-    alert('Gage actualizado con éxito')
+    const payload = { ...formModel.value };
+
+    // Eliminamos 'extraerId' porque no la estamos usando y 
+    // mejor usamos Number() directamente para asegurar la integridad en MySQL.
+
+    const bodyEnvio = {
+      GageId: payload.GageId,
+      GageSerie: payload.GageSerie,
+      Descripcion: payload.Descripcion,
+      Vendedor: payload.Vendedor,
+      FechaCompra: payload.FechaCompra,
+      Informacion: payload.Informacion,
+      Act_Inact: payload.Act_Inact,
+      Locacion: payload.Locacion,
+      // Aquí es donde aseguramos que no mande NULL a las llaves foráneas
+      Tipo: Number(payload.Tipo) || 1,
+      Estado: Number(payload.Estado) || 1,
+      FreqCalibracion: Number(payload.Frecuencia) || 1,
+      Ex_Int: Number(payload.Nombre_extint) || 1,
+      Usuario: 1, 
+      ProcedimientoId: Number(payload.ProcedimientoId) || 1
+    };
+
+
+    await api.put(`/api/gages/${formModel.value.GageId}`, bodyEnvio);
+    Form.value = false;
+    obtenerGages();
+    alert('¡Gage actualizado correctamente!');
   } catch (error) {
-    console.error(error)
-    alert('Error al actualizar los datos')
+    console.error(error);
+    alert('Error al actualizar: Revisa que los IDs existan en la base de datos.');
   }
-}
+};
 
 // --- FUNCIONES DE CONTROL DEL FORMULARIO ---
 
@@ -370,7 +425,7 @@ function abrirFormulario() {
   modoEdicion.value = false
   // Resetear el modelo
   formModel.value = {
-    GageID: '',         // Antes gageId
+    GageId: '',         // Antes gageId
     GageSerie: '',     // Nuevo campo para el número de serie
     Descripcion: '',    // Antes description
     Tipo: null,         // Antes tipo
@@ -381,7 +436,7 @@ function abrirFormulario() {
     Frecuencia: null, // Antes frecuencia
     Nombre_extint: null,       // Antes calibracionTipo
     Informacion: '',    // Antes infoExtra
-    Act_Inact: true 
+    Act_Inact: 1 
   }
   Form.value = true
 }
@@ -389,7 +444,16 @@ function abrirFormulario() {
 function prepararEdicion(row) {
   soloLectura.value = false
   modoEdicion.value = true
-  formModel.value = { ...row } // Copia los datos de la fila al formulario
+  
+  formModel.value = { 
+    ...row,
+    // Importante: El SELECT de tu backend debe traer estos campos "Id"
+    Tipo: row.TipoId, 
+    Estado: row.EstadoId,
+    Frecuencia: row.FreqId,
+    Nombre_extint: row.ExIntId,
+    ProcedimientoId: row.ProcedimientoId || 1
+  } 
   Form.value = true
 }
 
@@ -414,7 +478,7 @@ const toggleEstado = async () => {
     const nuevoValor = GageSeleccionado.value.Act_Inact == 1 ? 2 : 1;
 
     // Llamamos a la nueva ruta /status/
-    await api.put(`/api/gages/status/${GageSeleccionado.value.GageID}`, { 
+    await api.put(`/api/gages/status/${GageSeleccionado.value.GageId}`, { 
       activo: nuevoValor 
     });
 
