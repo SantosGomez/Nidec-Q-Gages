@@ -15,13 +15,12 @@
     <q-card-section>
       <div class="text-h6 q-mb-md">Historial de préstamos</div>
       <q-table
-        
-        :rows="rows"
-        :columns="columns"
-        :filter="search"
-        row-key="NoEmpleado"
-        flat
-        bordered
+        :rows="prestamoFiltrados"
+          :columns="columns"
+          :loading="loading"
+          row-key="PrestamoId"
+          flat
+          bordered
       >
         <template v-slot:top-right>
           <q-input v-model="search" dense debounce="300" placeholder="Buscar Empleado">
@@ -65,7 +64,7 @@
           <q-input filled dense v-model="formPrestamo.Turno" label="Turno" />
         </div>
         <div class="col-6">
-          <q-input filled dense v-model="formPrestamo.Gage" label="Gage" />
+          <q-input filled dense v-model="formPrestamo.GageId" label="Gage" />
         </div>
         <div class="col-12">
           <q-input filled dense v-model="formPrestamo.Area" label="Área" />
@@ -105,7 +104,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 
 const router = useRouter()
@@ -113,6 +112,8 @@ const index = () => router.push('/')
 
 // --- VARIABLES DE ESTADO ---
 const search = ref('')
+const rows = ref([]) 
+const loading = ref(false) 
 const horaActual = ref('')
 const mostrarFormulario = ref(false)
 const mostrarReloj = ref(false)
@@ -132,19 +133,16 @@ const formPrestamo = ref({
 
 // --- TABLA ---
 const columns = [
-  { name: 'noEmpleado', label: 'No. Empleado', field: 'NoEmpleado', align: 'left', sortable: true },
+  { name: 'NoEmpleado', label: 'No. Empleado', field: 'NoEmpleado', align: 'left', sortable: true },
   { name: 'nombre', label: 'Nombre', field: 'Nombre', align: 'left' },
-  { name: 'gage', label: 'Gage', field: 'Gage', align: 'left' },
+  { name: 'gage', label: 'Gage', field: 'GageId', align: 'left' },
+  { name: 'turno', label: 'Turno', field: 'TurnoNombre', align: 'left' },
   { name: 'area', label: 'Área', field: 'Area', align: 'left' },
-  { name: 'horaEntrega', label: 'Hora Prestamo', field: 'HoraPrestamo', align: 'left' },
-  { name: 'horaDevuelto', label: 'Hora Devolución', field: 'HoraDevuelto', align: 'left' },
+  { name: 'horaEntrega', label: 'Hora Prestamo', field: 'HPrestamo', align: 'left' },
+  { name: 'horaDevuelto', label: 'Hora Devolución', field: 'HDevolucion', align: 'left' },
   { name: 'actions', label: 'Acciones', align: 'center' }
 ]
 
-const rows = ref([
-  { NoEmpleado: '12345', Nombre: 'Juan Perez',  Area: 'Producción', Gage: 'NID-001', HoraPrestamo: '08:00', HoraDevuelto: '17:00' },
-  { NoEmpleado: '67890', Nombre: 'Maria Lopez', Area: 'Calidad', Gage: 'NID-002', HoraPrestamo: '09:30', HoraDevuelto: '--:--' }
-])
 
 // --- LOGICA DEL RELOJ ---
 const obtenerHora = () => {

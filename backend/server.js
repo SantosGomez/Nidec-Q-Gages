@@ -230,6 +230,92 @@ app.put("/api/gages/status/:id", async (req, res) => {
 
 // Otras rutas para gages, calibraciones, reportes, procedimientos, etc. se agregarían aquí siguiendo el mismo patrón
 
+// ======== Prestamos =========
+
+// ----- Visualizar Prestamos -------
+app.get("/api/prestamo", async (req, res) => {
+  try {
+    // Es mejor pedir las columnas específicas para estar seguros
+    const [rows] = await db.query(`
+      SELECT 
+      prestamo.PrestamoId,
+      prestamo.NoEmpleado, 
+      prestamo.Nombre, 
+      prestamo.GageId, 
+      gage_master.GageSerie, 
+      gage_master.Descripcion, 
+      prestamo.HPrestamo, 
+      prestamo.HDevolucion,
+      prestamo.TurnoId,
+      turno.TurnoId,
+      turno.TurnoNombre,
+      prestamo.Area,
+      FROM prestamo
+      INNER JOIN gage_master ON prestamo.GageId = gage_master.GageId;
+      INNER JOIN turno ON prestamo.TurnoId = turno.TurnoId;
+    `);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+//------- Insertar Datos ------------
+
+app.post("/api/prestamo", async (req, res) => {
+  const prestamo = req.body;
+  try {
+    const query = 
+    "INSERT INTO prestamo (NoEmpleado, Nombre, GageId, Hprestamo) values ( ?, ?, ?, ?)";
+
+    await db.query(query, [
+      prestamo.PrestamoId,
+      prestamo.NoEmpleado, 
+      prestamo.Nombre, 
+      prestamo.GageId, 
+      prestamo.HPrestamo, 
+      prestamo.HDevolucion,
+      prestamo.TurnoId,
+      prestamo.Area,
+    ]);
+    res.json({ message: "Gage agregado correctamente" });
+  } catch {
+    console.error("Error en devolución:", error);
+    res.status(500).json({ error: error.message });
+  }
+  
+});
+
+//------- Actualizar Datos ----------
+
+app.put("/api/prestamo/:id", async (req, res) => {
+  const { id } = req.params;
+  const { devolucion } = req.body; 
+  
+  try {
+    // Eliminamos el 'FROM' y corregimos la estructura para MySQL
+    const query = "UPDATE prestamo SET HDevolucion = ? WHERE PrestamoId = ?";
+
+    // Si 'devolucion' viene nulo o vacío desde el front, 
+    // podrías usar new Date() para mandar la fecha actual.
+    const fechaFinal = devolucion || new Date();
+
+    const [result] = await db.query(query, [fechaFinal, id]);
+
+    // Validación extra: ¿Realmente se actualizó algo?
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ error: "No se encontró el préstamo con ese ID" });
+    }
+
+    res.json({ message: "Gage devuelto de manera exitosa" });
+  } catch (error) {
+    console.error("Error en devolución:", error);
+    res.status(500).json({ 
+      error: "Error en la base de datos", 
+      detalle: error.sqlMessage || error.message 
+    });
+  }
+});
 // --- ENCENDER SERVIDOR ---
 app.listen(3000, () => {
   console.log("Servidor unificado corriendo en el puerto 3000");
