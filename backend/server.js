@@ -228,7 +228,23 @@ app.put("/api/gages/status/:id", async (req, res) => {
   }
 });
 
-// Otras rutas para gages, calibraciones, reportes, procedimientos, etc. se agregarían aquí siguiendo el mismo patrón
+app.get('/api/gages/disponibles', async (req, res) => {
+  try {
+    // Buscamos Gages que NO tengan un préstamo activo (HDevolucion es null)
+    const query = `
+      SELECT GageId, GageSerie, Descripcion 
+      FROM gage_master 
+      WHERE GageId NOT IN (
+        SELECT GageId FROM prestamo WHERE HDevolucion IS NULL
+      ) AND Act_Inact = 1`;
+    
+    const [rows] = await db.query(query);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 
 // ======== Prestamos =========
 
@@ -247,11 +263,10 @@ app.get("/api/prestamo", async (req, res) => {
       prestamo.HPrestamo, 
       prestamo.HDevolucion,
       prestamo.TurnoId,
-      turno.TurnoId,
       turno.TurnoNombre,
-      prestamo.Area,
+      prestamo.Area
       FROM prestamo
-      INNER JOIN gage_master ON prestamo.GageId = gage_master.GageId;
+      INNER JOIN gage_master ON prestamo.GageId = gage_master.GageId
       INNER JOIN turno ON prestamo.TurnoId = turno.TurnoId;
     `);
     res.json(rows);
@@ -263,27 +278,30 @@ app.get("/api/prestamo", async (req, res) => {
 //------- Insertar Datos ------------
 
 app.post("/api/prestamo", async (req, res) => {
-  const prestamo = req.body;
+  const p = req.body;
   try {
-    const query = 
-    "INSERT INTO prestamo (NoEmpleado, Nombre, GageId, Hprestamo) values ( ?, ?, ?, ?)";
+    // 1. Agregamos TurnoId y Area a la query SQL
+    const query = `
+      INSERT INTO prestamo (NoEmpleado, Nombre, GageId, HPrestamo, TurnoId, Area) 
+      VALUES (?, ?, ?, ?, ?, ?)
+    `;
 
+    // 2. Pasamos exactamente los 6 valores que pide la query arriba
+    // El orden debe ser idéntico al del INSERT
     await db.query(query, [
-      prestamo.PrestamoId,
-      prestamo.NoEmpleado, 
-      prestamo.Nombre, 
-      prestamo.GageId, 
-      prestamo.HPrestamo, 
-      prestamo.HDevolucion,
-      prestamo.TurnoId,
-      prestamo.Area,
+      p.NoEmpleado,   // 1
+      p.Nombre,       // 2
+      p.GageId,       // 3
+      p.HPrestamo,    // 4
+      p.TurnoId,      // 5 (Asegúrate que en Quasar se llame TurnoId)
+      p.Area          // 6
     ]);
-    res.json({ message: "Gage agregado correctamente" });
-  } catch {
-    console.error("Error en devolución:", error);
+
+    res.json({ message: "Préstamo registrado correctamente" });
+  } catch (error) { // Agregamos 'error' aquí para que no marque indefinido
+    console.error("Error al insertar préstamo:", error);
     res.status(500).json({ error: error.message });
   }
-  
 });
 
 //------- Actualizar Datos ----------
@@ -293,7 +311,6 @@ app.put("/api/prestamo/:id", async (req, res) => {
   const { devolucion } = req.body; 
   
   try {
-    // Eliminamos el 'FROM' y corregimos la estructura para MySQL
     const query = "UPDATE prestamo SET HDevolucion = ? WHERE PrestamoId = ?";
 
     // Si 'devolucion' viene nulo o vacío desde el front, 
