@@ -7,12 +7,33 @@ app.use(cors());
 app.use(express.json());
 
 // --- CONFIGURACIÓN DE LA BASE DE DATOS ---
+
+const getReynosaOffset = () => {
+  const date = new Date();
+  const localString = date.toLocaleString("en-US", {
+    timeZone: "America/Chicago",
+  });
+  const utcString = date.toLocaleString("en-US", { timeZone: "UTC" });
+  const diffMinutes = Math.round(
+    (new Date(localString) - new Date(utcString)) / 60000,
+  );
+
+  const sign = diffMinutes >= 0 ? "+" : "-";
+  const absDiff = Math.abs(diffMinutes);
+  const hours = String(Math.floor(absDiff / 60)).padStart(2, "0");
+  const minutes = String(absDiff % 60).padStart(2, "0");
+  return `${sign}${hours}:${minutes}`;
+};
+
+const reynosaOffset = getReynosaOffset();
+
 const db = mysql
   .createPool({
     host: "localhost",
     user: "root",
     password: "",
     database: "nidec_gages",
+    timezone: reynosaOffset,
   })
   .promise(); // Usamos .promise() para usar async/await
 
@@ -228,7 +249,7 @@ app.put("/api/gages/status/:id", async (req, res) => {
   }
 });
 
-app.get('/api/gages/disponibles', async (req, res) => {
+app.get("/api/gages/disponibles", async (req, res) => {
   try {
     // Buscamos Gages que NO tengan un préstamo activo (HDevolucion es null)
     const query = `
@@ -237,14 +258,13 @@ app.get('/api/gages/disponibles', async (req, res) => {
       WHERE GageId NOT IN (
         SELECT GageId FROM prestamo WHERE HDevolucion IS NULL
       ) AND Act_Inact = 1`;
-    
+
     const [rows] = await db.query(query);
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
-
 
 // ======== Prestamos =========
 
@@ -277,49 +297,50 @@ app.get("/api/prestamo", async (req, res) => {
 
 //------- Para el filtro de Area --------
 
-app.get("/api/prestamo/areas", async (req, res) =>{
-  try{
-
-    const query =`
+app.get("/api/prestamo/areas", async (req, res) => {
+  try {
+    const query = `
     SELECT DISTINCT Area from prestamo WHERE Area IS NOT NULL
     ORDER BY Area ASC
     `;
     const [row] = await db.query(query);
-    const areas = row.map(r => r.Area);
+    const areas = row.map((r) => r.Area);
     res.json(areas);
-  } catch(error){
-    res.status(500).json({error: error.message});
+  } catch (error) {
+    res.status(500).json({ error: error.message });
   }
-
-})
-
+});
 
 //------- Insertar Datos ----------------
 
 app.post("/api/prestamo", async (req, res) => {
   const p = req.body;
+  
+  // LOG PARA DEPURAR (Vigila tu consola)
+  console.log("Datos que llegan de Quasar:", p);
+
   try {
-    // 1. Agregamos TurnoId y Area a la query SQL
     const query = `
-      INSERT INTO prestamo (NoEmpleado, Nombre, GageId, HPrestamo, TurnoId, Area) 
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO prestamo (NoEmpleado, Nombre, GageId, TurnoId, Area, HPrestamo) 
+      VALUES (?, ?, ?, ?, ?, NOW())
     `;
 
-    // 2. Pasamos exactamente los 6 valores que pide la query arriba
-    // El orden debe ser idéntico al del INSERT
-    await db.query(query, [
-      p.NoEmpleado,   // 1
-      p.Nombre,       // 2
-      p.GageId,       // 3
-      p.HPrestamo,    // 4
-      p.TurnoId,      // 5 (Asegúrate que en Quasar se llame TurnoId)
-      p.Area          // 6
-    ]);
+    // FORZAMOS QUE NADA LLEGUE COMO UNDEFINED O NULL
+    const values = [
+      Number(p.NoEmpleado) || 0, 
+      p.Nombre || 'Sin Nombre',     
+      Number(p.GageId) || 0,     
+      Number(p.TurnoId) || 0,    
+      p.Area || 'N/A'
+    ];
 
+    await db.query(query, values);
     res.json({ message: "Préstamo registrado correctamente" });
-  } catch (error) { // Agregamos 'error' aquí para que no marque indefinido
-    console.error("Error al insertar préstamo:", error);
-    res.status(500).json({ error: error.message });
+
+  } catch (error) {
+    console.error("Error en INSERT:", error.sqlMessage);
+    // Si TurnoId sigue fallando, es porque p.TurnoId llegó vacío
+    res.status(500).json({ error: error.sqlMessage || "Error desconocido" });
   }
 });
 
@@ -327,28 +348,19 @@ app.post("/api/prestamo", async (req, res) => {
 
 app.put("/api/prestamo/:id", async (req, res) => {
   const { id } = req.params;
-  const { devolucion } = req.body; 
-  
   try {
-    const query = "UPDATE prestamo SET HDevolucion = ? WHERE PrestamoId = ?";
-
-    // Si 'devolucion' viene nulo o vacío desde el front, 
-    // podrías usar new Date() para mandar la fecha actual.
-    const fechaFinal = devolucion || new Date();
-
-    const [result] = await db.query(query, [fechaFinal, id]);
-
-    // Validación extra: ¿Realmente se actualizó algo?
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "No se encontró el préstamo con ese ID" });
-    }
-
-    res.json({ message: "Gage devuelto de manera exitosa" });
+    const query = `
+      UPDATE prestamo 
+      SET HDevolucion = NOW() 
+      WHERE PrestamoId = ?
+    `;
+    await db.query(query, [id]);
+    res.json({ message: "Devolución exitosa" });
   } catch (error) {
     console.error("Error en devolución:", error);
-    res.status(500).json({ 
-      error: "Error en la base de datos", 
-      detalle: error.sqlMessage || error.message 
+    res.status(500).json({
+      error: "Error en la base de datos",
+      detalle: error.sqlMessage || error.message,
     });
   }
 });
@@ -356,3 +368,4 @@ app.put("/api/prestamo/:id", async (req, res) => {
 app.listen(3000, () => {
   console.log("Servidor unificado corriendo en el puerto 3000");
 });
+

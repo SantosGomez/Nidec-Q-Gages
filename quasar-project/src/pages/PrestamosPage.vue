@@ -5,7 +5,10 @@
 
   <div class="text-h3 flex flex-center" style="font-weight: bold; margin: 6px">Préstamos</div>
 
-  <q-card class="my-card" style="max-width: 1200px; width: 100%; margin: 0 auto; margin-top: 10px; margin-bottom: 10px;" >
+  <q-card
+    class="my-card"
+    style="max-width: 1200px; width: 100%; margin: 0 auto; margin-top: 10px; margin-bottom: 10px"
+  >
     <q-card-section class="row items-center q-pb-none">
       <div class="text-h4 q-mb-md">Historial de préstamos</div>
       <q-space />
@@ -56,10 +59,21 @@
             </q-input>
           </div>
         </template>
+        <template v-slot:body-cell-horaEntrega="props">
+          <q-td :props="props">
+            {{ formatearFecha(props.value) }}
+          </q-td>
+        </template>
+
+        <template v-slot:body-cell-horaDevuelto="props">
+          <q-td :props="props" class="text-grey-9">
+            {{ formatearFecha(props.value) }}
+          </q-td>
+        </template>
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-center">
             <q-btn
-              v-if="!props.row.HDevolucion"
+              v-if="!props.row.HDevolucion || props.row.HDevolucion.startsWith('0000')"
               color="warning"
               icon="history"
               label="Devolver"
@@ -205,7 +219,7 @@ const Areas = async () => {
     const { data } = await api.get('/api/prestamo/areas')
     opcionesAreas.value = ['Todas', ...data]
   } catch (error) {
-    console.error("Error al cargar areas", error)
+    console.error('Error al cargar areas', error)
   }
 }
 
@@ -215,10 +229,13 @@ const prestamoFiltrados = computed(() => {
     lista = lista.filter((row) => row.TurnoNombre === filtroTurno.value)
   }
   if (soloPendientes.value) {
-    lista = lista.filter((row) => !row.HDevolucion || row.HDevolucion === '--:--')
+    lista = lista.filter(
+      (row) =>
+        !row.HDevolucion || row.HDevolucion === '--:--' || row.HDevolucion.startsWith('0000'),
+    )
   }
-  if (filtroArea.value !== 'Todas'){
-    lista = lista.filter(row => row.Area === filtroArea.value)
+  if (filtroArea.value !== 'Todas') {
+    lista = lista.filter((row) => row.Area === filtroArea.value)
   }
   if (search.value) {
     const s = search.value.toLowerCase()
@@ -270,15 +287,12 @@ const registrarPrestamo = async () => {
       return
     }
 
-    const ahora = new Date().toISOString().slice(0, 19).replace('T', ' ')
-
     const bodyEnvio = {
       NoEmpleado: Number(formPrestamo.value.NoEmpleado),
       Nombre: formPrestamo.value.Nombre,
-      GageId: formPrestamo.value.GageId, // Viene del q-select de Gages
-      TurnoId: formPrestamo.value.TurnoId, // Viene del q-select de Turnos
+      GageId: formPrestamo.value.GageId,    
+      TurnoId: formPrestamo.value.TurnoId,  
       Area: formPrestamo.value.Area,
-      HPrestamo: ahora,
     }
 
     await api.post('/api/prestamo', bodyEnvio)
@@ -294,8 +308,8 @@ const registrarPrestamo = async () => {
     formPrestamo.value = {
       NoEmpleado: '',
       Nombre: '',
-      TurnoId: '',
       GageId: '',
+      TurnoId: '',
       Area: '',
     }
 
@@ -318,10 +332,7 @@ const prepararDevolucion = (row) => {
 
 const procesarDevolucion = async () => {
   try {
-    const ahora = new Date().toISOString().slice(0, 19).replace('T', ' ')
-    await api.put(`/api/prestamo/${itemSeleccionado.value.PrestamoId}`, {
-      devolucion: ahora,
-    })
+    await api.put(`/api/prestamo/${itemSeleccionado.value.PrestamoId}`)
 
     $q.notify({ color: 'positive', message: 'Gage devuelto y disponible' })
 
@@ -359,7 +370,6 @@ const cargarGagesDisponibles = async () => {
   }
 }
 
-
 // --- LOGICA DEL RELOJ ---
 const obtenerHora = () => {
   const ahora = new Date()
@@ -367,6 +377,26 @@ const obtenerHora = () => {
 }
 
 let intervalo = null
+
+const formatearFecha = (fechaString) => {
+  if (!fechaString || fechaString === '--:--' || fechaString.startsWith('0000')){
+    return '--:--'
+  }
+
+  const fecha = new Date(fechaString)
+  if (isNaN(fecha)) return fechaString
+
+  // Usamos 'en-GB' o 'es-MX' con hour12: false para forzar las 24h
+  return new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit', // Opcional, por si Nidec requiere precisión de segundos
+    hour12: false,
+  }).format(fecha)
+}
 
 onMounted(() => {
   obtenerPrestamos()
