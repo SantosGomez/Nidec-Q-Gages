@@ -275,7 +275,26 @@ app.get("/api/prestamo", async (req, res) => {
   }
 });
 
-//------- Insertar Datos ------------
+//------- Para el filtro de Area --------
+
+app.get("/api/prestamo/areas", async (req, res) =>{
+  try{
+
+    const query =`
+    SELECT DISTINCT Area from prestamo WHERE Area IS NOT NULL
+    ORDER BY Area ASC
+    `;
+    const [row] = await db.query(query);
+    const areas = row.map(r => r.Area);
+    res.json(areas);
+  } catch(error){
+    res.status(500).json({error: error.message});
+  }
+
+})
+
+
+//------- Insertar Datos ----------------
 
 app.post("/api/prestamo", async (req, res) => {
   const p = req.body;
