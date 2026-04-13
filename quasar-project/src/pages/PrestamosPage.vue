@@ -1,17 +1,18 @@
 <template>
-  <div style="margin: 20px">
+  <div style="margin: 15px">
     <q-btn color="primary" icon="home" label="Inicio" @click="index" />
   </div>
 
-  <div class="text-h3 flex flex-center" style="font-weight: bold; margin: 10px">Préstamos</div>
+  <div class="text-h3 flex flex-center" style="font-weight: bold; margin: 6px">Préstamos</div>
 
-  <q-card class="my-card" style="max-width: 1200px; margin: 0 auto; margin-top: 20px">
+  <q-card class="my-card" style="max-width: 1200px; width: 100%; margin: 0 auto; margin-top: 10px; margin-bottom: 10px;" >
     <q-card-section class="row items-center q-pb-none">
+      <div class="text-h4 q-mb-md">Historial de préstamos</div>
+      <q-space />
       <q-btn label="Nuevo registro" icon="add" color="primary" @click="abrirFormulario" />
     </q-card-section>
 
     <q-card-section>
-      <div class="text-h4 q-mb-md">Historial de préstamos</div>
       <q-table
         :rows="prestamoFiltrados"
         :columns="columns"
