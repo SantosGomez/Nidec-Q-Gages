@@ -92,6 +92,66 @@ app.put("/api/usuarios/:id", async (req, res) => {
   }
 });
 
+//----- Agregar usuario nuevo ------
+
+app.post("/api/usuarios/registro", async (req, res) => {
+  const { usuario, contrasena, rol } = req.body;
+  
+  try {
+    // Generamos el "salt" y el hash
+    const saltRounds = 10;
+    const hashedPass = await bcrypt.hash(contrasena, saltRounds);
+
+    const query = `INSERT INTO usuarios (Usuario, Contrasena, Rol) VALUES (?, ?, ?)`;
+    await db.query(query, [usuario, hashedPass, rol]);
+
+    res.json({ message: "Usuario creado con éxito" });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ======== API para Login =========
+
+app.post("/api/login", async (req, res) => {
+  const { usuario, password } = req.body;
+
+  try {
+    // 1. Buscamos al usuario por su nombre de usuario únicamente
+    const query = "SELECT * FROM usuarios WHERE Usuario = ?";
+    const [rows] = await db.query(query, [usuario]);
+
+    // 2. Si no existe el usuario, mandamos error
+    if (rows.length === 0) {
+      return res.status(401).json({ message: "Usuario o contraseña incorrectos" });
+    }
+
+    const user = rows[0];
+
+    // 3. Comparamos la contraseña que escribió Santos con el Hash de la DB
+    // bcrypt.compare(texto_plano, hash_encriptado)
+    const coinciden = await bcrypt.compare(password, user.Password);
+
+    if (coinciden) {
+      // 4. Si coinciden, quitamos la contraseña del objeto por seguridad antes de enviarlo
+      delete user.Password;
+      
+      console.log(`Sesión iniciada: ${user.Usuario}`);
+      res.json({ 
+        success: true, 
+        user: user // Aquí van todos tus permisos (edit_gage, etc.)
+      });
+    } else {
+      // 5. Si no coinciden
+      res.status(401).json({ success: false, message: "Usuario o contraseña incorrectos" });
+    }
+
+  } catch (error) {
+    console.error("Error en login:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 //======= PROCEDIMIENTOS ============
 
 app.get("/api/procedimientos", async (req, res) => {
@@ -364,6 +424,10 @@ app.put("/api/prestamo/:id", async (req, res) => {
     });
   }
 });
+
+
+
+
 // --- ENCENDER SERVIDOR ---
 app.listen(3000, () => {
   console.log("Servidor unificado corriendo en el puerto 3000");

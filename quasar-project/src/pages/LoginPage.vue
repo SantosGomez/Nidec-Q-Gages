@@ -75,4 +75,24 @@ import { ref } from 'vue'
 const username = ref('')
 const password = ref('')
 const isPwd = ref(true)
+
+
+const handleLogin = async () => {
+  try {
+    const res = await api.post('/api/login', {
+      usuario: form.usuario,
+      password: form.password
+    });
+
+    if (res.data.success) {
+      // Guardamos al usuario en el almacenamiento local para que no se cierre la sesión al refrescar
+      localStorage.setItem('user_qgage', JSON.stringify(res.data.user));
+      
+      // Redirigir al dashboard o página principal
+      router.push('/dashboard');
+    }
+  } catch (err) {
+    alert(err.response?.data?.message || "Error al conectar");
+  }
+};
 </script>
