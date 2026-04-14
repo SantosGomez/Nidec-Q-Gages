@@ -65,22 +65,22 @@
                 </template>
               </q-input>
             </template>
-             <template v-slot:body-cell-actions="props">
-            <q-td :props="props" class="q-gutter-sm">
-              <q-btn 
-                outline round color="warning" icon="edit" 
-                @click="prepararEdicion(props.row)"
-              >
-                <q-tooltip>Editar</q-tooltip>
-              </q-btn>
-              <q-btn 
-                outline round color="info" icon="visibility" 
-                @click="verDetalles(props.row)"
-              >
-                <q-tooltip>Ver Detalles</q-tooltip>
-              </q-btn>
-            </q-td>
-          </template>
+            <template v-slot:body-cell-actions="props">
+              <q-td :props="props" class="q-gutter-sm">
+                <q-btn
+                  outline
+                  round
+                  color="warning"
+                  icon="edit"
+                  @click="prepararEdicion(props.row)"
+                >
+                  <q-tooltip>Editar</q-tooltip>
+                </q-btn>
+                <q-btn outline round color="info" icon="visibility" @click="verDetalles(props.row)">
+                  <q-tooltip>Ver Detalles</q-tooltip>
+                </q-btn>
+              </q-td>
+            </template>
           </q-table>
         </q-card-section>
       </q-card>
@@ -97,92 +97,81 @@
       <q-card-section>
         <q-form @submit="onSubmit" @reset="onReset">
           <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.gageId" label="GageID" />
+            <div class="col-12 col-md-4">
+              <q-input filled v-model="formModel.gageId" label="Gage ID" readonly />
             </div>
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.description" label="Nombre del Gage" />
+            <div class="col-12 col-md-8">
+              <q-input filled v-model="formModel.description" label="Equipo" readonly />
             </div>
 
             <div class="col-12 col-md-6">
-              <q-select filled :readonly="soloLectura" v-model="formModel.tipo" :options="opcionesTipo" label="Tipo" />
+              <q-input filled v-model="formModel.folio" label="No. de Certificado / Folio" />
             </div>
             <div class="col-12 col-md-6">
-              <q-select
+              <q-input
                 filled
-                :readonly="soloLectura"
-                v-model="estadoSeleccionado"
-                :options="opcionesEstado"
-                label="Estado"
+                v-model="formModel.calibradoPor"
+                label="Calibrado por (Externo/Técnico)"
               />
             </div>
 
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.localizacion" label="Localización" />
+            <div class="col-12 col-md-4">
+              <q-input
+                filled
+                type="number"
+                v-model="formModel.valorMedido"
+                label="Valor Medido"
+                suffix="mm"
+              />
             </div>
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.vendedor" label="Vendedor" />
+            <div class="col-12 col-md-8">
+              <div class="q-gutter-sm">
+                <q-radio
+                  v-model="formModel.estatusPasa"
+                  :val="1"
+                  label="PASA"
+                  color="positive"
+                  keep-color
+                />
+                <q-radio
+                  v-model="formModel.estatusPasa"
+                  :val="0"
+                  label="FALLA"
+                  color="negative"
+                  keep-color
+                />
+              </div>
             </div>
 
             <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.fechaCompra" mask="date" label="Fecha de Compra">
+              <q-input
+                filled
+                v-model="formModel.fechaCalibracion"
+                mask="date"
+                label="Fecha de Calibración"
+              >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="formModel.fechaCompra">
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="Close" color="primary" flat />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
+                    <q-popup-proxy><q-date v-model="formModel.fechaCalibracion" /></q-popup-proxy>
                   </q-icon>
                 </template>
               </q-input>
             </div>
-
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.fechaProxima" mask="date" label="Próxima Calibración">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="formModel.fechaProxima">
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="Close" color="primary" flat />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </div>
-
-            <div class="col-12 col-md-6">
-              <q-select
-                filled
-                :readonly="soloLectura"
-                v-model="formModel.frecuencia"
-                :options="opcionesFrecuencias"
-                label="Frequencia de calibración"
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-select
-                filled
-                :readonly="soloLectura"
-                v-model="formModel.calibracionTipo"
-                :options="opcionesCalibracion"
-                label="Calibración Int/Ext."
-              />
-            </div>
-
-            <div class="col-12">
-              <q-input filled :readonly="soloLectura" v-model="formModel.infoExtra" type="textarea" label="Información adicional" />
-            </div>
-
-            <div class="col-12 q-mt-lg">
-              <q-btn v-if="!soloLectura" :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'" type="submit" color="primary" />
-              <q-btn :label="soloLectura ? 'Cerrar' : 'CANCELAR'" flat color="negative" v-close-popup class="q-ml-sm" />
-            </div>
+          </div>
+          <div class="col-12 q-mt-lg">
+            <q-btn
+              v-if="!soloLectura"
+              :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
+              type="submit"
+              color="primary"
+            />
+            <q-btn
+              :label="soloLectura ? 'Cerrar' : 'CANCELAR'"
+              flat
+              color="negative"
+              v-close-popup
+              class="q-ml-sm"
+            />
           </div>
         </q-form>
       </q-card-section>
@@ -191,7 +180,7 @@
 
   <!-- dialog de procedimientos de calibracion -->
   <q-dialog v-model="procedimientos">
-    <q-card style="max-width: 900px; width: 100%;">
+    <q-card style="max-width: 900px; width: 100%">
       <q-toolbar class="bg-primary text-white rounded-borders">
         <q-toolbar-title> Procedimientos de Calibración </q-toolbar-title>
 
@@ -240,8 +229,8 @@ function index() {
 import { ref } from 'vue'
 
 const procedimientos = ref(false)
-const Form = ref(false)         // Controla el diálogo de Agregar/Editar
-const modoEdicion = ref(false)  // Switch para saber si estamos editando o creando
+const Form = ref(false) // Controla el diálogo de Agregar/Editar
+const modoEdicion = ref(false) // Switch para saber si estamos editando o creando
 const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
 const text = ref('')
 const search = ref('')
@@ -257,7 +246,7 @@ const formModel = ref({
   fechaCompra: '',
   fechaProxima: '',
   infoExtra: '',
-  activo: true
+  activo: true,
 })
 
 const abrirFormulario = () => {
@@ -274,7 +263,6 @@ const prepararEdicion = (row) => {
   formModel.value = { ...row }
   Form.value = true
 }
-
 
 const verDetalles = (row) => {
   soloLectura.value = true // Activamos el bloqueo de inputs
@@ -293,14 +281,14 @@ const onReset = () => {
     vendedor: '',
     fechaCompra: '',
     fechaProxima: '',
-    infoExtra: ''
+    infoExtra: '',
   }
 }
 
 const onSubmit = () => {
   if (modoEdicion.value) {
     // Lógica para actualizar en la tabla (buscar por ID y reemplazar)
-    const index = rows.value.findIndex(r => r.gageId === formModel.value.gageId)
+    const index = rows.value.findIndex((r) => r.gageId === formModel.value.gageId)
     if (index !== -1) rows.value[index] = { ...formModel.value }
     alert('Gage actualizado con éxito')
   } else {
@@ -367,7 +355,7 @@ const columns = [
     sortable: true,
   },
 
-  { name: 'actions', label: 'Acciones', align: 'center' }
+  { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 const rows = [
   {
@@ -402,7 +390,4 @@ const rows = [
   },
 ]
 
-
-const opcionesEstado = ['Aprobado', 'Rechazado']
-const opcionesTipo = ['Mecánico', 'Eléctrico', 'Digital']
 </script>

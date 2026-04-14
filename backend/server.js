@@ -102,7 +102,7 @@ app.put("/api/usuarios/:id", async (req, res) => {
 
 app.post("/api/usuarios/registro", async (req, res) => {
   const { usuario, contrasena, rol } = req.body;
-  
+
   try {
     // Generamos el "salt" y el hash
     const saltRounds = 10;
@@ -141,15 +141,15 @@ app.post("/api/login", async (req, res) => {
     if (coinciden) {
       // 4. Si coinciden, quitamos la contraseña del objeto por seguridad antes de enviarlo
       delete user.Password;
-      
+
       const token = jwt.sign(
-        { userId: user.UserID, rol: user.Rol }, 
-        SECRET_KEY, 
+        { userId: user.UserID, rol: user.Rol },
+        SECRET_KEY,
         { expiresIn: '24h' }
       );
 
-      res.json({ 
-        success: true, 
+      res.json({
+        success: true,
         token: token,
         user: user // Aquí van todos tus permisos (edit_gage, etc.)
       });
@@ -387,7 +387,7 @@ app.get("/api/prestamo/areas", async (req, res) => {
 
 app.post("/api/prestamo", async (req, res) => {
   const p = req.body;
-  
+
   // LOG PARA DEPURAR (Vigila tu consola)
   console.log("Datos que llegan de Quasar:", p);
 
@@ -399,10 +399,10 @@ app.post("/api/prestamo", async (req, res) => {
 
     // FORZAMOS QUE NADA LLEGUE COMO UNDEFINED O NULL
     const values = [
-      Number(p.NoEmpleado) || 0, 
-      p.Nombre || 'Sin Nombre',     
-      Number(p.GageId) || 0,     
-      Number(p.TurnoId) || 0,    
+      Number(p.NoEmpleado) || 0,
+      p.Nombre || 'Sin Nombre',
+      Number(p.GageId) || 0,
+      Number(p.TurnoId) || 0,
       p.Area || 'N/A'
     ];
 
@@ -437,7 +437,92 @@ app.put("/api/prestamo/:id", async (req, res) => {
   }
 });
 
+// ============ Calibracion ===============
 
+// --------- Ver Calibraciones ------------
+app.get("/api/calibracion", async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        c.CalibracionId,
+        c.FolioCertificado, 
+        c.GagesId, 
+        g.GageSerie, 
+        g.Descripcion,
+        c.Resultado, 
+        c.EstatusPasa, 
+        c.CalibracionBy, 
+        c.FechaProxima, 
+        c.FechaCalibracion,
+        f.NomFreq
+      FROM calibracion c
+      INNER JOIN gage_master g ON g.GageId = c.GagesId
+      INNER JOIN frecuencia_gage f ON f.FreqId = g.FreqCalibracion
+      ORDER BY c.FechaCalibracion DESC
+      `);
+    res.json(rows)
+  } catch (error) {
+    console.error("Error al obtener calibraciones:", error);
+    res.status(500).json({ error: "Error al obtener los registros" });
+  }
+})
+
+// ----- Insertar Nueva Calibracion -------
+
+app.post("/api/registrar-calibracion", async (req, res) => {
+  const {
+    GageId,
+    FechaCalibracion,
+    Resultado,
+    EstatusPasa,
+    CalibracionBy,
+    FechaProxima,
+    CapturadoPor,
+    FolioCertificado
+  } = req.body;
+
+  // Validación básica
+  if (!GageId || !FechaCalibracion) {
+    return res.status(400).json({ error: "Faltan datos obligatorios" });
+  }
+
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Insertar registro
+    const sqlInsert = `
+      INSERT INTO calibracion 
+      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+    
+    await connection.query(sqlInsert, [
+      GageId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor
+    ]);
+
+    // 2. Actualizar Maestro de Gages
+    // Nota: El ID del estado debe coincidir con tu tabla 'estado_gage'
+    const nuevoEstado = (EstatusPasa === 1 || EstatusPasa === true) ? 1 : 2; 
+
+    const sqlUpdate = `
+      UPDATE gage_master 
+      SET Estado = ?, ProximaCalibracion = ? 
+      WHERE GageId = ?`;
+    
+    await connection.query(sqlUpdate, [nuevoEstado, FechaProxima, GageId]);
+
+    await connection.commit();
+    res.json({ success: true, message: "Historial guardado y Gage actualizado con éxito" });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error en transacción de calibración:", error);
+    res.status(500).json({ error: "No se pudo completar el registro" });
+  } finally {
+    connection.release();
+  }
+});
 
 
 // --- ENCENDER SERVIDOR ---
