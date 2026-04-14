@@ -7,7 +7,7 @@
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <q-card class="my-card" style="max-width: 750px; width: 100%; margin: 0 auto; margin-top: 20px; padding: 20px">
       <div class="col-12 col-md-6">
-        <q-input v-model="search" filled placeholder="BUSCAR POR NOMBRE O ROL"> <template v-slot:append>
+        <q-input v-model="search" placeholder="BUSCAR POR NOMBRE O ROL"> <template v-slot:append>
             <q-icon name="search" />
           </template>
         </q-input>

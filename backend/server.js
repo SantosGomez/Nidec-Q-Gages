@@ -2,12 +2,17 @@ const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
 const app = express();
+const bcrypt = require('bcrypt');
+
+const jwt = require('jsonwebtoken');
+const SECRET_KEY = "Nidec_QGage_2024_Secret"; // Usa una frase secreta segura
 
 app.use(cors());
 app.use(express.json());
 
-// --- CONFIGURACIÓN DE LA BASE DE DATOS ---
+// ===== CONFIGURACIÓN DE LA BASE DE DATOS =====
 
+// ----- Configuracion de la Hora local --------
 const getReynosaOffset = () => {
   const date = new Date();
   const localString = date.toLocaleString("en-US", {
@@ -27,6 +32,7 @@ const getReynosaOffset = () => {
 
 const reynosaOffset = getReynosaOffset();
 
+// ---- Conexion y comunicacion con la BD ----
 const db = mysql
   .createPool({
     host: "localhost",
@@ -136,9 +142,15 @@ app.post("/api/login", async (req, res) => {
       // 4. Si coinciden, quitamos la contraseña del objeto por seguridad antes de enviarlo
       delete user.Password;
       
-      console.log(`Sesión iniciada: ${user.Usuario}`);
+      const token = jwt.sign(
+        { userId: user.UserID, rol: user.Rol }, 
+        SECRET_KEY, 
+        { expiresIn: '24h' }
+      );
+
       res.json({ 
         success: true, 
+        token: token,
         user: user // Aquí van todos tus permisos (edit_gage, etc.)
       });
     } else {

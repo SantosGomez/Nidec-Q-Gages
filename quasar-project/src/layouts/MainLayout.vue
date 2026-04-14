@@ -30,7 +30,7 @@
         <div class="row no-wrap q-pa-md">
           <div class="column flex flex-center">
             <q-btn flat color="primary" label="Configuraciones" v-close-popup @click="user" icon="settings" />
-            <q-btn flat color="negative" label="Logout" v-close-popup @click="login" icon="logout"/>
+            <q-btn flat color="negative" label="Logout" v-close-popup @click="logout" icon="logout"/>
           </div>
 
           <q-separator vertical inset class="q-mx-lg" />
@@ -40,10 +40,11 @@
               <img src="src\assets\iconosGAGES\usuario.png" />
             </q-avatar>
 
-            <div class="text-subtitle1 q-mt-md q-mb-xs">Usuario</div>
+            <div v-if="usuarioConectado" class="text-subtitle1 q-mt-md q-mb-xs">
+              {{ usuarioConectado?.Usuario }} ({{ usuarioConectado?.Rol }})
+            </div>
 
-            
-          </div>
+            </div>
         </div>
       </q-menu>
     </q-btn>
@@ -119,15 +120,17 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+// import { api } from "boot/axios";
+// import { useQuasar } from 'quasar' 
+
 const router = useRouter()
+const usuarioConectado = ref(null)
 
 function index() {
   router.push('/')
 }
 
-function login() {
-  router.push({ name: 'login' })
-}
 function master() {
   router.push('GageMaster')
 }
@@ -150,11 +153,25 @@ function checkout() {
 function user() {
   router.push('usuarios')
 }
-import { ref } from 'vue'
 
 const leftDrawerOpen = ref(false)
 
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value
+}
+
+onMounted(() => {
+  // Al cargar la página, leemos el localStorage
+  const data = localStorage.getItem('user_qgage')
+  if (data) {
+    usuarioConectado.value = JSON.parse(data)
+  }
+})
+
+const logout = () => {
+  localStorage.removeItem('user_qgage')
+  localStorage.removeItem('token_qgage')
+  usuarioConectado.value = null
+  router.push({ name: 'login' })
 }
 </script>

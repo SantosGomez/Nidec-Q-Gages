@@ -33,5 +33,23 @@ export default defineRouter(function (/* { store, ssrContext } */) {
     history: createHistory(process.env.VUE_ROUTER_BASE),
   })
 
+  Router.beforeEach((to, from, next) => {
+    // 1. Buscamos el token en el localStorage
+    const isAuthenticated = localStorage.getItem('token_qgage')
+
+    // 2. Verificamos si la ruta a la que va el usuario requiere estar logueado
+    // Como tu login está bajo '/auth', cualquier otra ruta (como '/') está protegida
+    if (to.name !== 'login' && !isAuthenticated) {
+      // Si no está autenticado y no va al login, lo mandamos para allá
+      next({ name: 'login' })
+    } else if (to.name === 'login' && isAuthenticated) {
+      // Si ya está logueado e intenta ir al login, lo mandamos al inicio
+      next({ path: '/' })
+    } else {
+      // En cualquier otro caso, lo dejamos pasar
+      next()
+    }
+  })
+  
   return Router
 })
