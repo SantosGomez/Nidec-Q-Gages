@@ -467,6 +467,30 @@ app.get("/api/calibracion", async (req, res) => {
   }
 })
 
+// -------- Gage sin Calibracion ----------
+app.get("/api/calibracion/nuevos", async (req, res) => {
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        g.GageId,
+        g.GageSerie, 
+        g.Descripcion,
+        g.FechaCompra,
+        ei.Nombre_extint as Tipo -- Para saber si es Interno o Externo
+      FROM gage_master g
+      LEFT JOIN calibracion c ON g.GageId = c.GagesId
+      INNER JOIN externo_interno ei ON g.Ex_Int = ei.Ext_IntId
+      WHERE c.GagesId IS NULL;
+      `);
+    res.json(rows)
+  } catch (error) {
+    console.error("Error al obtener Gages:", error);
+    res.status(500).json({ error: "Error al obtener los registros" });
+  }
+})
+
+
+
 // ----- Insertar Nueva Calibracion -------
 
 app.post("/api/registrar-calibracion", async (req, res) => {
