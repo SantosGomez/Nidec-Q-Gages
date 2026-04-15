@@ -89,7 +89,7 @@
 
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-    <q-card class="my-card" style=" max-width: 1000px; width: 100%; height: 400px; ">
+    <q-card class="my-card" style="max-width: 1000px; width: 100%; height: 400px">
       <q-card-section class="bg-primary text-white">
         <div class="text-h4">{{ modoEdicion ? 'Editar calibracion' : 'Nueva Calibracion' }}</div>
       </q-card-section>
@@ -104,7 +104,14 @@
               <q-input filled v-model="formModel.description" label="Equipo" readonly />
             </div>
             <div class="col-12 col-md-2">
-              <q-btn color="secondary" flat size="12px" icon="search" label="Seleccionar Gage" @click="abrirGages" />
+              <q-btn
+                color="secondary"
+                flat
+                size="12px"
+                icon="search"
+                label="Seleccionar Gage"
+                @click="abrirGages"
+              />
             </div>
 
             <div class="col-12 col-md-6">
@@ -158,8 +165,6 @@
                 />
               </div>
             </div>
-
-            
           </div>
           <div class="col-12 q-mt-lg">
             <q-btn
@@ -220,13 +225,23 @@
   </q-dialog>
 
   // ---- Dialog para seleccionar un Gage
-<q-dialog v-model="Gages" persistent transition-show="scale" transition-hide="scale" :backdrop-filter="backdropFilter">
-  <q-layout view="hHh lpR fFf" container class="bg-white text-dark" style="height: 600px; width: 700px; max-width: 90vw;">
-      
+  <q-dialog
+    v-model="Gages"
+    persistent
+    transition-show="scale"
+    transition-hide="scale"
+    :backdrop-filter="backdropFilter"
+  >
+    <q-layout
+      view="hHh lpR fFf"
+      container
+      class="bg-white text-dark"
+      style="height: 600px; width: 700px; max-width: 90vw"
+    >
       <q-header elevated class="bg-primary text-white">
         <q-toolbar>
           <q-toolbar-title>Gages Sin Calibrar</q-toolbar-title>
-          
+
           <q-input
             v-model="search"
             dark
@@ -235,12 +250,12 @@
             debounce="300"
             placeholder="Buscar por Serie o Descripción..."
             class="q-ml-md"
-            >
+          >
             <template v-slot:append>
               <q-icon name="search" />
             </template>
           </q-input>
-          <q-btn style="margin-left: 10px;" flat v-close-popup round dense icon="close" />
+          <q-btn style="margin-left: 10px" flat v-close-popup round dense icon="close" />
         </q-toolbar>
       </q-header>
 
@@ -251,15 +266,14 @@
           </div>
 
           <q-list bordered separator>
-            <q-item 
-              v-for="gage in filteredGages" 
-              :key="gage.GageId" 
+            <q-item
+              v-for="gage in filteredGages"
+              :key="gage.GageId"
               :loading="loading"
-              clickable 
+              clickable
               v-ripple
               @click="seleccionarGage(gage)"
             >
-            
               <q-item-section>
                 <q-item-label class="text-weight-bold">{{ gage.GageSerie }}</q-item-label>
                 <q-item-label caption>{{ gage.Descripcion }}</q-item-label>
@@ -272,7 +286,10 @@
             </q-item>
           </q-list>
 
-          <div v-if="filteredGages.length === 0" class="column items-center q-pa-xl text-grey-4 text-center">
+          <div
+            v-if="filteredGages.length === 0"
+            class="column items-center q-pa-xl text-grey-4 text-center"
+          >
             <q-icon name="manage_search" size="5rem" />
             <div class="text-h6">No coinciden resultados</div>
             <div class="text-caption">Intenta con otro ID o Serie</div>
@@ -280,7 +297,7 @@
         </q-page>
       </q-page-container>
     </q-layout>
-</q-dialog>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -295,11 +312,10 @@ function index() {
 import { ref, computed, onMounted } from 'vue'
 import { api } from 'boot/axios'
 
-
 const procedimientos = ref(false)
 
 const Gages = ref(false)
-const loading = ref(false) 
+const loading = ref(false)
 const Form = ref(false) // Controla el diálogo de Agregar/Editar
 const modoEdicion = ref(false) // Switch para saber si estamos editando o creando
 const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
@@ -308,30 +324,28 @@ const search = ref('')
 const listaGagesNuevos = ref([])
 const backdropFilter = 'blur(5px)'
 
-
 const cargarGagesNuevos = async () => {
-loading.value = true
-try {
-  const respuesta = await api.get('/api/calibracion/nuevos') 
-  listaGagesNuevos.value = respuesta.data
-} catch (error) {
-  console.error('Error al traer gages:', error)
-}finally {
+  loading.value = true
+  try {
+    const respuesta = await api.get('/api/calibracion/nuevos')
+    listaGagesNuevos.value = respuesta.data
+  } catch (error) {
+    console.error('Error al traer gages:', error)
+  } finally {
     loading.value = false
   }
 }
 
-const abrirGages =() =>{
+const abrirGages = () => {
   Gages.value = true
 }
 
 const filteredGages = computed(() => {
   if (!search.value) return listaGagesNuevos.value
-  
+
   const termo = search.value.toLowerCase()
-  return listaGagesNuevos.value.filter(g => 
-    g.GageSerie.toLowerCase().includes(termo) || 
-    g.Descripcion.toLowerCase().includes(termo)
+  return listaGagesNuevos.value.filter(
+    (g) => g.GageSerie.toLowerCase().includes(termo) || g.Descripcion.toLowerCase().includes(termo),
   )
 })
 
@@ -345,10 +359,12 @@ const seleccionarGage = (gage) => {
 
 const formModel = ref({
   gageId: '',
-  description: '',
-  activo: true,
+  fechaCalibracion: '',
+  Resultado: '',
+  estatusPasa: '',
+  calibracionBy: '',
+  CapturadoPor: '',
 })
-
 
 const abrirFormulario = () => {
   soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
@@ -401,61 +417,12 @@ const onSubmit = () => {
 }
 
 const columns = [
-  {
-    name: 'IdGage',
-    required: true,
-    label: 'Gage ID',
-    align: 'left',
-    field: (row) => row.idGage,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'description',
-    required: true,
-    label: 'Descripción',
-    align: 'left',
-    field: (row) => row.description,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'tipo',
-    required: true,
-    label: 'Tipo',
-    align: 'left',
-    field: (row) => row.tipo,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'Estado',
-    required: true,
-    label: 'Estado',
-    align: 'left',
-    field: (row) => row.Estado,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'fechaCalibraion',
-    required: true,
-    label: 'Fecha de Calibración actual',
-    align: 'left',
-    field: (row) => row.fechaCalibraion,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-  {
-    name: 'fechaProxima',
-    required: true,
-    label: 'Próxima Calibración',
-    align: 'left',
-    field: (row) => row.fechaProxima,
-    format: (val) => `${val}`,
-    sortable: true,
-  },
-
+  { name: 'CalibracionId', label: '#', field: 'CalibracionId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  { name: 'description', label: 'Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
+  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  { name: 'FechaCal', label: 'Calibrado en', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  { name: 'FechaProx', label: 'Prox. Calibracion', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
   { name: 'actions', label: 'Acciones', align: 'center' },
 ]
 const rows = [
