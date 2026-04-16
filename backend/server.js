@@ -207,7 +207,14 @@ app.get("/api/gages", async (req, res) => {
     gage_master.Act_Inact, 
     gage_master.Locacion, 
     gage_master.ProcedimientoId,
-    procedimiento.NombreProce AS Procedimiento
+    procedimiento.NombreProce AS Procedimiento,
+    gage_master.Marca,
+    gage_master.Modelo,
+    gage_master.Codigo,
+    gage_master.Serie,
+    gage_master.Rango,
+    gage_master.Resolucion,
+    gage_master.OrdenCompra
     FROM gage_master
     INNER JOIN procedimiento ON gage_master.ProcedimientoId = procedimiento.ProceId
     INNER JOIN usuarios ON gage_master.Usuario = usuarios.UserID
@@ -224,27 +231,35 @@ app.get("/api/gages", async (req, res) => {
 
 //--- AGREGAR NUEVO GAGE ---
 app.post("/api/gages", async (req, res) => {
-  const gage = req.body; // Aquí vienen los datos del nuevo gage desde Quasar
+  const p = req.body; // Aquí vienen los datos del nuevo gage desde Quasar
   try {
     const query = `
       INSERT INTO gage_master 
-      (GageSerie, Descripcion, Vendedor, Tipo, Estado, FechaCompra, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (GageSerie, Descripcion, Vendedor, Tipo, Estado, FechaCompra, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId, Marca, Modelo, Codigo, Serie, Rango, Resolucion, OrdenCompra) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await db.query(query, [
-      gage.GageSerie,
-      gage.Descripcion,
-      gage.Vendedor,
-      gage.Tipo,
-      gage.Estado,
-      gage.FechaCompra,
-      gage.FreqCalibracion,
-      gage.Usuario,
-      gage.Informacion,
-      gage.Ex_Int,
-      gage.Act_Inact,
-      gage.Locacion,
-      gage.ProcedimientoId,
+      p.GageSerie,
+      p.Descripcion,
+      p.Vendedor,
+      p.Tipo,
+      p.Estado,
+      p.FechaCompra,
+      p.FreqCalibracion,
+      p.Usuario,
+      p.Informacion,
+      p.Ex_Int,
+      p.Act_Inact,
+      p.Locacion,
+      p.ProcedimientoId,
+      p.Marca,
+      p.Modelo,
+      p.Codigo,
+      p.Serie,
+      p.Rango,
+      p.Resolucion,
+      p.OrdenCompra
+      
     ]);
     res.json({ message: "Gage agregado correctamente" });
   } catch (error) {
@@ -266,10 +281,11 @@ app.put("/api/gages/:id", async (req, res) => {
   try {
     const query = `
       UPDATE gage_master SET 
-        GageSerie = ?, Descripcion = ?, Vendedor = ?, 
-        Tipo = ?, Estado = ?, FechaCompra = ?, FreqCalibracion = ?, 
+        GageSerie = ?, Descripcion = ?, Vendedor = ?, Tipo = ?, 
+        Estado = ?, FechaCompra = ?, FreqCalibracion = ?, 
         Usuario = ?, Informacion = ?, Ex_Int = ?, Act_Inact = ?, 
-        Locacion = ?, ProcedimientoId = ?
+        Locacion = ?, ProcedimientoId = ?, Marca = ?, Modelo = ?, 
+        Codigo = ?, Serie = ?, Rango = ?, Resolucion = ?, OrdenCompra = ?
       WHERE GageId = ? 
     `;
 
@@ -288,7 +304,14 @@ app.put("/api/gages/:id", async (req, res) => {
       toInt(p.Act_Inact),
       p.Locacion,
       toInt(p.ProcedimientoId),
-      id,
+     p.Marca,
+      p.Modelo,
+      p.Codigo,
+      p.Serie,
+      p.Rango,
+      p.Resolucion,
+      p.OrdenCompra,
+      id
     ];
 
     await db.query(query, values);
@@ -476,6 +499,7 @@ app.get("/api/calibracion/nuevos", async (req, res) => {
         g.GageSerie, 
         g.Descripcion,
         g.FechaCompra,
+        g.FreqCalibracion as FreqMeses,
         ei.Nombre_extint as Tipo -- Para saber si es Interno o Externo
       FROM gage_master g
       LEFT JOIN calibracion c ON g.GageId = c.GagesId
@@ -495,7 +519,7 @@ app.get("/api/calibracion/nuevos", async (req, res) => {
 
 app.post("/api/registrar-calibracion", async (req, res) => {
   const {
-    GageId,
+    GagesId,
     FechaCalibracion,
     Resultado,
     EstatusPasa,
@@ -506,7 +530,7 @@ app.post("/api/registrar-calibracion", async (req, res) => {
   } = req.body;
 
   // Validación básica
-  if (!GageId || !FechaCalibracion) {
+  if (!GagesId || !FechaCalibracion) {
     return res.status(400).json({ error: "Faltan datos obligatorios" });
   }
 
@@ -522,7 +546,7 @@ app.post("/api/registrar-calibracion", async (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
     
     await connection.query(sqlInsert, [
-      GageId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor
+      GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor
     ]);
 
     // 2. Actualizar Maestro de Gages
@@ -531,10 +555,10 @@ app.post("/api/registrar-calibracion", async (req, res) => {
 
     const sqlUpdate = `
       UPDATE gage_master 
-      SET Estado = ?, ProximaCalibracion = ? 
+      SET Estado = ? 
       WHERE GageId = ?`;
     
-    await connection.query(sqlUpdate, [nuevoEstado, FechaProxima, GageId]);
+    await connection.query(sqlUpdate, [nuevoEstado, GagesId]);
 
     await connection.commit();
     res.json({ success: true, message: "Historial guardado y Gage actualizado con éxito" });

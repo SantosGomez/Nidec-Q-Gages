@@ -65,6 +65,16 @@
                 </template>
               </q-input>
             </template>
+            <template v-slot:body-cell-FechaCalibracion="props">
+          <q-td :props="props">
+            {{ formatearFecha(props.value) }}
+          </q-td>
+        </template>
+        <template v-slot:body-cell-FechaProxima="props">
+          <q-td :props="props">
+            {{ formatearFecha(props.value) }}
+          </q-td>
+        </template>
             <template v-slot:body-cell-actions="props">
               <q-td :props="props" class="q-gutter-sm">
                 <q-btn
@@ -98,10 +108,10 @@
         <q-form @submit="onSubmit" @reset="onReset">
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-4">
-              <q-input filled v-model="formModel.gageId" label="Gage ID" readonly />
+              <q-input filled v-model="formModel.GageSerie" label="Gage ID" readonly />
             </div>
             <div class="col-12 col-md-6">
-              <q-input filled v-model="formModel.description" label="Equipo" readonly />
+              <q-input filled v-model="formModel.Descripcion" label="Equipo" readonly />
             </div>
             <div class="col-12 col-md-2">
               <q-btn
@@ -115,25 +125,27 @@
             </div>
 
             <div class="col-12 col-md-6">
-              <q-input filled v-model="formModel.folio" label="No. de Certificado / Folio" />
+              <q-input filled :readonly="soloLectura" v-model="formModel.FolioCertificado" label="No. de Certificado / Folio" />
             </div>
             <div class="col-12 col-md-6">
               <q-input
                 filled
-                v-model="formModel.calibradoPor"
+                :readonly="soloLectura"
+                v-model="formModel.CalibracionBy"
                 label="Calibrado por (Externo/Técnico)"
               />
             </div>
             <div class="col-12 col-md-4">
               <q-input
                 filled
-                v-model="formModel.fechaCalibracion"
+                :readonly="soloLectura"
+                v-model="formModel.FechaCalibracion"
                 mask="date"
                 label="Fecha de Calibración"
               >
                 <template v-slot:append>
                   <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy><q-date v-model="formModel.fechaCalibracion" /></q-popup-proxy>
+                    <q-popup-proxy><q-date v-model="formModel.FechaCalibracion" /></q-popup-proxy>
                   </q-icon>
                 </template>
               </q-input>
@@ -141,10 +153,9 @@
             <div class="col-12 col-md-4">
               <q-input
                 filled
-                type="number"
-                v-model="formModel.valorMedido"
+                :readonly="soloLectura"
+                v-model="formModel.Resultado"
                 label="Valor Medido"
-                suffix="mm"
               />
             </div>
             <div class="col-12 col-md-4">
@@ -152,15 +163,17 @@
                 <q-radio
                   v-model="formModel.estatusPasa"
                   :val="1"
-                  label="PASA"
+                  label="APROBADO"
                   color="positive"
+                  :readonly="soloLectura"
                   keep-color
                 />
                 <q-radio
                   v-model="formModel.estatusPasa"
                   :val="0"
-                  label="FALLA"
+                  label="RECHAZADO"
                   color="negative"
+                  :readonly="soloLectura"
                   keep-color
                 />
               </div>
@@ -309,8 +322,11 @@ function index() {
 }
 
 //para el dialog de procedimientos
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { api } from 'boot/axios'
+import { useQuasar } from 'quasar'
+
+const $q = useQuasar()
 
 const procedimientos = ref(false)
 
@@ -322,7 +338,29 @@ const soloLectura = ref(false) // Controla si los inputs están bloqueados (para
 const text = ref('')
 const search = ref('')
 const listaGagesNuevos = ref([])
+const rows = ref([])
 const backdropFilter = 'blur(5px)'
+const selectedGage = ref(null);
+
+const formModel = ref({
+  GageSerie: '',
+  Descripcion: '',
+  FolioCertificado: '',
+  FechaCalibracion: '',
+  Resultado: '',
+  estatusPasa: 1,
+  CalibracionBy: '',
+  fechaProxima: ''
+})
+
+watch(() => formModel.value.FechaCalibracion, (nuevaFecha) => {
+  if (nuevaFecha && selectedGage.value) {
+    const fecha = new Date(nuevaFecha);
+    // Sumamos los meses según la frecuencia del gage seleccionado
+    fecha.setMonth(fecha.getMonth() + selectedGage.value.FreqMeses); 
+    formModel.value.fechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/');
+  }
+});
 
 const cargarGagesNuevos = async () => {
   loading.value = true
@@ -350,21 +388,14 @@ const filteredGages = computed(() => {
 })
 
 const seleccionarGage = (gage) => {
-  formModel.value.gageId = gage.GageSerie
-  formModel.value.description = gage.Descripcion
-  // Aquí cerrarías este diálogo y llenarías el form principal
-  Gages.value = false
-  // formModel.value.gageId = gage.GageId ... etc
+  selectedGage.value = gage; // Guardamos el objeto completo para tener la frecuencia
+  formModel.value.GagesId = gage.GageId; // ID numérico para la DB
+  formModel.value.GageSerie = gage.GageSerie; // Serie para mostrar al usuario
+  formModel.value.Descripcion = gage.Descripcion;
+  Gages.value = false;
 }
 
-const formModel = ref({
-  gageId: '',
-  fechaCalibracion: '',
-  Resultado: '',
-  estatusPasa: '',
-  calibracionBy: '',
-  CapturadoPor: '',
-})
+
 
 const abrirFormulario = () => {
   soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
@@ -390,75 +421,86 @@ const verDetalles = (row) => {
 
 const onReset = () => {
   formModel.value = {
-    gageId: '',
-    description: '',
-    tipo: null,
-    estado: null,
-    localizacion: '',
-    vendedor: '',
-    fechaCompra: '',
-    fechaProxima: '',
-    infoExtra: '',
+    GageSerie: '',
+    Descripcion: '',
+    FolioCertificado: '',
+    FechaCalibracion: '',
+    Resultado: '',
+    estatusPasa: 1,
+    CalibracionBy: '',
+    fechaProxima: ''
   }
 }
 
-const onSubmit = () => {
-  if (modoEdicion.value) {
-    // Lógica para actualizar en la tabla (buscar por ID y reemplazar)
-    const index = rows.value.findIndex((r) => r.gageId === formModel.value.gageId)
-    if (index !== -1) rows.value[index] = { ...formModel.value }
-    alert('Gage actualizado con éxito')
-  } else {
-    // Lógica para agregar nuevo
-    rows.value.push({ ...formModel.value, activo: true })
-    alert('Gage registrado con éxito')
-  }
-  Form.value = false
-}
+const onSubmit = async () => {
+  try {
+    $q.loading.show({ message: 'Registrando calibración...' });
+    
+    // Mapeo de campos para que coincidan con lo que espera tu server.js
+    const payload = {
+      GagesId: formModel.value.GagesId,
+      FechaCalibracion: formModel.value.FechaCalibracion,
+      Resultado: formModel.value.Resultado, // Antes era valorMedido
+      EstatusPasa: formModel.value.estatusPasa,
+      CalibracionBy: formModel.value.CalibracionBy, // Antes era calibradoPor
+      FechaProxima: formModel.value.fechaProxima,
+      CapturadoPor: 1, 
+      FolioCertificado: formModel.value.FolioCertificado // Antes era folio
+    };
 
+    const res = await api.post('/api/registrar-calibracion', payload);
+
+    if (res.data.success) {
+      $q.notify({ type: 'positive', message: 'Registro exitoso y Gage actualizado' });
+      Form.value = false;
+      obtenerCalibraciones(); // Recargar la tabla principal
+      cargarGagesNuevos();    // Limpiar la lista de pendientes
+    }
+  } catch (error) {
+    console.error(error);
+    $q.notify({ type: 'negative', message: 'Error al conectar con el servidor' });
+  } finally {
+    $q.loading.hide();
+  }
+}
 const columns = [
   { name: 'CalibracionId', label: '#', field: 'CalibracionId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
   { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
-  { name: 'description', label: 'Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
-  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
-  { name: 'FechaCal', label: 'Calibrado en', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
-  { name: 'FechaProx', label: 'Prox. Calibracion', field: 'Act_Inact', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  { name: 'Descripcion', label: 'Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
+  { name: 'CalibracionBy', label: 'Calibrado por:', field: 'CalibracionBy', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  { name: 'FechaCalibracion', label: 'Calibrado en', field: 'FechaCalibracion', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  { name: 'FechaProxima', label: 'Prox. Calibracion', field: 'FechaProxima', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
   { name: 'actions', label: 'Acciones', align: 'center' },
 ]
-const rows = [
-  {
-    idGage: 'G001',
-    description: 'Micrómetro Externo',
-    tipo: 'Mecánico',
-    Estado: 'Calibrado',
-    fechaCalibraion: '2022-01-15',
-    fechaProxima: '2023-01-15',
-    frecuencia: 'Anual',
-    calibracionTipo: 'Interna',
-  },
-  {
-    idGage: 'G002',
-    description: 'Calibrador Vernier',
-    tipo: 'Mecánico',
-    Estado: 'Pendiente de Calibración',
-    fechaCalibraion: '2021-06-10',
-    fechaProxima: '2022-06-10',
-    frecuencia: 'Anual',
-    calibracionTipo: 'Externa',
-  },
-  {
-    idGage: 'G003',
-    description: 'Micrómetro Interno',
-    tipo: 'Mecánico',
-    Estado: 'Calibrado',
-    fechaCalibraion: '2020-11-05',
-    fechaProxima: '2021-11-05',
-    frecuencia: 'Anual',
-    calibracionTipo: 'Interna',
-  },
-]
+
+const obtenerCalibraciones = async () => {
+  loading.value = true
+  try {
+    const respuesta = await api.get('/api/calibracion')
+    rows.value = respuesta.data
+  } catch (error) {
+    console.error('Error al cargar las calibraciones', error)
+  } finally{
+    loading.value = false
+  }
+}
+
+const formatearFecha = (fechaString) => {
+
+  const fecha = new Date(fechaString)
+  if (isNaN(fecha)) return fechaString
+
+  // Usamos 'en-GB' o 'es-MX' con hour12: false para forzar las 24h
+  return new Intl.DateTimeFormat('es-MX', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+  }).format(fecha)
+}
+
 
 onMounted(() => {
   cargarGagesNuevos()
+  obtenerCalibraciones()
 })
 </script>
