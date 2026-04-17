@@ -55,7 +55,6 @@
                 :color="props.row.Act_Inact == 1 ? 'positive' : 'grey-7'"
                 :icon="props.row.Act_Inact == 1 ? 'check_circle' : 'cancel'"
                 :label="props.row.Act_Inact == 1 ? 'Activo' : 'Inactivo'"
-                size="sm"
                 unelevated
                 @click="confirmarInactivar(props.row)"
               />
@@ -69,7 +68,6 @@
                 round
                 color="warning"
                 icon="edit"
-                size="sm"
                 @click="prepararEdicion(props.row)"
               >
                 <q-tooltip>Editar</q-tooltip>
@@ -80,7 +78,6 @@
                 round
                 color="info"
                 icon="visibility"
-                size="sm"
                 @click="verDetalles(props.row)"
               >
                 <q-tooltip>Ver ficha técnica</q-tooltip>
