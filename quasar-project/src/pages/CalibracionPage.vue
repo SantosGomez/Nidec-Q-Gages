@@ -5,17 +5,12 @@
   <div class="text-h3 flex flex-center" style="font-weight: bold">Calibracion De Gages</div>
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
-    <div class="col-12 col-md-12">
-      <q-card class="my-card" style="max-width: 1250px; margin: 0 auto; margin-top: 20px">
+    
+      <q-card class="my-card" style="max-width: 1250px; width: 100%; margin: 0 auto; margin-top: 20px">
+        
         <q-card-section>
-          <div class="text-h5">
-            Bienvenido al sistema de calibración de Gages. Seleccione una opción.
-          </div>
-        </q-card-section>
-        <q-separator />
-        <q-card-section>
-          <div class="row q-col-gutter-md text-right">
-            <div class="col-12 col-md-3">
+          <div align="right" class="row q-col-gutter-md text-right">
+            <div class="col-12 col-md-12">
               <q-btn
                 icon="add"
                 style="
@@ -30,30 +25,8 @@
                 @click="abrirFormulario()"
               />
             </div>
-            <div class="col-12 col-md-3">
-              <q-btn
-                color="info"
-                icon="list_alt"
-                label="procedimientos"
-                @click="procedimientos = true"
-                style="
-                  font-size: 18px;
-                  width: 300px;
-                  height: 40px;
-                  margin-top: 5px;
-                  margin-right: 10px;
-                "
-              />
-            </div>
           </div>
-        </q-card-section>
-      </q-card>
-    </div>
-
-    <div class="col-12 col-md-12">
-      <q-card class="my-card" style="max-width: 1250px; margin: 0 auto">
-        <q-card-section>
-          <div class="text-h6">Calibraciones</div>
+          <div class="text-h5">Calibraciones</div>
         </q-card-section>
         <q-card-section>
           <!--Tabla con la informacion de las calibraciones de los gages-->
@@ -89,15 +62,17 @@
                 <q-btn outline round color="info" icon="visibility" @click="verDetalles(props.row)">
                   <q-tooltip>Ver Detalles</q-tooltip>
                 </q-btn>
+                <q-btn outline round color="primary" icon="topic" @click="procedimientos = true">
+                  <q-tooltip>Ver Manual de Procedimiento</q-tooltip>
+                </q-btn>
               </q-td>
             </template>
           </q-table>
         </q-card-section>
       </q-card>
     </div>
-  </div>
 
-  <!-- dialog de formulario para calibracion de gages -->
+    <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
     <q-card class="my-card" style="max-width: 1000px; width: 100%; height: 400px">
       <q-card-section class="bg-primary text-white">
@@ -200,44 +175,51 @@
   </q-dialog>
 
   <!-- dialog de procedimientos de calibracion -->
-  <q-dialog v-model="procedimientos">
-    <q-card style="max-width: 900px; width: 100%">
-      <q-toolbar class="bg-primary text-white rounded-borders">
-        <q-toolbar-title> Procedimientos de Calibración </q-toolbar-title>
+  <q-dialog v-model="procedimientos" maximized transition-show="slide-up" transition-hide="slide-down">
+      <q-card>
+        <q-bar class="bg-primary text-white q-pa-lg">
+          <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce || 'NombreProce' }}</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup>
+            <q-tooltip>Cerrar</q-tooltip>
+          </q-btn>
+        </q-bar>
 
-        <q-space />
+        <q-card-section class="q-pa-md">
+          <div class="row q-col-gutter-lg">
+            <div class="col-12 col-md-6">
+              <div class="text-h5 q-mb-sm">Instrucciones de Calibración</div>
+              <p class="text-body1">{{ procedimientoSeleccionado?.DescripcionProce }}</p>
+              
+              <q-banner rounded class="bg-amber-1 q-mb-md">
+                <template v-slot:avatar>
+                  <q-icon name="warning" color="amber-9" />
+                </template>
+                Asegúrese de desconectar la fuente de poder antes de iniciar.
+              </q-banner>
+            </div>
 
-        <q-input dark dense standout v-model="text" input-class="text-right" class="q-ml-md">
-          <template v-slot:append>
-            <q-icon v-if="text === ''" name="search" />
-            <q-icon v-else name="search" class="cursor-pointer" @click="text = ''" />
-          </template>
-        </q-input>
-      </q-toolbar>
-      <q-card-section class="row items-center">
-        <q-intersection :key="index" transition="scale" class="example-item">
-          <div>
-            <!-- seccion donde se pondra los procedimientos existentes -->
-            <q-card class="my-card cursor-pointer q-hoverable" @click="openManual('motor')">
-              <span class="q-focus-helper"></span>
-              <q-card-section class="text-center bg-primary text-white">
-                <q-icon name="settings_input_component" size="4rem" />
-                <div class="text-h6">Motor / Rotor-SHAFT</div>
-              </q-card-section>
-              <q-card-actions align="center">
-                <q-btn flat color="primary" label="Ver Procedimiento" />
-              </q-card-actions>
-            </q-card>
+            <div class="col-12 col-md-6">
+              <div class="text-h5 q-mb-sm">Apoyo Visual</div>
+              <q-img 
+                :src="'/procedimientos/'+ procedimientoSeleccionado?.ImgProce" 
+                class="rounded-borders shadow-2"
+                style="max-height: 300px"
+              />
+              <q-btn 
+                color="red-9" 
+                icon="picture_as_pdf" 
+                label="Abrir Manual PDF Completo" 
+                class="full-width q-mt-md"
+                @click="viewPDF(currentManual.pdfUrl)"
+              />
+            </div>
           </div>
-        </q-intersection>
-      </q-card-section>
-      <q-card-actions align="right">
-        <q-btn flat label="Cerrar" color="negative" v-close-popup />
-      </q-card-actions>
-    </q-card>
-  </q-dialog>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
 
-  // ---- Dialog para seleccionar un Gage
+   <!-- Dialog para seleccionar un Gage -->
   <q-dialog
     v-model="Gages"
     persistent
@@ -335,7 +317,7 @@ const loading = ref(false)
 const Form = ref(false) // Controla el diálogo de Agregar/Editar
 const modoEdicion = ref(false) // Switch para saber si estamos editando o creando
 const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
-const text = ref('')
+
 const search = ref('')
 const listaGagesNuevos = ref([])
 const rows = ref([])
