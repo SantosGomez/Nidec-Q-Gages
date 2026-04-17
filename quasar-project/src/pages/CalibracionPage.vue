@@ -294,7 +294,7 @@
 
               <q-item-section side>
                 <q-badge outline color="primary" :label="gage.Tipo" />
-                <div class="text-caption text-grey-6">{{ gage.FechaCompra }}</div>
+                <div class="text-caption text-grey-6">{{ formatearFecha(gage.FechaAlta) }}</div>
               </q-item-section>
             </q-item>
           </q-list>

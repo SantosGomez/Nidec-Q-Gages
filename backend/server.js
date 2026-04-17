@@ -180,6 +180,18 @@ app.get("/api/procedimientos", async (req, res) => {
   }
 });
 
+app.get("/api/procedimiento/manual", async (req, res) => {
+  try {
+    const query =`
+    select ProceId, NombreProce from procedimiento
+    `;
+    const [row] = await db.query(query);
+    res.json(row);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 //========= Gages ===========
 
 //--- OBTENER GAGES ---
@@ -196,7 +208,7 @@ app.get("/api/gages", async (req, res) => {
     tipo_gage.NombreTipo AS Tipo, 
     gage_master.Estado AS EstadoId,    -- ID original para el select
     estado_gage.NombreEstado AS Estado, 
-    gage_master.FechaCompra, 
+    gage_master.FechaAlta, 
     gage_master.FreqCalibracion AS FreqId, -- ID original para el select
     frecuencia_gage.NomFreq AS Frecuencia,
     gage_master.Usuario AS UsuarioId,
@@ -235,7 +247,7 @@ app.post("/api/gages", async (req, res) => {
   try {
     const query = `
       INSERT INTO gage_master 
-      (GageSerie, Descripcion, Vendedor, Tipo, Estado, FechaCompra, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId, Marca, Modelo, Codigo, Serie, Rango, Resolucion, OrdenCompra) 
+      (GageSerie, Descripcion, Vendedor, Tipo, Estado, FechaAlta, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId, Marca, Modelo, Codigo, Serie, Rango, Resolucion, OrdenCompra) 
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await db.query(query, [
@@ -244,7 +256,7 @@ app.post("/api/gages", async (req, res) => {
       p.Vendedor,
       p.Tipo,
       p.Estado,
-      p.FechaCompra,
+      p.FechaAlta,
       p.FreqCalibracion,
       p.Usuario,
       p.Informacion,
@@ -282,7 +294,7 @@ app.put("/api/gages/:id", async (req, res) => {
     const query = `
       UPDATE gage_master SET 
         GageSerie = ?, Descripcion = ?, Vendedor = ?, Tipo = ?, 
-        Estado = ?, FechaCompra = ?, FreqCalibracion = ?, 
+        Estado = ?, FechaAlta = ?, FreqCalibracion = ?, 
         Usuario = ?, Informacion = ?, Ex_Int = ?, Act_Inact = ?, 
         Locacion = ?, ProcedimientoId = ?, Marca = ?, Modelo = ?, 
         Codigo = ?, Serie = ?, Rango = ?, Resolucion = ?, OrdenCompra = ?
@@ -296,7 +308,7 @@ app.put("/api/gages/:id", async (req, res) => {
       p.Vendedor,
       toInt(p.Tipo),
       toInt(p.Estado),
-      p.FechaCompra,
+      p.FechaAlta,
       toInt(p.FreqCalibracion),
       toInt(p.Usuario),
       p.Informacion,
@@ -304,7 +316,7 @@ app.put("/api/gages/:id", async (req, res) => {
       toInt(p.Act_Inact),
       p.Locacion,
       toInt(p.ProcedimientoId),
-     p.Marca,
+      p.Marca,
       p.Modelo,
       p.Codigo,
       p.Serie,
@@ -498,7 +510,7 @@ app.get("/api/calibracion/nuevos", async (req, res) => {
         g.GageId,
         g.GageSerie, 
         g.Descripcion,
-        g.FechaCompra,
+        g.FechaAlta,
         g.FreqCalibracion as FreqMeses,
         ei.Nombre_extint as Tipo -- Para saber si es Interno o Externo
       FROM gage_master g
