@@ -62,7 +62,7 @@
                 <q-btn outline round color="info" icon="visibility" @click="verDetalles(props.row)">
                   <q-tooltip>Ver Detalles</q-tooltip>
                 </q-btn>
-                <q-btn outline round color="primary" icon="topic" @click="procedimientos = true">
+                <q-btn outline round color="primary" icon="topic" @click="abrirProcedimiento(props.row)">
                   <q-tooltip>Ver Manual de Procedimiento</q-tooltip>
                 </q-btn>
               </q-td>
@@ -312,6 +312,8 @@ const $q = useQuasar()
 
 const procedimientos = ref(false)
 
+const procedimientoSeleccionado = ref(null)
+
 const Gages = ref(false)
 const loading = ref(false)
 const Form = ref(false) // Controla el diálogo de Agregar/Editar
@@ -478,6 +480,12 @@ const formatearFecha = (fechaString) => {
     month: '2-digit',
     year: 'numeric',
   }).format(fecha)
+}
+
+const abrirProcedimiento = (row) => {
+  // row trae toda la información de la tabla, incluyendo los campos del procedimiento
+  procedimientoSeleccionado.value = row
+  procedimientos.value = true
 }
 
 

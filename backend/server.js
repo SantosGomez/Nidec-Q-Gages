@@ -489,10 +489,15 @@ app.get("/api/calibracion", async (req, res) => {
         c.CalibracionBy, 
         c.FechaProxima, 
         c.FechaCalibracion,
-        f.NomFreq
+        f.NomFreq,
+        p.ProceId,
+        p.NombreProce,
+        p.DescripcionProce,
+        p.ImgProce
       FROM calibracion c
       INNER JOIN gage_master g ON g.GageId = c.GagesId
       INNER JOIN frecuencia_gage f ON f.FreqId = g.FreqCalibracion
+      LEFT JOIN procedimiento p on p.ProceId = g.ProcedimientoId
       ORDER BY c.FechaCalibracion DESC
       `);
     res.json(rows)
