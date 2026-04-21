@@ -5,294 +5,348 @@
   <div class="text-h3 flex flex-center" style="font-weight: bold">Calibracion De Gages</div>
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
-    
-      <q-card class="my-card" style="max-width: 1250px; width: 100%; margin: 0 auto; margin-top: 20px">
-        
-        <q-card-section>
-          <div align="right" class="row q-col-gutter-md text-right">
-            <div class="col-12 col-md-12">
-              <q-btn
-                icon="add"
-                style="
-                  font-size: 18px;
-                  width: 300px;
-                  height: 40px;
-                  margin-top: 5px;
-                  margin-right: 10px;
-                "
-                color="primary"
-                label="Calibrar Nuevo Gage"
-                @click="abrirFormulario()"
-              />
+    <q-card
+      class="my-card"
+      style="max-width: 1250px; width: 100%; margin: 0 auto; margin-top: 20px"
+    >
+      <q-card-section>
+        <div class="text-h5">Calibraciones</div>
+      </q-card-section>
+      <q-card-section>
+        <q-table
+          :rows="rows"
+          :columns="columns"
+          :filter="search"
+          row-key="CalibracionId"
+          flat
+          bordered
+          dense
+        >
+          <template v-slot:top-right>
+            <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </template>
+
+          <template v-slot:body="props">
+            <q-tr :props="props" :class="obtenerClaseFila(props.row)">
+              <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                <template v-if="col.name === 'FechaCalibracion' || col.name === 'FechaProxima'">
+                  {{ formatearFecha(props.row[col.field]) }}
+                </template>
+
+                <template v-else-if="col.name === 'Calibracion'">
+                  <q-badge
+                    v-if="props.row.EsNuevo === 1"
+                    color="blue-7"
+                    class="text-weight-bold"
+                    label="NUEVO / PENDIENTE"
+                  />
+
+                  <q-badge
+                    v-else
+                    :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
+                    class="text-weight-bold"
+                  >
+                    {{ props.row.EstatusPasa === 1 ? 'PASA' : 'RECHAZADO' }}
+                  </q-badge>
+                </template>
+                <template v-else-if="col.name === 'Procedimiento'">
+                  <q-btn
+                    outline
+                    round
+                    dense
+                    color="primary"
+                    icon="topic"
+                    @click="abrirProcedimiento(props.row)"
+                  >
+                    <q-tooltip>Manual de Procedimiento</q-tooltip>
+                  </q-btn>
+                </template>
+
+                <template v-else-if="col.name === 'actions'">
+                  <q-btn
+                    v-if="props.row.EsNuevo"
+                    color="primary"
+                    icon="play_arrow"
+                    label="Calibrar"
+                    @click="seleccionarParaCalibrar(props.row)"
+                  />
+
+                  <div v-else class="q-gutter-xs">
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="warning"
+                      icon="edit"
+                      @click="prepararEdicion(props.row)"
+                      ><q-tooltip>EDITAR CALIBRACION</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="info"
+                      icon="visibility"
+                      @click="verDetalles(props.row)"
+                      ><q-tooltip>VER DETALLES</q-tooltip>
+                    </q-btn>
+                  </div>
+                </template>
+
+                <template v-else>
+                  {{ col.value }}
+                </template>
+              </q-td>
+            </q-tr>
+          </template>
+        </q-table>
+      </q-card-section>
+    </q-card>
+  </div>
+
+  <!-- dialog de formulario para calibracion de gages -->
+  <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
+    <q-card class="my-card" style="max-width: 1200px; width: 100%; min-height: 500px">
+      <q-card-section class="bg-primary text-white q-pa-sm">
+        <div class="row items-center no-wrap">
+          <div class="col">
+            <div class="text-h5">
+              {{
+                modoEdicion
+                  ? 'Editar Calibración'
+                  : soloLectura
+                    ? 'Detalle de Calibración'
+                    : 'Registrar Calibración'
+              }}
+            </div>
+            <div class="text-subtitle2">
+              {{ formModel.GageSerie }} - {{ formModel.Descripcion }}
             </div>
           </div>
-          <div class="text-h5">Calibraciones</div>
-        </q-card-section>
-        <q-card-section>
-          <!--Tabla con la informacion de las calibraciones de los gages-->
-          <q-table :rows="rows" :columns="columns" :filter="search" row-key="idGage" flat bordered>
-            <template v-slot:top-right>
-              <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
-            </template>
-            <template v-slot:body-cell-FechaCalibracion="props">
-          <q-td :props="props">
-            {{ formatearFecha(props.value) }}
-          </q-td>
-        </template>
-        <template v-slot:body-cell-FechaProxima="props">
-          <q-td :props="props">
-            {{ formatearFecha(props.value) }}
-          </q-td>
-        </template>
-            <template v-slot:body-cell-actions="props">
-              <q-td :props="props" class="q-gutter-sm">
-                <q-btn
-                  outline
-                  round
-                  color="warning"
-                  icon="edit"
-                  @click="prepararEdicion(props.row)"
-                >
-                  <q-tooltip>Editar</q-tooltip>
-                </q-btn>
-                <q-btn outline round color="info" icon="visibility" @click="verDetalles(props.row)">
-                  <q-tooltip>Ver Detalles</q-tooltip>
-                </q-btn>
-                <q-btn outline round color="primary" icon="topic" @click="abrirProcedimiento(props.row)">
-                  <q-tooltip>Ver Manual de Procedimiento</q-tooltip>
-                </q-btn>
-              </q-td>
-            </template>
-          </q-table>
-        </q-card-section>
-      </q-card>
-    </div>
-
-    <!-- dialog de formulario para calibracion de gages -->
-  <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-    <q-card class="my-card" style="max-width: 1000px; width: 100%; height: 400px">
-      <q-card-section class="bg-primary text-white">
-        <div class="text-h4">{{ modoEdicion ? 'Editar calibracion' : 'Nueva Calibracion' }}</div>
+        </div>
       </q-card-section>
 
-      <q-card-section>
-        <q-form @submit="onSubmit" @reset="onReset">
-          <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-4">
-              <q-input filled v-model="formModel.GageSerie" label="Gage ID" readonly />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input filled v-model="formModel.Descripcion" label="Equipo" readonly />
-            </div>
-            <div class="col-12 col-md-2">
-              <q-btn
-                color="secondary"
-                flat
-                size="12px"
-                icon="search"
-                label="Seleccionar Gage"
-                @click="abrirGages"
-              />
-            </div>
+      <q-tabs
+        v-model="tabActual"
+        dense
+        class="bg-grey-2 text-grey-7"
+        active-color="primary"
+        indicator-color="primary"
+        align="justify"
+      >
+        <q-tab name="registro" icon="edit" label="Captura / Detalle" />
+        <q-tab name="historial" icon="history" label="Historial de este Gage" />
+      </q-tabs>
 
-            <div class="col-12 col-md-6">
-              <q-input filled :readonly="soloLectura" v-model="formModel.FolioCertificado" label="No. de Certificado / Folio" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input
-                filled
-                :readonly="soloLectura"
-                v-model="formModel.CalibracionBy"
-                label="Calibrado por (Externo/Técnico)"
-              />
-            </div>
-            <div class="col-12 col-md-4">
-              <q-input
-                filled
-                :readonly="soloLectura"
-                v-model="formModel.FechaCalibracion"
-                mask="date"
-                label="Fecha de Calibración"
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy><q-date v-model="formModel.FechaCalibracion" /></q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-input
-                filled
-                :readonly="soloLectura"
-                v-model="formModel.Resultado"
-                label="Valor Medido"
-              />
-            </div>
-            <div class="col-12 col-md-4">
-              <div class="q-gutter-sm">
+      <q-separator />
+
+      <q-tab-panels v-model="tabActual" animated>
+        <q-tab-panel name="registro" class="q-pa-md">
+          <q-form @submit="onSubmit" @reset="onReset">
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-6">
+                <q-input filled v-model="formModel.GageSerie" label="Gage ID" readonly />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input filled v-model="formModel.Descripcion" label="Equipo" readonly />
+              </div>
+              
+              <div class="col-12 col-md-4">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.FolioCertificado"
+                  label="No. de Certificado / Folio"
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.E_Pusado"
+                  label="Patrón/Equipo Usado"
+                />
+              </div>
+              <div class="col-12 col-md-2">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.Temperatura"
+                  label="Temp (°C)"
+                  type="number"
+                  step="0.1"
+                />
+              </div>
+              <div class="col-12 col-md-2">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.Humedad"
+                  label="Humedad (%)"
+                  type="number"
+                  step="0.1"
+                />
+              </div>
+
+              <div class="col-12 col-md-3">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.PuntoNominal"
+                  type="number"
+                  step="0.0001"
+                  label="Punto Nominal"
+                />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.ValorLeido"
+                  label="Valor Leído"
+                  type="number"
+                  step="0.0001"
+                />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-input
+                  filled
+                  readonly
+                  v-model="formModel.Diferencia"
+                  label="Diferencia"
+                  bg-color="grey-2"
+                />
+              </div>
+              <div class="col-12 col-md-3">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.CalibracionBy"
+                  label="Calibrado por"
+                />
+              </div>
+
+              <div class="col-12 col-md-4">
+                <q-input
+                  filled
+                  :readonly="soloLectura"
+                  v-model="formModel.FechaCalibracion"
+                  mask="date"
+                  label="Fecha Calibración"
+                >
+                  <template v-slot:append>
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy><q-date v-model="formModel.FechaCalibracion" /></q-popup-proxy>
+                    </q-icon>
+                  </template>
+                </q-input>
+              </div>
+
+              <div class="col-12 col-md-8 flex items-center justify-around">
+                <span class="text-weight-bold">Resultado Final:</span>
                 <q-radio
                   v-model="formModel.estatusPasa"
                   :val="1"
                   label="APROBADO"
                   color="positive"
-                  :readonly="soloLectura"
-                  keep-color
+                  :disable="soloLectura"
                 />
                 <q-radio
                   v-model="formModel.estatusPasa"
                   :val="0"
                   label="RECHAZADO"
                   color="negative"
-                  :readonly="soloLectura"
-                  keep-color
+                  :disable="soloLectura"
                 />
               </div>
             </div>
+
+            <div class="row justify-end q-mt-lg q-gutter-sm">
+              <q-btn label="Cerrar" flat color="negative" v-close-popup />
+              <q-btn
+                v-if="!soloLectura"
+                :label="modoEdicion ? 'Actualizar' : 'Registrar'"
+                type="submit"
+                color="primary"
+              />
+            </div>
+          </q-form>
+        </q-tab-panel>
+
+        <q-tab-panel name="historial" class="q-pa-none">
+          <q-table
+            flat
+            :rows="rowsHistorial"
+            :columns="columnsHistorial"
+            row-key="CalibracionId"
+            placeholder="No hay registros previos"
+          >
+            <template v-slot:body-cell-EstatusPasa="props">
+              <q-td :props="props">
+                <q-badge :color="props.value === 1 ? 'positive' : 'negative'">
+                  {{ props.value === 1 ? 'PASA' : 'FALLA' }}
+                </q-badge>
+              </q-td>
+            </template>
+          </q-table>
+        </q-tab-panel>
+      </q-tab-panels>
+    </q-card>
+  </q-dialog>
+  <!-- dialog de procedimientos de calibracion -->
+  <q-dialog
+    v-model="procedimientos"
+    maximized
+    transition-show="slide-up"
+    transition-hide="slide-down"
+  >
+    <q-card>
+      <q-bar class="bg-primary text-white q-pa-lg">
+        <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce || 'NombreProce' }}</div>
+        <q-space />
+        <q-btn dense flat icon="close" v-close-popup>
+          <q-tooltip>Cerrar</q-tooltip>
+        </q-btn>
+      </q-bar>
+
+      <q-card-section class="q-pa-md">
+        <div class="row q-col-gutter-lg">
+          <div class="col-12 col-md-6">
+            <div class="text-h5 q-mb-sm">Instrucciones de Calibración</div>
+            <p class="text-body1">{{ procedimientoSeleccionado?.DescripcionProce }}</p>
+
+            <q-banner rounded class="bg-amber-1 q-mb-md">
+              <template v-slot:avatar>
+                <q-icon name="warning" color="amber-9" />
+              </template>
+              Asegúrese de desconectar la fuente de poder antes de iniciar.
+            </q-banner>
           </div>
-          <div class="col-12 q-mt-lg">
-            <q-btn
-              v-if="!soloLectura"
-              :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
-              type="submit"
-              color="primary"
+
+          <div class="col-12 col-md-6">
+            <div class="text-h5 q-mb-sm">Apoyo Visual</div>
+            <q-img
+              :src="'/procedimientos/' + procedimientoSeleccionado?.ImgProce"
+              class="rounded-borders shadow-2"
+              style="max-height: 300px"
             />
             <q-btn
-              :label="soloLectura ? 'Cerrar' : 'CANCELAR'"
-              flat
-              color="negative"
-              v-close-popup
-              class="q-ml-sm"
+              color="red-9"
+              icon="picture_as_pdf"
+              label="Abrir Manual PDF Completo"
+              class="full-width q-mt-md"
+              @click="viewPDF(currentManual.pdfUrl)"
             />
           </div>
-        </q-form>
+        </div>
       </q-card-section>
     </q-card>
   </q-dialog>
 
-  <!-- dialog de procedimientos de calibracion -->
-  <q-dialog v-model="procedimientos" maximized transition-show="slide-up" transition-hide="slide-down">
-      <q-card>
-        <q-bar class="bg-primary text-white q-pa-lg">
-          <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce || 'NombreProce' }}</div>
-          <q-space />
-          <q-btn dense flat icon="close" v-close-popup>
-            <q-tooltip>Cerrar</q-tooltip>
-          </q-btn>
-        </q-bar>
-
-        <q-card-section class="q-pa-md">
-          <div class="row q-col-gutter-lg">
-            <div class="col-12 col-md-6">
-              <div class="text-h5 q-mb-sm">Instrucciones de Calibración</div>
-              <p class="text-body1">{{ procedimientoSeleccionado?.DescripcionProce }}</p>
-              
-              <q-banner rounded class="bg-amber-1 q-mb-md">
-                <template v-slot:avatar>
-                  <q-icon name="warning" color="amber-9" />
-                </template>
-                Asegúrese de desconectar la fuente de poder antes de iniciar.
-              </q-banner>
-            </div>
-
-            <div class="col-12 col-md-6">
-              <div class="text-h5 q-mb-sm">Apoyo Visual</div>
-              <q-img 
-                :src="'/procedimientos/'+ procedimientoSeleccionado?.ImgProce" 
-                class="rounded-borders shadow-2"
-                style="max-height: 300px"
-              />
-              <q-btn 
-                color="red-9" 
-                icon="picture_as_pdf" 
-                label="Abrir Manual PDF Completo" 
-                class="full-width q-mt-md"
-                @click="viewPDF(currentManual.pdfUrl)"
-              />
-            </div>
-          </div>
-        </q-card-section>
-      </q-card>
-    </q-dialog>
-
-   <!-- Dialog para seleccionar un Gage -->
-  <q-dialog
-    v-model="Gages"
-    persistent
-    transition-show="scale"
-    transition-hide="scale"
-    :backdrop-filter="backdropFilter"
-  >
-    <q-layout
-      view="hHh lpR fFf"
-      container
-      class="bg-white text-dark"
-      style="height: 600px; width: 700px; max-width: 90vw"
-    >
-      <q-header elevated class="bg-primary text-white">
-        <q-toolbar>
-          <q-toolbar-title>Gages Sin Calibrar</q-toolbar-title>
-
-          <q-input
-            v-model="search"
-            dark
-            dense
-            standout
-            debounce="300"
-            placeholder="Buscar por Serie o Descripción..."
-            class="q-ml-md"
-          >
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-          <q-btn style="margin-left: 10px" flat v-close-popup round dense icon="close" />
-        </q-toolbar>
-      </q-header>
-
-      <q-page-container>
-        <q-page padding>
-          <div class="text-subtitle2 q-mb-md text-grey-8">
-            Equipos nuevos detectados en el sistema:
-          </div>
-
-          <q-list bordered separator>
-            <q-item
-              v-for="gage in filteredGages"
-              :key="gage.GageId"
-              :loading="loading"
-              clickable
-              v-ripple
-              @click="seleccionarGage(gage)"
-            >
-              <q-item-section>
-                <q-item-label class="text-weight-bold">{{ gage.GageSerie }}</q-item-label>
-                <q-item-label caption>{{ gage.Descripcion }}</q-item-label>
-              </q-item-section>
-
-              <q-item-section side>
-                <q-badge outline color="primary" :label="gage.Tipo" />
-                <div class="text-caption text-grey-6">{{ formatearFecha(gage.FechaAlta) }}</div>
-              </q-item-section>
-            </q-item>
-          </q-list>
-
-          <div
-            v-if="filteredGages.length === 0"
-            class="column items-center q-pa-xl text-grey-4 text-center"
-          >
-            <q-icon name="manage_search" size="5rem" />
-            <div class="text-h6">No coinciden resultados</div>
-            <div class="text-caption">Intenta con otro ID o Serie</div>
-          </div>
-        </q-page>
-      </q-page-container>
-    </q-layout>
-  </q-dialog>
 </template>
 
 <script setup>
@@ -304,7 +358,7 @@ function index() {
 }
 
 //para el dialog de procedimientos
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 
@@ -314,17 +368,17 @@ const procedimientos = ref(false)
 
 const procedimientoSeleccionado = ref(null)
 
-const Gages = ref(false)
+
 const loading = ref(false)
 const Form = ref(false) // Controla el diálogo de Agregar/Editar
 const modoEdicion = ref(false) // Switch para saber si estamos editando o creando
 const soloLectura = ref(false) // Controla si los inputs están bloqueados (para ver detalles)
-
+const tabActual = ref('registro') // Controla la pestaña activa
+const rowsHistorial = ref([]) // Se llenará al abrir el diálogo
 const search = ref('')
-const listaGagesNuevos = ref([])
 const rows = ref([])
 const backdropFilter = 'blur(5px)'
-const selectedGage = ref(null);
+const selectedGage = ref(null)
 
 const formModel = ref({
   GageSerie: '',
@@ -334,64 +388,73 @@ const formModel = ref({
   Resultado: '',
   estatusPasa: 1,
   CalibracionBy: '',
-  fechaProxima: ''
+  fechaProxima: '',
+  E_Pusado: '',
+  Temperatura: '',
+  Humedad: '',
+  PuntoNominal: '',
+  ToleranciaMin: '',
+  ToleranciaMax: '',
+  ValorLeido: '',
+  Diferencia: '',
 })
 
-watch(() => formModel.value.FechaCalibracion, (nuevaFecha) => {
-  if (nuevaFecha && selectedGage.value) {
-    const fecha = new Date(nuevaFecha);
-    // Sumamos los meses según la frecuencia del gage seleccionado
-    fecha.setMonth(fecha.getMonth() + selectedGage.value.FreqMeses); 
-    formModel.value.fechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/');
+watch(
+  () => formModel.value.FechaCalibracion,
+  (nuevaFecha) => {
+    // Verificamos que tengamos fecha y que el gage seleccionado tenga su frecuencia
+    if (nuevaFecha && selectedGage.value && selectedGage.value.FreqMeses) {
+      
+      // Creamos la fecha (Quasar usa YYYY/MM/DD, la convertimos a formato estándar)
+      const fecha = new Date(nuevaFecha.replace(/\//g, '-'))
+
+      // Si la fecha es válida, sumamos los meses
+      if (!isNaN(fecha.getTime())) {
+        fecha.setMonth(fecha.getMonth() + selectedGage.value.FreqMeses)
+        
+        // Guardamos el resultado de vuelta en el modelo
+        formModel.value.fechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/')
+      }
+    }
   }
-});
+)
 
-const cargarGagesNuevos = async () => {
-  loading.value = true
-  try {
-    const respuesta = await api.get('/api/calibracion/nuevos')
-    listaGagesNuevos.value = respuesta.data
-  } catch (error) {
-    console.error('Error al traer gages:', error)
-  } finally {
-    loading.value = false
-  }
-}
+watch([() => formModel.value.PuntoNominal, () => formModel.value.ValorLeido], () => {
+  // Aseguramos que trabajamos con números, si es vacío usamos 0
+  const nominal = parseFloat(formModel.value.PuntoNominal) || 0
+  const leido = parseFloat(formModel.value.ValorLeido) || 0
 
-const abrirGages = () => {
-  Gages.value = true
-}
+  // Calculamos la diferencia
+  const diff = leido - nominal
+  formModel.value.Diferencia = diff.toFixed(4)
 
-const filteredGages = computed(() => {
-  if (!search.value) return listaGagesNuevos.value
-
-  const termo = search.value.toLowerCase()
-  return listaGagesNuevos.value.filter(
-    (g) => g.GageSerie.toLowerCase().includes(termo) || g.Descripcion.toLowerCase().includes(termo),
-  )
+  // Opcional: Lógica automática para marcar Aprobado/Rechazado
+  // Si la diferencia absoluta es mayor a la tolerancia, podrías sugerir el cambio de radio
 })
 
-const seleccionarGage = (gage) => {
-  selectedGage.value = gage; // Guardamos el objeto completo para tener la frecuencia
-  formModel.value.GagesId = gage.GageId; // ID numérico para la DB
-  formModel.value.GageSerie = gage.GageSerie; // Serie para mostrar al usuario
-  formModel.value.Descripcion = gage.Descripcion;
-  Gages.value = false;
-}
-
-
-
-const abrirFormulario = () => {
-  soloLectura.value = false // IMPORTANTE: Desbloquear para nuevos registros
-  modoEdicion.value = false
+const seleccionarParaCalibrar = async (row) => {
   onReset()
+  formModel.value.GagesId = row.GageId
+  formModel.value.GageSerie = row.GageSerie
+  formModel.value.Descripcion = row.Descripcion
+  selectedGage.value = row
+
+  // CARGAR HISTORIAL AL ABRIR
+  tabActual.value = 'registro' // Resetear a la primera pestaña
+  try {
+    const res = await api.get(`/api/historial/${row.GageId}`)
+    rowsHistorial.value = res.data
+  } catch (error) {
+    console.error('No se pudo cargar el historial', error)
+  }
+
   Form.value = true
 }
-
 // Prepara el formulario con los datos de la fila seleccionada
 const prepararEdicion = (row) => {
   soloLectura.value = false // IMPORTANTE: Desbloquear para editar
   modoEdicion.value = true
+  selectedGage.value = row
   formModel.value = { ...row }
   Form.value = true
 }
@@ -399,6 +462,7 @@ const prepararEdicion = (row) => {
 const verDetalles = (row) => {
   soloLectura.value = true // Activamos el bloqueo de inputs
   modoEdicion.value = false
+  selectedGage.value = row
   formModel.value = { ...row } // Pasamos los datos al formModel
   Form.value = true // Abrimos el diálogo
 }
@@ -412,14 +476,22 @@ const onReset = () => {
     Resultado: '',
     estatusPasa: 1,
     CalibracionBy: '',
-    fechaProxima: ''
+    fechaProxima: '',
+    E_Pusado: '',
+    Temperatura: '',
+    Humedad: '',
+    PuntoNominal: '',
+    ToleranciaMin: '',
+    ToleranciaMax: '',
+    ValorLeido: '',
+    Diferencia: '',
   }
 }
 
 const onSubmit = async () => {
   try {
-    $q.loading.show({ message: 'Registrando calibración...' });
-    
+    $q.loading.show({ message: 'Registrando calibración...' })
+
     // Mapeo de campos para que coincidan con lo que espera tu server.js
     const payload = {
       GagesId: formModel.value.GagesId,
@@ -428,33 +500,73 @@ const onSubmit = async () => {
       EstatusPasa: formModel.value.estatusPasa,
       CalibracionBy: formModel.value.CalibracionBy, // Antes era calibradoPor
       FechaProxima: formModel.value.fechaProxima,
-      CapturadoPor: 1, 
-      FolioCertificado: formModel.value.FolioCertificado // Antes era folio
-    };
+      CapturadoPor: 1,
+      FolioCertificado: formModel.value.FolioCertificado, // Antes era folio
+      E_Pusado: formModel.value.E_Pusado,
+      Temperatura: formModel.value.Temperatura,
+      Humedad: formModel.value.Humedad,
+      PuntoNominal: formModel.value.PuntoNominal,
+      ToleranciaMin: formModel.value.ToleranciaMin,
+      ToleranciaMax: formModel.value.ToleranciaMax,
+      ValorLeido: formModel.value.ValorLeido,
+      Diferencia: formModel.value.Diferencia,
+    }
 
-    const res = await api.post('/api/registrar-calibracion', payload);
+    const res = await api.post('/api/registrar-calibracion', payload)
 
     if (res.data.success) {
-      $q.notify({ type: 'positive', message: 'Registro exitoso y Gage actualizado' });
-      Form.value = false;
-      obtenerCalibraciones(); // Recargar la tabla principal
-      cargarGagesNuevos();    // Limpiar la lista de pendientes
+      $q.notify({ type: 'positive', message: 'Registro exitoso y Gage actualizado' })
+      Form.value = false
+      obtenerCalibraciones() // Recargar la tabla principal
     }
   } catch (error) {
-    console.error(error);
-    $q.notify({ type: 'negative', message: 'Error al conectar con el servidor' });
+    console.error(error)
+    $q.notify({ type: 'negative', message: 'Error al conectar con el servidor' })
   } finally {
-    $q.loading.hide();
+    $q.loading.hide()
   }
 }
 const columns = [
   { name: 'CalibracionId', label: '#', field: 'CalibracionId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
   { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
   { name: 'Descripcion', label: 'Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
-  { name: 'CalibracionBy', label: 'Calibrado por:', field: 'CalibracionBy', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
-  { name: 'FechaCalibracion', label: 'Calibrado en', field: 'FechaCalibracion', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
-  { name: 'FechaProxima', label: 'Prox. Calibracion', field: 'FechaProxima', align: 'center', sortable: true}, // 'Act_Inact' es el campo de tu DB
+  {
+    name: 'CalibracionBy',
+    label: 'Calibrado por:',
+    field: 'CalibracionBy',
+    align: 'center',
+    sortable: true,
+  }, // 'Act_Inact' es el campo de tu DB
+  {
+    name: 'FechaCalibracion',
+    label: 'Calibrado en',
+    field: 'FechaCalibracion',
+    align: 'center',
+    sortable: true,
+  }, // 'Act_Inact' es el campo de tu DB
+  {
+    name: 'FechaProxima',
+    label: 'Prox. Calibracion',
+    field: 'FechaProxima',
+    align: 'center',
+    sortable: true,
+  }, // 'Act_Inact' es el campo de tu DB
+  { name: 'Calibracion', label: 'Estado', align: 'center' },
+  { name: 'Procedimiento', label: 'Procedimiento', align: 'center' },
   { name: 'actions', label: 'Acciones', align: 'center' },
+]
+
+const columnsHistorial = [
+  {
+    name: 'FechaCalibracion',
+    label: 'Fecha',
+    field: 'FechaCalibracion',
+    align: 'left',
+    format: (val) => formatearFecha(val),
+  },
+  { name: 'FolioCertificado', label: 'Folio', field: 'FolioCertificado', align: 'left' },
+  { name: 'EstatusPasa', label: 'Resultado', field: 'EstatusPasa', align: 'center' },
+  { name: 'CalibracionBy', label: 'Técnico', field: 'CalibracionBy', align: 'left' },
 ]
 
 const obtenerCalibraciones = async () => {
@@ -464,17 +576,33 @@ const obtenerCalibraciones = async () => {
     rows.value = respuesta.data
   } catch (error) {
     console.error('Error al cargar las calibraciones', error)
-  } finally{
+  } finally {
     loading.value = false
   }
 }
 
+const cargarHistorialGage = async (gageId) => {
+  try {
+    const res = await api.get(`/api/historial/${gageId}`)
+    rowsHistorial.value = res.data
+  } catch (error) {
+    console.error('Error cargando historial', error)
+  }
+}
+
 const formatearFecha = (fechaString) => {
+  if (
+    !fechaString ||
+    fechaString === '0000-00-00' ||
+    fechaString.startsWith('1969') ||
+    fechaString.startsWith('1970')
+  ) {
+    return '-- : --'
+  }
 
   const fecha = new Date(fechaString)
-  if (isNaN(fecha)) return fechaString
+  if (isNaN(fecha)) return '-- : --'
 
-  // Usamos 'en-GB' o 'es-MX' con hour12: false para forzar las 24h
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: '2-digit',
@@ -488,9 +616,54 @@ const abrirProcedimiento = (row) => {
   procedimientos.value = true
 }
 
+const obtenerClaseFila = (row) => {
+  // 1. Si es nuevo, color azulito (clase 'fila-nueva')
+  if (row.EsNuevo === 1) return 'fila-nueva'
+
+  // 2. Si falló la última calibración
+  if (row.EstatusPasa === 0) return 'fila-rechazada'
+
+  // 3. Lógica de fechas para los que sí están activos
+  if (!row.FechaProxima) return ''
+
+  const hoy = new Date()
+  const fechaProx = new Date(row.FechaProxima)
+  const diffDias = Math.ceil((fechaProx - hoy) / (1000 * 60 * 60 * 24))
+
+  if (diffDias < 0) return 'fila-vencida'
+  if (diffDias <= 7) return 'fila-proxima'
+
+  return ''
+}
 
 onMounted(() => {
-  cargarGagesNuevos()
   obtenerCalibraciones()
+  cargarHistorialGage()
 })
 </script>
+
+<style scoped>
+/* Rojo suave para equipos que fallaron */
+.fila-rechazada {
+  background-color: #ffcdd2 !important;
+}
+
+/* Rojo muy claro para equipos vencidos */
+.fila-vencida {
+  background-color: #ffebee !important;
+}
+
+/* Naranja preventivo para los que están por vencer (15 días) */
+.fila-proxima {
+  background-color: #fff3e0 !important;
+}
+
+/* Efecto hover para que no se pierda el foco al pasar el mouse */
+.q-tr:hover {
+  filter: brightness(0.95);
+}
+.fila-nueva {
+  background-color: #e8eaf6 !important; /* Azul lavanda para equipo nuevo */
+  border-left: 5px solid #3f51b5; /* Una línea para que resalte más */
+}
+</style>

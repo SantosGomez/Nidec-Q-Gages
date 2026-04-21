@@ -2,9 +2,9 @@ const express = require("express");
 const mysql = require("mysql2");
 const cors = require("cors");
 const app = express();
-const bcrypt = require('bcrypt');
+const bcrypt = require("bcrypt");
 
-const jwt = require('jsonwebtoken');
+const jwt = require("jsonwebtoken");
 const SECRET_KEY = "Nidec_QGage_2024_Secret"; // Usa una frase secreta segura
 
 app.use(cors());
@@ -129,7 +129,9 @@ app.post("/api/login", async (req, res) => {
 
     // 2. Si no existe el usuario, mandamos error
     if (rows.length === 0) {
-      return res.status(401).json({ message: "Usuario o contraseña incorrectos" });
+      return res
+        .status(401)
+        .json({ message: "Usuario o contraseña incorrectos" });
     }
 
     const user = rows[0];
@@ -145,19 +147,20 @@ app.post("/api/login", async (req, res) => {
       const token = jwt.sign(
         { userId: user.UserID, rol: user.Rol },
         SECRET_KEY,
-        { expiresIn: '24h' }
+        { expiresIn: "24h" },
       );
 
       res.json({
         success: true,
         token: token,
-        user: user // Aquí van todos tus permisos (edit_gage, etc.)
+        user: user, // Aquí van todos tus permisos (edit_gage, etc.)
       });
     } else {
       // 5. Si no coinciden
-      res.status(401).json({ success: false, message: "Usuario o contraseña incorrectos" });
+      res
+        .status(401)
+        .json({ success: false, message: "Usuario o contraseña incorrectos" });
     }
-
   } catch (error) {
     console.error("Error en login:", error);
     res.status(500).json({ error: "Error interno del servidor" });
@@ -182,7 +185,7 @@ app.get("/api/procedimientos", async (req, res) => {
 
 app.get("/api/procedimiento/manual", async (req, res) => {
   try {
-    const query =`
+    const query = `
     select ProceId, NombreProce from procedimiento
     `;
     const [row] = await db.query(query);
@@ -270,8 +273,7 @@ app.post("/api/gages", async (req, res) => {
       p.Serie,
       p.Rango,
       p.Resolucion,
-      p.OrdenCompra
-      
+      p.OrdenCompra,
     ]);
     res.json({ message: "Gage agregado correctamente" });
   } catch (error) {
@@ -323,7 +325,7 @@ app.put("/api/gages/:id", async (req, res) => {
       p.Rango,
       p.Resolucion,
       p.OrdenCompra,
-      id
+      id,
     ];
 
     await db.query(query, values);
@@ -435,15 +437,14 @@ app.post("/api/prestamo", async (req, res) => {
     // FORZAMOS QUE NADA LLEGUE COMO UNDEFINED O NULL
     const values = [
       Number(p.NoEmpleado) || 0,
-      p.Nombre || 'Sin Nombre',
+      p.Nombre || "Sin Nombre",
       Number(p.GageId) || 0,
       Number(p.TurnoId) || 0,
-      p.Area || 'N/A'
+      p.Area || "N/A",
     ];
 
     await db.query(query, values);
     res.json({ message: "Préstamo registrado correctamente" });
-
   } catch (error) {
     console.error("Error en INSERT:", error.sqlMessage);
     // Si TurnoId sigue fallando, es porque p.TurnoId llegó vacío
@@ -479,58 +480,90 @@ app.get("/api/calibracion", async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT 
-        c.CalibracionId,
-        c.FolioCertificado, 
-        c.GagesId, 
+        g.GageId, 
         g.GageSerie, 
         g.Descripcion,
+        c.CalibracionId,
+        c.FolioCertificado, 
         c.Resultado, 
         c.EstatusPasa, 
         c.CalibracionBy, 
         c.FechaProxima, 
         c.FechaCalibracion,
         f.NomFreq,
-        p.ProceId,
+        f.ValorMeses AS FreqMeses,
         p.NombreProce,
-        p.DescripcionProce,
-        p.ImgProce
-      FROM calibracion c
-      INNER JOIN gage_master g ON g.GageId = c.GagesId
+        -- Esta bandera le dice a Vue si debe mostrar el botón "Calibrar" o "Editar"
+        CASE WHEN c.CalibracionId IS NULL THEN 1 ELSE 0 END as EsNuevo 
+      FROM gage_master g
+      -- Usamos LEFT JOIN para que el Gage salga aunque c.CalibracionId sea NULL
+      LEFT JOIN (
+          SELECT * FROM calibracion WHERE CalibracionId IN (
+              SELECT MAX(CalibracionId) FROM calibracion GROUP BY GagesId
+          )
+      ) c ON g.GageId = c.GagesId
       INNER JOIN frecuencia_gage f ON f.FreqId = g.FreqCalibracion
-      LEFT JOIN procedimiento p on p.ProceId = g.ProcedimientoId
-      ORDER BY c.FechaCalibracion DESC
-      `);
-    res.json(rows)
+      LEFT JOIN procedimiento p ON p.ProceId = g.ProcedimientoId
+      ORDER BY EsNuevo DESC, c.FechaProxima ASC
+    `);
+    res.json(rows);
   } catch (error) {
     console.error("Error al obtener calibraciones:", error);
     res.status(500).json({ error: "Error al obtener los registros" });
   }
-})
-
+});
 // -------- Gage sin Calibracion ----------
 app.get("/api/calibracion/nuevos", async (req, res) => {
   try {
     const [rows] = await db.query(`
       SELECT 
-        g.GageId,
-        g.GageSerie, 
-        g.Descripcion,
-        g.FechaAlta,
-        g.FreqCalibracion as FreqMeses,
-        ei.Nombre_extint as Tipo -- Para saber si es Interno o Externo
-      FROM gage_master g
-      LEFT JOIN calibracion c ON g.GageId = c.GagesId
-      INNER JOIN externo_interno ei ON g.Ex_Int = ei.Ext_IntId
-      WHERE c.GagesId IS NULL;
+        g.GageId, g.GageSerie, g.Descripcion,
+        c.CalibracionId, c.FolioCertificado, c.Resultado, c.EstatusPasa, 
+        c.CalibracionBy, c.FechaProxima, c.FechaCalibracion,
+        f.NomFreq, p.NombreProce,
+        CASE WHEN c.CalibracionId IS NULL THEN 1 ELSE 0 END as EsNuevo -- Bandera clave
+        FROM gage_master g
+        LEFT JOIN (
+    -- Subconsulta para traer solo la ÚLTIMA calibración de cada gage
+        SELECT * FROM calibracion WHERE CalibracionId IN (
+            SELECT MAX(CalibracionId) FROM calibracion GROUP BY GagesId
+        )
+    ) c ON g.GageId = c.GagesId
+    LEFT JOIN frecuencia_gage f ON f.FreqId = g.FreqCalibracion
+    LEFT JOIN procedimiento p ON p.ProceId = g.ProcedimientoId
+    ORDER BY EsNuevo DESC, c.FechaProxima ASC;
       `);
-    res.json(rows)
+    res.json(rows);
   } catch (error) {
     console.error("Error al obtener Gages:", error);
     res.status(500).json({ error: "Error al obtener los registros" });
   }
-})
+});
 
+// --------- Calibracion con Detalle  -----------
+app.get("/api/calibracion/detalle/:id", async (req, res) => {
+  const { id } = req.params; // Obtenemos el ID desde la URL
+  try {
+    const [rows] = await db.query(
+      `
+      SELECT 
+        cd.MedicionId, cd.PuntoNominal, cd.ToleranciaMin,
+        cd.ToleranciaMax, cd.ValorLeido, cd.Diferencia,
+        c.FolioCertificado, g.GageSerie, p.NombreProce
+      FROM calibraciondtl cd
+      INNER JOIN calibracion c ON c.CalibracionId = cd.CalibracionId
+      INNER JOIN gage_master g ON g.GageId = c.GagesId
+      LEFT JOIN procedimiento p ON p.ProceId = g.ProcedimientoId
+      WHERE c.CalibracionId = ?  -- IMPORTANTE: Solo traemos lo de esa calibración
+    `,
+      [id],
+    );
 
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el detalle" });
+  }
+});
 
 // ----- Insertar Nueva Calibracion -------
 
@@ -543,55 +576,79 @@ app.post("/api/registrar-calibracion", async (req, res) => {
     CalibracionBy,
     FechaProxima,
     CapturadoPor,
-    FolioCertificado
+    FolioCertificado,
+    PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia,
+    E_Pusado, Temperatura, Humedad
   } = req.body;
 
-  // Validación básica
-  if (!GagesId || !FechaCalibracion) {
-    return res.status(400).json({ error: "Faltan datos obligatorios" });
-  }
-
   const connection = await db.getConnection();
-
   try {
     await connection.beginTransaction();
 
     // 1. Insertar registro
-    const sqlInsert = `
+    const sqlInsertCabecera = `
       INSERT INTO calibracion 
-      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
-    
-    await connection.query(sqlInsert, [
-      GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor
+      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor, E_Pusado, Temperatura, Humedad)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+      const [result] = await connection.query(sqlInsertCabecera, [
+      GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, 
+      CalibracionBy, FechaProxima, CapturadoPor, E_Pusado, Temperatura, Humedad
+    ]);
+
+    const newCalibracionId = result.insertId; // Obtenemos el ID generado
+
+    const sqlInsertDetalle = `
+      INSERT INTO calibraciondtl 
+      (CalibracionId, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia)
+      VALUES (?, ?, ?, ?, ?, ?)`;
+
+    await connection.query(sqlInsertDetalle, [
+      newCalibracionId, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia
     ]);
 
     // 2. Actualizar Maestro de Gages
     // Nota: El ID del estado debe coincidir con tu tabla 'estado_gage'
-    const nuevoEstado = (EstatusPasa === 1 || EstatusPasa === true) ? 1 : 2; 
-
-    const sqlUpdate = `
-      UPDATE gage_master 
-      SET Estado = ? 
-      WHERE GageId = ?`;
-    
-    await connection.query(sqlUpdate, [nuevoEstado, GagesId]);
+   const nuevoEstado = (EstatusPasa == 1) ? 1 : 2; // 1=Activo/Pasa, 2=Rechazado (ajustar según tu tabla estado_gage)
+    await connection.query("UPDATE gage_master SET Estado = ? WHERE GageId = ?", [nuevoEstado, GagesId]);
 
     await connection.commit();
-    res.json({ success: true, message: "Historial guardado y Gage actualizado con éxito" });
-
+    res.json({ success: true, message: "Registro completo con detalles" });
   } catch (error) {
     await connection.rollback();
-    console.error("Error en transacción de calibración:", error);
-    res.status(500).json({ error: "No se pudo completar el registro" });
+    console.error(error);
+    res.status(500).json({ error: "Error en el servidor" });
   } finally {
     connection.release();
   }
 });
 
+// --------- Historial de Calibraciones por Gage -----------
+app.get("/api/historial/:gageId", async (req, res) => {
+  const { gageId } = req.params;
+  try {
+    const [rows] = await db.query(`
+      SELECT 
+        c.CalibracionId, 
+        c.FechaCalibracion, 
+        c.FolioCertificado, 
+        c.EstatusPasa, 
+        c.CalibracionBy,
+        cd.PuntoNominal, 
+        cd.ValorLeido, 
+        cd.Diferencia
+      FROM calibracion c
+      INNER JOIN calibraciondtl cd ON c.CalibracionId = cd.CalibracionId
+      WHERE c.GagesId = ?
+      ORDER BY c.FechaCalibracion DESC
+    `, [gageId]);
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener el historial" });
+  }
+});
 
 // --- ENCENDER SERVIDOR ---
 app.listen(3000, () => {
   console.log("Servidor unificado corriendo en el puerto 3000");
 });
-
