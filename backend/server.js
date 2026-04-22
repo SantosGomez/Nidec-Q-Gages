@@ -490,6 +490,9 @@ app.get("/api/calibracion", async (req, res) => {
         c.CalibracionBy, 
         c.FechaProxima, 
         c.FechaCalibracion,
+        c.E_Pusados,
+        c.Temperatura,
+        c.Humedad,
         f.NomFreq,
         f.ValorMeses AS FreqMeses,
         p.NombreProce,
@@ -578,7 +581,7 @@ app.post("/api/registrar-calibracion", async (req, res) => {
     CapturadoPor,
     FolioCertificado,
     PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia,
-    E_Pusado, Temperatura, Humedad
+    E_Pusados, Temperatura, Humedad
   } = req.body;
 
   const connection = await db.getConnection();
@@ -588,12 +591,12 @@ app.post("/api/registrar-calibracion", async (req, res) => {
     // 1. Insertar registro
     const sqlInsertCabecera = `
       INSERT INTO calibracion 
-      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor, E_Pusado, Temperatura, Humedad)
+      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor, E_Pusados, Temperatura, Humedad)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
       const [result] = await connection.query(sqlInsertCabecera, [
       GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, 
-      CalibracionBy, FechaProxima, CapturadoPor, E_Pusado, Temperatura, Humedad
+      CalibracionBy, FechaProxima, CapturadoPor, E_Pusados, Temperatura, Humedad
     ]);
 
     const newCalibracionId = result.insertId; // Obtenemos el ID generado
@@ -645,6 +648,73 @@ app.get("/api/historial/:gageId", async (req, res) => {
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener el historial" });
+  }
+});
+
+// -------- Editar Calibracion ---------
+
+app.put("/api/actualizar-calibracion/:id", async (req, res) => {
+  const { id } = req.params;
+  const p = req.body;
+
+  const{
+    GagesId,
+    FechaCalibracion,
+    Resultado,
+    EstatusPasa,
+    CalibracionBy,
+    FechaProxima,
+    FolioCertificado,
+    PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia,
+    E_Pusados, Temperatura, Humedad
+  } = req.body;
+
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    const sqlUpdateCabecera = `
+      UPDATE calibracion SET 
+        FolioCertificado = ?, 
+        FechaCalibracion = ?, 
+        Resultado = ?, 
+        EstatusPasa = ?, 
+        CalibracionBy = ?, 
+        FechaProxima = ?, 
+        E_Pusados = ?, 
+        Temperatura = ?, 
+        Humedad = ?
+      WHERE CalibracionId = ?`;
+
+    await connection.query(sqlUpdateCabecera, [
+      FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, 
+      CalibracionBy, FechaProxima, E_Pusados, Temperatura, Humedad, id
+    ]);
+
+    const sqlUpdateDetalle = `
+      UPDATE calibraciondtl SET 
+        PuntoNominal = ?, 
+        ToleranciaMin = ?, 
+        ToleranciaMax = ?, 
+        ValorLeido = ?, 
+        Diferencia = ?
+      WHERE CalibracionId = ?`;
+
+    await connection.query(sqlUpdateDetalle, [
+      PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia, id
+    ]);
+
+    const nuevoEstado = (EstatusPasa == 1) ? 1 : 2; 
+    await connection.query("UPDATE gage_master SET Estado = ? WHERE GageId = ?", [nuevoEstado, GagesId]);
+
+    await connection.commit();
+    res.json({ success: true, message: "Calibración actualizada correctamente" });
+  } catch (error) {
+    await connection.rollback();
+    console.error("Error al actualizar:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  } finally {
+    connection.release();
   }
 });
 
