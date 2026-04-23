@@ -24,14 +24,57 @@
         >
           <template v-slot:top-left>
             <div class="row q-gutter-md">
-              <q-select v-model="filtroEstado"
-                :options="['Todos', 'NUEVO', 'CALIBRADO', 'PROXIMO A CALIBRAR', 'VENCIDO', 'RECHAZADO']" label="Filtrar por Estado"
-                dense outlined style="min-width: 170px" />
+              <q-select
+                v-model="filtroEstado"
+                :options="['Todos','NUEVO','CALIBRADO','PROXIMO A CALIBRAR','VENCIDO','RECHAZADO',]" label="Filtrar por Estado" dense outlined style="min-width: 170px"/>
+
+              <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date v-model="fechaInicioProx">
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="OK" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+
+              <q-input dense outlined v-model="fechaFinProx" label="Vence Hasta" mask="date">
+                <template v-slot:append>
+                  <q-icon name="event" class="cursor-pointer">
+                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                      <q-date v-model="fechaFinProx">
+                        <div class="row items-center justify-end">
+                          <q-btn v-close-popup label="OK" color="primary" flat />
+                        </div>
+                      </q-date>
+                    </q-popup-proxy>
+                  </q-icon>
+                </template>
+              </q-input>
+
+              <q-btn
+                v-if="fechaInicioProx || fechaFinProx"
+                flat
+                round
+                dense
+                icon="event_busy"
+                color="negative"
+                @click="
+                  fechaInicioProx = '';
+                  fechaFinProx = ''
+                "
+              >
+                <q-tooltip>Limpiar Rango de Vencimiento</q-tooltip>
+              </q-btn>
             </div>
           </template>
 
           <template v-slot:top-right>
-            <q-input v-model="search" dense debounce="300" placeholder="Buscar Gage">
+            <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar Gage">
               <template v-slot:append>
                 <q-icon name="search" />
               </template>
@@ -46,17 +89,32 @@
                 </template>
 
                 <template v-else-if="col.name === 'Calibracion'">
-                  <q-badge v-if="props.row.EsNuevo === 1" color="blue-7" class="text-weight-bold"
-                    label="NUEVO / PENDIENTE" />
+                  <q-badge
+                    v-if="props.row.EsNuevo === 1"
+                    color="blue-7"
+                    class="text-weight-bold"
+                    label="NUEVO / PENDIENTE"
+                  />
 
-                  <q-badge v-else-if="calcularDias(props.row.FechaProxima) <= 0" color="orange-10"
-                    class="text-weight-bold" label="VENCIDO / RECALIBRAR" />
+                  <q-badge
+                    v-else-if="calcularDias(props.row.FechaProxima) <= 0"
+                    color="orange-10"
+                    class="text-weight-bold"
+                    label="VENCIDO / RECALIBRAR"
+                  />
 
-                  <q-badge v-else-if="calcularDias(props.row.FechaProxima) <= 7" color="warning"
-                    class="text-weight-bold" label="PROXIMO A CALIBRAR" />
+                  <q-badge
+                    v-else-if="calcularDias(props.row.FechaProxima) <= 7"
+                    color="warning"
+                    class="text-weight-bold"
+                    label="PROXIMO A CALIBRAR"
+                  />
 
-                  <q-badge v-else :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
-                    class="text-weight-bold">
+                  <q-badge
+                    v-else
+                    :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
+                    class="text-weight-bold"
+                  >
                     {{ props.row.EstatusPasa === 1 ? 'CALIBRADO' : 'RECHAZADO' }}
                   </q-badge>
                 </template>
@@ -74,16 +132,45 @@
                 </template>
 
                 <template v-else-if="col.name === 'actions'">
-                  <q-btn v-if="props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0" color="positive"
-                    icon="build" label="Calibrar" @click="seleccionarParaCalibrar(props.row)" />
+                  <q-btn
+                    v-if="props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0"
+                    color="positive"
+                    icon="build"
+                    label="Calibrar"
+                    @click="seleccionarParaCalibrar(props.row)"
+                  />
 
                   <div v-else class="q-gutter-xs">
-                    <q-btn outline round dense color="warning" icon="edit" @click="prepararEdicion(props.row)">
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="warning"
+                      icon="edit"
+                      @click="prepararEdicion(props.row)"
+                    >
                       <q-tooltip>EDITAR CALIBRACION</q-tooltip>
                     </q-btn>
 
-                    <q-btn outline round dense color="info" icon="visibility" @click="verDetalles(props.row)">
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="info"
+                      icon="visibility"
+                      @click="verDetalles(props.row)"
+                    >
                       <q-tooltip>VER DETALLES</q-tooltip>
+                    </q-btn>
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="primary"
+                      icon="build"
+                      @click="seleccionarParaCalibrar(props.row)"
+                    >
+                      <q-tooltip>CALIBRAR</q-tooltip>
                     </q-btn>
                   </div>
                 </template>
@@ -105,14 +192,22 @@
       <q-card-section class="bg-primary text-white q-pa-sm">
         <div class="row items-center no-wrap">
           <div class="col">
-            <div class="text-h5">{{ modoEdicion ? 'Editar Calibración' : soloLectura ? 'Detalle de Calibración' : 'Registrar Calibración' }}</div>
+            <div class="text-h5">
+              {{
+                modoEdicion
+                  ? 'Editar Calibración'
+                  : soloLectura
+                    ? 'Detalle de Calibración'
+                    : 'Registrar Calibración'
+              }}
+            </div>
             <div class="text-subtitle2">
               {{ formModel.GageSerie }} - {{ formModel.Descripcion }}
             </div>
           </div>
           <q-btn round dense flat icon="close" v-close-popup>
-          <q-tooltip anchor="top middle" self="bottom middle">Cerrar</q-tooltip>
-        </q-btn>
+            <q-tooltip anchor="top middle" self="bottom middle">Cerrar</q-tooltip>
+          </q-btn>
         </div>
       </q-card-section>
 
@@ -140,7 +235,7 @@
               <div class="col-12 col-md-6">
                 <q-input filled v-model="formModel.Descripcion" label="Equipo" readonly />
               </div>
-              
+
               <div class="col-12 col-md-4">
                 <q-input
                   filled
@@ -283,7 +378,6 @@
     </q-card>
   </q-dialog>
 
-
   <!-- dialog de procedimientos de calibracion -->
   <q-dialog
     v-model="procedimientos"
@@ -333,7 +427,6 @@
       </q-card-section>
     </q-card>
   </q-dialog>
-
 </template>
 
 <script setup>
@@ -355,7 +448,8 @@ const procedimientos = ref(false)
 
 const procedimientoSeleccionado = ref(null)
 
-
+const fechaInicioProx = ref('') // Desde (Próxima)
+const fechaFinProx = ref('') // Hasta (Próxima)
 const loading = ref(false)
 const Form = ref(false) // Controla el diálogo de Agregar/Editar
 const modoEdicion = ref(false) // Switch para saber si estamos editando o creando
@@ -379,19 +473,19 @@ const rowsFiltradas = computed(() => {
       // Prioridad 1: ¿Es nuevo?
       if (row.EsNuevo === 1) {
         estadoFila = 'NUEVO'
-      } 
+      }
       // Prioridad 2: ¿Está rechazado por calidad?
       else if (row.EstatusPasa === 0) {
         estadoFila = 'RECHAZADO'
-      } 
+      }
       // Prioridad 3: ¿Ya se pasó la fecha? (Rojo)
       else if (dias !== null && dias <= 0) {
         estadoFila = 'VENCIDO'
-      } 
+      }
       // Prioridad 4: ¿Faltan 7 días o menos? (Amarillo)
       else if (dias !== null && dias <= 7) {
         estadoFila = 'PROXIMO A CALIBRAR'
-      } 
+      }
       // Prioridad 5: Está al día (Blanco)
       else {
         estadoFila = 'CALIBRADO'
@@ -401,9 +495,28 @@ const rowsFiltradas = computed(() => {
     })
   }
 
+  if (fechaInicioProx.value && fechaFinProx.value) {
+    const inicio = new Date(fechaInicioProx.value.replace(/\//g, '-'))
+    const fin = new Date(fechaFinProx.value.replace(/\//g, '-'))
+    fin.setHours(23, 59, 59, 999)
+
+    lista = lista.filter((row) => {
+      // Validamos que exista la fecha y no sea una fecha nula de sistema (1969/1970)
+      if (
+        !row.FechaProxima ||
+        row.FechaProxima.startsWith('1969') ||
+        row.FechaProxima.startsWith('1970')
+      ) {
+        return false
+      }
+
+      const fechaFila = new Date(row.FechaProxima.replace(/\//g, '-'))
+      return fechaFila >= inicio && fechaFila <= fin
+    })
+  }
+
   return lista
 })
-
 
 const formModel = ref({
   GageSerie: '',
@@ -420,7 +533,7 @@ const formModel = ref({
   PuntoNominal: '',
   ToleranciaMin: '',
   ToleranciaMax: '',
-  ValorLeido:'',
+  ValorLeido: '',
   Diferencia: '',
 })
 
@@ -429,19 +542,18 @@ watch(
   (nuevaFecha) => {
     // Verificamos que tengamos fecha y que el gage seleccionado tenga su frecuencia
     if (nuevaFecha && selectedGage.value && selectedGage.value.FreqMeses) {
-      
       // Creamos la fecha (Quasar usa YYYY/MM/DD, la convertimos a formato estándar)
       const fecha = new Date(nuevaFecha.replace(/\//g, '-'))
 
       // Si la fecha es válida, sumamos los meses
       if (!isNaN(fecha.getTime())) {
         fecha.setMonth(fecha.getMonth() + selectedGage.value.FreqMeses)
-        
+
         // Guardamos el resultado de vuelta en el modelo
         formModel.value.fechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/')
       }
     }
-  }
+  },
 )
 
 watch([() => formModel.value.PuntoNominal, () => formModel.value.ValorLeido], () => {
@@ -495,18 +607,17 @@ const prepararEdicion = async (row) => {
         formModel.value.ValorLeido = dtl.ValorLeido
         formModel.value.Diferencia = dtl.Diferencia
       }
-      
+
       // 3. Traer el historial de este Gage específico
       const respHistorial = await api.get(`/api/historial/${row.GageId}`)
       rowsHistorial.value = respHistorial.data // Debes tener un ref('rowsHistorial')
-      
     } catch (error) {
-      console.error("Error cargando detalles o historial:", error)
+      console.error('Error cargando detalles o historial:', error)
     }
   }
-  
+
   await cargarHistorialGage(row.GageId)
-  
+
   Form.value = true
 }
 
@@ -531,7 +642,7 @@ const verDetalles = async (row) => {
       const respHistorial = await api.get(`/api/historial/${row.GageId}`)
       rowsHistorial.value = respHistorial.data
     } catch (error) {
-      console.error("Error al ver detalles:", error)
+      console.error('Error al ver detalles:', error)
     }
   }
 
@@ -604,9 +715,9 @@ const actualizarCalibracion = async () => {
 
     const datos = formModel.value
 
-    let fechaLimpia = datos.FechaCalibracion;
+    let fechaLimpia = datos.FechaCalibracion
     if (fechaLimpia && fechaLimpia.includes('T')) {
-      fechaLimpia = fechaLimpia.split('T')[0]; // Si viene con ISO Time, nos quedamos solo con la fecha
+      fechaLimpia = fechaLimpia.split('T')[0] // Si viene con ISO Time, nos quedamos solo con la fecha
     }
 
     const bodyEnvio = {
@@ -627,7 +738,6 @@ const actualizarCalibracion = async () => {
       ValorLeido: datos.ValorLeido,
       Diferencia: datos.Diferencia,
     }
-    
 
     await api.put(`/api/actualizar-calibracion/${datos.CalibracionId}`, bodyEnvio)
 
@@ -723,7 +833,6 @@ const cargarHistorialGage = async (id) => {
   }
 }
 
-
 const formatearFecha = (fechaString) => {
   if (
     !fechaString ||
@@ -767,8 +876,8 @@ const obtenerClaseFila = (row) => {
 
   // 3. Lógica de fechas para los que sí están activos
   const diff = calcularDias(row.FechaProxima)
-  if (diff <= 0) return 'fila-vencida'  // Rojo
-  if (diff <= 7) return 'fila-proxima'  // Amarillo
+  if (diff <= 0) return 'fila-vencida' // Rojo
+  if (diff <= 7) return 'fila-proxima' // Amarillo
   return ''
 }
 

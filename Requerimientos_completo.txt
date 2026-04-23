@@ -33,8 +33,9 @@ y el boton de editar edita la informacion de la calibracion seleccionada.
 - en el apartado de calibracion cambiar comments y poner informacion del gage y dentro de informacion poner 3 inputs input 1 es temperatura y humeda:, input 2 patrones usados: e  input 3 informacion:
 -‎ Para las calibraciones externas que pida el nombre del proveedor de calibración que hizo la calibración y opcion de guardar el certificado de calibración.
 - ‎Una opción para que imprima los certificados de calibración externa (lo intentaré).
-‎
-
+‎- Una opción para que pueda volver a calibrar (por sí se descalabro por una caída o así) 
+- para lo de "punto nominal" Son varios tipos y son varias medidas
+- filtro para los próximos a calibrar (que se divida por mes)
 	-Reportes-
 - ‎Que tenga opciones de filtros para poder imprimir reportes más exactos.
 - si deja la fecha en blanco cuando se mande a imprimir la ultima fecha de calibracion cuando se pone solo el id.
@@ -45,6 +46,11 @@ y el boton de editar edita la informacion de la calibracion seleccionada.
 ‎- Es todo lo que debe de hacer para hacer una calibración.
 ‎- Hacer un filtro para ver los diferentes tipos de procedimientos.
 ‎- Añadir imágenes para los procedimientos (ejemplos ilustrados).
+
+	-Usuarios-
+- hacer que el usuario para sistema pueda recuperar/resetar contraseñas y permisos de administrador
+- Roles para IT, Supervisor y usuario normal
+- Opción para editar el id de Gage por Usuario
 
 	
 ‎Nuevo apartado

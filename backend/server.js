@@ -56,7 +56,7 @@ app.get("/api/usuarios", async (req, res) => {
     const [rows] = await db.query(`
       SELECT 
         UserID, Usuario, Rol, 
-        edit_gage, edit_calibracion, edit_reportes, edit_procedimientos,
+        edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos,
         ver_gage, ver_calibracion, ver_reportes, ver_procedimientos 
       FROM usuarios
     `);
@@ -74,7 +74,7 @@ app.put("/api/usuarios/:id", async (req, res) => {
   try {
     const query = `
       UPDATE usuarios SET 
-        edit_gage = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?,
+        edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?,
         ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?
       WHERE UserID = ?
     `;
@@ -82,6 +82,7 @@ app.put("/api/usuarios/:id", async (req, res) => {
     // MySQL convertirá automáticamente true/false a 1/0
     await db.query(query, [
       p.edit_gage,
+      p.edit_gageId,
       p.edit_calibracion,
       p.edit_reportes,
       p.edit_procedimientos,

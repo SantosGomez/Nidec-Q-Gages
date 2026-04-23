@@ -1,13 +1,13 @@
 <template>
   <q-page class="flex flex-center">
-    <q-card rd class="my-card row q-col-gutter-md" style="max-width: 1000px; margin: auto; margin-top: 20px;  padding: 20px;">
+    <q-card rd class="my-card row q-col-gutter-md" style="max-width: 1000px; width: 100%; margin: auto; margin-top: 20px;  padding: 20px;">
       <q-card-section class="flex flex-center">
         <div class="text-h4">Bienvenido a Nidec Q-Gages</div>
       </q-card-section>
      
     <div class="row q-col-gutter-md">
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Master" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Master" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <img
               src="src\assets\iconosGAGES\GageMaster.png"
@@ -23,7 +23,7 @@
       </div>
 
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Calibracion" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Calibracion" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <img
               src="src\assets\iconosGAGES\calibracion.png"
@@ -41,7 +41,7 @@
       </div>
 
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Reportes" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Reportes" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <div class="flex flex-center">
               <img
@@ -60,7 +60,7 @@
       </div>
 
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Procedimientos" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Procedimientos" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <img
               src="src\assets\iconosGAGES\Procedimiento.png"
@@ -77,7 +77,7 @@
       </div>
 
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Checkout" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Checkout" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <img
               src="src\assets\iconosGAGES\registro.png"
@@ -88,13 +88,13 @@
           </q-card-section>
           <q-separator style="margin-left: 10px; margin-right: 10px;" />
           <q-card-section>
-            <q-btn style="width: 100%" color="primary" label="Gage Checkout" @click="Checkout" />
+            <q-btn style="width: 100%" color="primary" label="PRESTAMO" @click="Checkout" />
           </q-card-section>
         </q-card>
       </div>
 
       <div class="col-4">
-        <q-card class="my-card" style="max-width: 300px; height: auto;" @click="Usuario" clickable v-ripple>
+        <q-card class="my-card" style="max-width: 300px; width: 100%; height: auto;" @click="Usuario" clickable v-ripple>
           <q-card-section class="flex flex-center">
             <img
               src="src\assets\iconosGAGES\usuario.png"
