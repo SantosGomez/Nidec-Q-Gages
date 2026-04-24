@@ -6,12 +6,19 @@
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
     <q-card class="my-card" style="max-width: 750px; width: 100%; margin: 0 auto; margin-top: 20px; padding: 20px">
-      <div class="col-12 col-md-12">
-        <q-input outlined v-model="search" placeholder="BUSCAR POR NOMBRE O ROL"> <template v-slot:append>
-            <q-icon name="search" />
-          </template>
-        </q-input>
-        <q-btn color="primary" icon="add" label="Agregar" @click="AbrirRegistro()" />
+      <div class="row q-col-gutter-sm items-center q-mb-lg">
+        <div class="col-12 col-sm-auto">
+          <q-btn class="full-width" color="primary" icon="add" label="Agregar Usuario" @click="AbrirRegistro()" />
+        </div>
+
+        <q-space class="gt-xs" />
+        <div class="col-12 col-sm-5">
+          <q-input v-model="search" placeholder="Buscar por nombre o rol..." outlined dense>
+            <template v-slot:append>
+              <q-icon name="search" />
+            </template>
+          </q-input>
+        </div>
       </div>
       
       <div class="col-12 col-md-12" style="margin-top: 20px">
@@ -33,7 +40,6 @@
                 <q-icon color="primary" name="account_circle" size="30px" />
               </q-item-section>
               <q-item-section>
-                <q-item-label caption>ID: {{ user.UserID }}</q-item-label>
                 <q-item-label>{{ user.Usuario }}</q-item-label>
               </q-item-section>
               <q-item-section>
@@ -66,11 +72,14 @@
     <q-card-section>
       <q-form class="q-gutter-md">
         <div class="row q-col-gutter-sm">
-          <div class="col-12">
-             <q-input v-model="formModel.Usuario" label="Nombre de Usuario" outlined dense />
+          <div class="col-4">
+             <q-input v-model="formModel.Usuario" label="Nombre de Usuario" dense />
           </div>
-          <div class="col-12" v-if="!esEdicion">
-            <q-input v-model="formModel.Password" label="Contraseña" type="password" outlined dense />
+          <div class="col-4">
+             <q-input v-model="formModel.Rol" label="Rol de Usuario" dense />
+          </div>
+          <div class="col-4" v-if="!esEdicion">
+            <q-input v-model="formModel.Password" label="Contraseña" type="password" dense />
           </div>
         </div>
       </q-form>
@@ -123,8 +132,8 @@ const esEdicion = ref(false)    // Switch entre Registro y Edición
 const usuarioSeleccionado = ref(null)
 
 const formModel = ref({
-  UserID: '',
   Usuario: '',
+  Rol:'',
   Password: '',
   edit_gage: false,
   edit_gageId: false,
@@ -185,7 +194,7 @@ const usuariosFiltrados = computed(() => {
 
 const limpiarFormulario = () => {
   formModel.value = {
-    UserID: '', Usuario: '', Password: '',
+    Usuario: '', Rol: '', Password: '',
     edit_gage: false, edit_gageId: false, edit_calibracion: false, edit_reportes: false, edit_procedimientos: false,
     ver_gage: false, ver_calibracion: false, ver_reportes: false, ver_procedimientos: false
   }

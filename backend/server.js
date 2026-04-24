@@ -74,13 +74,15 @@ app.put("/api/usuarios/:id", async (req, res) => {
   try {
     const query = `
       UPDATE usuarios SET 
-        edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?,
+        Usuario = ?, Rol = ?, edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?,
         ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?
       WHERE UserID = ?
     `;
 
     // MySQL convertirá automáticamente true/false a 1/0
     await db.query(query, [
+      p.Usuario,
+      p.Rol,
       p.edit_gage,
       p.edit_gageId,
       p.edit_calibracion,
@@ -102,19 +104,54 @@ app.put("/api/usuarios/:id", async (req, res) => {
 //----- Agregar usuario nuevo ------
 
 app.post("/api/usuarios/registro", async (req, res) => {
-  const { usuario, contrasena, rol } = req.body;
-
+  const {
+    Usuario,
+    Password,
+    Rol,
+    edit_gage,
+    edit_gageId,
+    edit_calibracion,
+    edit_reportes,
+    edit_procedimientos,
+    ver_gage,
+    ver_calibracion,
+    ver_reportes,
+    ver_procedimientos
+  } = req.body;
   try {
     // Generamos el "salt" y el hash
     const saltRounds = 10;
-    const hashedPass = await bcrypt.hash(contrasena, saltRounds);
+    const hashedPass = await bcrypt.hash(Password, saltRounds);
 
-    const query = `INSERT INTO usuarios (Usuario, Contrasena, Rol) VALUES (?, ?, ?)`;
-    await db.query(query, [usuario, hashedPass, rol]);
+    const query = `INSERT INTO usuarios (Usuario, Password, Rol,  edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos,
+        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const values = [
+    Usuario,
+    hashedPass,
+    Rol,
+    edit_gage || 0, // Usamos || 0 por si algún valor llega undefined
+    edit_gageId || 0,
+    edit_calibracion || 0,
+    edit_reportes || 0,
+    edit_procedimientos || 0,
+    ver_gage || 0,
+    ver_calibracion || 0,
+    ver_reportes || 0,
+    ver_procedimientos || 0
+    ];
+    
+    await db.query(query, values);
 
-    res.json({ message: "Usuario creado con éxito" });
+    res.json({ 
+      success: true, 
+      message: "Usuario creado con éxito en el sistema Q-GAGE" 
+    });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error("Error al registrar en la base de datos:", error);
+    res.status(500).json({ 
+      success: false, 
+      error: "Error interno al procesar el registro" 
+    });
   }
 });
 
