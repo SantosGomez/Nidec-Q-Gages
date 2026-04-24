@@ -64,6 +64,7 @@
 import { useQuasar } from 'quasar' // Opcional, para notificaciones bonitas
 const $q = useQuasar()
 
+
 import { useRouter } from 'vue-router'
 const router = useRouter()
 
@@ -75,6 +76,8 @@ const form = ref({
 const isPwd = ref(true)
 
 import { api } from 'boot/axios'
+import { useAuthStore } from 'src/stores/auth'
+const authStore = useAuthStore()
 
 const handleLogin = async () => {
   if (!form.value.usuario || !form.value.password) {
@@ -108,8 +111,7 @@ const handleLogin = async () => {
           timeout: 2000,
         })
         // Guardamos al usuario en el almacenamiento local para que no se cierre la sesión al refrescar
-        localStorage.setItem('token_qgage', res.data.token);
-        localStorage.setItem('user_qgage', JSON.stringify(res.data.user));
+        authStore.login(res.data.user, res.data.token)
         // Redirigir al dashboard o página principal
         router.push('/')
       

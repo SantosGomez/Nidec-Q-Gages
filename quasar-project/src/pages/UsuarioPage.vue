@@ -5,10 +5,20 @@
   <div class="text-h2 flex flex-center" style="font-weight: bold">Usuarios</div>
 
   <div class="row q-col-gutter-md" style="margin-top: 20px">
-    <q-card class="my-card" style="max-width: 750px; width: 100%; margin: 0 auto; margin-top: 20px; padding: 20px">
+    <q-card
+      class="my-card"
+      style="max-width: 750px; width: 100%; margin: 0 auto; margin-top: 20px; padding: 20px"
+    >
       <div class="row q-col-gutter-sm items-center q-mb-lg">
         <div class="col-12 col-sm-auto">
-          <q-btn class="full-width" color="primary" icon="add" label="Agregar Usuario" @click="AbrirRegistro()" />
+          <q-btn
+            v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
+            class="full-width"
+            color="primary"
+            icon="add"
+            label="Agregar Usuario"
+            @click="AbrirRegistro()"
+          />
         </div>
 
         <q-space class="gt-xs" />
@@ -20,10 +30,9 @@
           </q-input>
         </div>
       </div>
-      
+
       <div class="col-12 col-md-12" style="margin-top: 20px">
         <q-card-section>
-
           <div v-if="loading" class="flex flex-center q-pa-lg">
             <q-spinner-dots color="primary" size="40px" />
           </div>
@@ -43,7 +52,7 @@
                 <q-item-label>{{ user.Usuario }}</q-item-label>
               </q-item-section>
               <q-item-section>
-                <q-badge color="secondary" :label="user.Rol"  style="width: 74px;"/>
+                <q-badge color="secondary" :label="user.Rol" style="width: 74px" />
               </q-item-section>
             </q-item>
 
@@ -59,58 +68,93 @@
   </div>
 
   <q-dialog v-model="UserInfo" persistent>
-  <q-card style="min-width: 550px">
-    <q-card-section class="row items-center bg-primary text-white">
-      <q-icon :name="esEdicion ? 'edit' : 'person_add'" size="30px" class="q-mr-sm" />
-      <div class="text-h6">
-        {{ esEdicion ? `Editar: ${usuarioSeleccionado?.Usuario}` : 'Registrar Nuevo Usuario' }}
-      </div>
-      <q-space />
-      <q-btn icon="close" flat round dense v-close-popup />
-    </q-card-section>
-
-    <q-card-section>
-      <q-form class="q-gutter-md">
-        <div class="row q-col-gutter-sm">
-          <div class="col-4">
-             <q-input v-model="formModel.Usuario" label="Nombre de Usuario" dense />
-          </div>
-          <div class="col-4">
-             <q-input v-model="formModel.Rol" label="Rol de Usuario" dense />
-          </div>
-          <div class="col-4" v-if="!esEdicion">
-            <q-input v-model="formModel.Password" label="Contraseña" type="password" dense />
-          </div>
+    <q-card style="min-width: 550px">
+      <q-card-section class="row items-center bg-primary text-white">
+        <q-icon :name="!puedeEditar ? 'visibility' : (esEdicion ? 'edit' : 'person_add')" size="30px" class="q-mr-sm" />
+        <div class="text-h6">
+          {{
+            esEdicion
+              ? puedeEditar
+                ? `Editar: ${usuarioSeleccionado?.Usuario}`
+                : `Detalles: ${usuarioSeleccionado?.Usuario}`
+              : 'Registrar Nuevo Usuario'
+          }}
         </div>
-      </q-form>
-    </q-card-section>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
+      </q-card-section>
 
-    <q-card-section>
-      <div class="text-subtitle2 text-primary q-mb-xs">Acceso para Editar:</div>
-      <div class="row">
-        <q-checkbox v-for="opt in permisosEdit" :key="opt.val" v-model="formModel[opt.val]" :label="opt.label" class="col-4" />
-      </div>
-      
-      <q-separator class="q-my-md" />
+      <q-card-section>
+        <q-form class="q-gutter-md">
+          <q-banner v-if="!puedeEditar" class="bg-amber-1 text-amber-9 q-mb-md" rounded dense>
+          <template v-slot:avatar>
+            <q-icon name="lock" />
+          </template>
+          Modo de solo lectura. No tienes permisos para modificar usuarios.
+        </q-banner>
+          <div class="row q-col-gutter-sm">
+            <div
+              class="col-4"
+              v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
+            >
+              <q-input v-model="formModel.Usuario" label="Nombre de Usuario" dense />
+            </div>
+            <div class="col-4">
+              <q-input
+                v-model="formModel.Rol"
+                label="Rol de Usuario"
+                dense
+                :disable="!puedeEditar"
+              />
+            </div>
+            <div class="col-4" v-if="!esEdicion">
+              <q-input v-model="formModel.Password" label="Contraseña" type="password" dense />
+            </div>
+          </div>
+        </q-form>
+      </q-card-section>
 
-      <div class="text-subtitle2 text-secondary q-mb-xs">Acceso para Visualizar:</div>
-      <div class="row">
-        <q-checkbox v-for="opt in permisosVer" :key="opt.val" v-model="formModel[opt.val]" :label="opt.label" class="col-4" />
-      </div>
-    </q-card-section>
+      <q-card-section>
+        
+        <div class="text-subtitle2 text-primary q-mb-xs">Acceso para Editar:</div>
+        <div class="row">
+          <q-checkbox
+            v-for="opt in permisosEdit"
+            :key="opt.val"
+            v-model="formModel[opt.val]"
+            :label="opt.label"
+            class="col-4"
+            :disable="!puedeEditar"
+          />
+        </div>
 
-    <q-card-actions align="right" class="q-pb-md q-pr-md">
-      <q-btn flat label="Cancelar" color="grey-7" v-close-popup />
-      <q-btn 
-        unelevated 
-        :label="esEdicion ? 'Actualizar Permisos' : 'Crear Usuario'" 
-        :color="esEdicion ? 'orange-9' : 'primary'" 
-        @click="ejecutarGuardado" 
-      />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+        <q-separator class="q-my-md" />
 
+        <div class="text-subtitle2 text-secondary q-mb-xs">Acceso para Visualizar:</div>
+        <div class="row">
+          <q-checkbox
+            v-for="opt in permisosVer"
+            :key="opt.val"
+            v-model="formModel[opt.val]"
+            :label="opt.label"
+            class="col-4"
+            :disable="!puedeEditar"
+          />
+        </div>
+      </q-card-section>
+
+      <q-card-actions align="right" class="q-pb-md q-pr-md">
+        <q-btn flat label="Cancelar" color="grey-7" v-close-popup />
+        <q-btn
+          v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
+          unelevated
+          :label="esEdicion ? 'Actualizar Permisos' : 'Crear Usuario'"
+          :color="esEdicion ? 'orange-9' : 'primary'"
+          @click="ejecutarGuardado"
+        />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -118,22 +162,23 @@ import { useRouter } from 'vue-router'
 import { ref, onMounted, computed } from 'vue' // Añadimos computed
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth' // Importamos
 
 const $q = useQuasar()
-
 const router = useRouter()
 
 // --- ESTADO ---
 const search = ref('')
 const usuarios = ref([])
 const loading = ref(false)
-const UserInfo = ref(false)     // Controla el diálogo
-const esEdicion = ref(false)    // Switch entre Registro y Edición
+const UserInfo = ref(false) // Controla el diálogo
+const esEdicion = ref(false) // Switch entre Registro y Edición
 const usuarioSeleccionado = ref(null)
+const authStore = useAuthStore()
 
 const formModel = ref({
   Usuario: '',
-  Rol:'',
+  Rol: '',
   Password: '',
   edit_gage: false,
   edit_gageId: false,
@@ -143,7 +188,7 @@ const formModel = ref({
   ver_gage: false,
   ver_calibracion: false,
   ver_reportes: false,
-  ver_procedimientos: false
+  ver_procedimientos: false,
 })
 
 const permisosEdit = [
@@ -151,15 +196,19 @@ const permisosEdit = [
   { label: 'Gage ID', val: 'edit_gageId' },
   { label: 'Calibración', val: 'edit_calibracion' },
   { label: 'Reportes', val: 'edit_reportes' },
-  { label: 'Procedimientos', val: 'edit_procedimientos' }
+  { label: 'Procedimientos', val: 'edit_procedimientos' },
 ]
 
 const permisosVer = [
   { label: 'Gage Master', val: 'ver_gage' },
   { label: 'Calibración', val: 'ver_calibracion' },
   { label: 'Reportes', val: 'ver_reportes' },
-  { label: 'Procedimientos', val: 'ver_procedimientos' }
+  { label: 'Procedimientos', val: 'ver_procedimientos' },
 ]
+
+const puedeEditar = computed(() => {
+  return authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'
+})
 
 // --- LÓGICA DE NAVEGACIÓN ---
 function index() {
@@ -183,20 +232,29 @@ const obtenerUsuarios = async () => {
 // Esta función filtra la lista de usuarios automáticamente según lo que escribas
 const usuariosFiltrados = computed(() => {
   if (!search.value) return usuarios.value
-  return usuarios.value.filter(user => 
-    user.Usuario.toLowerCase().includes(search.value.toLowerCase()) ||
-    user.Rol.toLowerCase().includes(search.value.toLowerCase())
+  return usuarios.value.filter(
+    (user) =>
+      user.Usuario.toLowerCase().includes(search.value.toLowerCase()) ||
+      user.Rol.toLowerCase().includes(search.value.toLowerCase()),
   )
 })
 
 // --- GESTIÓN DEL DIÁLOGO ---
 
-
 const limpiarFormulario = () => {
   formModel.value = {
-    Usuario: '', Rol: '', Password: '',
-    edit_gage: false, edit_gageId: false, edit_calibracion: false, edit_reportes: false, edit_procedimientos: false,
-    ver_gage: false, ver_calibracion: false, ver_reportes: false, ver_procedimientos: false
+    Usuario: '',
+    Rol: '',
+    Password: '',
+    edit_gage: false,
+    edit_gageId: false,
+    edit_calibracion: false,
+    edit_reportes: false,
+    edit_procedimientos: false,
+    ver_gage: false,
+    ver_calibracion: false,
+    ver_reportes: false,
+    ver_procedimientos: false,
   }
 }
 
@@ -210,7 +268,7 @@ const AbrirRegistro = () => {
 const abrirDetalle = (user) => {
   esEdicion.value = true
   usuarioSeleccionado.value = user
-  
+
   // Sincronizamos el modelo con los datos del usuario (!! convierte 1/0 a true/false)
   formModel.value = {
     ...user,
@@ -222,7 +280,7 @@ const abrirDetalle = (user) => {
     ver_gage: !!user.ver_gage,
     ver_calibracion: !!user.ver_calibracion,
     ver_reportes: !!user.ver_reportes,
-    ver_procedimientos: !!user.ver_procedimientos
+    ver_procedimientos: !!user.ver_procedimientos,
   }
   UserInfo.value = true
 }
@@ -232,7 +290,7 @@ const ejecutarGuardado = () => {
     $q.notify({ type: 'warning', message: 'Por favor completa los campos obligatorios' })
     return
   }
-  
+
   if (esEdicion.value) {
     actualizarPermisos()
   } else {
@@ -256,7 +314,7 @@ const actualizarPermisos = async () => {
   }
 }
 
- const AgregarUsuario = async () => {
+const AgregarUsuario = async () => {
   $q.loading.show({ message: 'Registrando nuevo usuario...' })
   try {
     const res = await api.post('/api/usuarios/registro', formModel.value)
@@ -272,7 +330,6 @@ const actualizarPermisos = async () => {
     $q.loading.hide()
   }
 }
-
 
 // --- INICIO ---
 onMounted(() => {

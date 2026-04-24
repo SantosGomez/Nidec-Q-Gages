@@ -119,6 +119,9 @@ app.post("/api/usuarios/registro", async (req, res) => {
     ver_procedimientos
   } = req.body;
   try {
+    if (!Password) {
+      return res.status(400).json({ success: false, error: "Password es requerido" });
+    }
     // Generamos el "salt" y el hash
     const saltRounds = 10;
     const hashedPass = await bcrypt.hash(Password, saltRounds);
