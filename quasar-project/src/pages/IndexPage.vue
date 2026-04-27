@@ -67,7 +67,7 @@
           </q-card>
         </div>
 
-        <div v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin' || authStore.usuario?.Rol === 'Supervisor'" class="col-12 col-sm-4">
+        <div v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'" class="col-12 col-sm-4">
           <q-card class="my-card cursor-pointer" @click="Usuario" v-ripple>
             <q-card-section class="flex flex-center">
               <img src="src/assets/iconosGAGES/usuario.png" style="width: 50px; height: auto" />

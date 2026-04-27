@@ -3,14 +3,40 @@ const routes = [
     path: '/',
     component: () => import('layouts/MainLayout.vue'),
     children: [
-      { path: '', component: () => import('pages/IndexPage.vue') },
-      { path: 'GageMaster', component: () => import('pages/GageMasterPage.vue') },
-      { path: 'Calibracion', component: () => import ('pages/CalibracionPage.vue') },
-      { path: 'checkout', component: () => import ('pages/PrestamosPage.vue') },
-      { path: 'Procedimientos', component: () => import ('pages/ProcedimientoPage.vue') },
-      { path: 'Usuarios', component: () => import ('pages/UsuarioPage.vue') },
-      { path: 'Reports', component: () => import ('pages/ReportsPage.vue') },
-      // {path: 'login', component:() => import ('pages/LoginPage.vue')},
+      { 
+        path: '', 
+        component: () => import('pages/IndexPage.vue') 
+      },
+      { 
+        path: 'GageMaster', 
+        component: () => import('pages/GageMasterPage.vue'),
+        meta: { permiso: 'ver_gage' } // Requiere este permiso en el store
+      },
+      { 
+        path: 'Calibracion', 
+        component: () => import('pages/CalibracionPage.vue'),
+        meta: { permiso: 'ver_calibracion' }
+      },
+      { 
+        path: 'checkout', 
+        component: () => import('pages/PrestamosPage.vue') 
+        // Si todos pueden entrar a préstamos, se deja sin meta
+      },
+      { 
+        path: 'Procedimientos', 
+        component: () => import('pages/ProcedimientoPage.vue'),
+        meta: { permiso: 'ver_procedimientos' }
+      },
+      { 
+        path: 'Usuarios', 
+        component: () => import('pages/UsuarioPage.vue'),
+        meta: { requiereAdmin: true } // Solo para Admin/SuperAdmin
+      },
+      { 
+        path: 'Reports', 
+        component: () => import('pages/ReportsPage.vue'),
+        meta: { permiso: 'ver_reportes' }
+      },
     ]
   },
   {

@@ -11,7 +11,7 @@
           <div class="col-12 col-md-6">
             <div class="text-h5">Gestion de Gages</div>
           </div>
-          <div class="col-12 col-md-6 text-right">
+          <div v-if="authStore.usuario?.edit_gage" class="col-12 col-md-6 text-right">
             <q-btn
               icon="add"
               color="primary"
@@ -24,7 +24,7 @@
         </div>
       </q-card-section>
 
-      <q-separator style="margin-right: 14px;" />
+      <q-separator style="margin-right: 14px" />
 
       <q-card-section>
         <q-table
@@ -50,36 +50,25 @@
           </template>
 
           <template v-slot:body-cell-estado="props">
-            <q-td :props="props">
+            <q-td  :props="props">
               <q-btn
                 :color="props.row.Act_Inact == 1 ? 'positive' : 'grey-7'"
                 :icon="props.row.Act_Inact == 1 ? 'check_circle' : 'cancel'"
                 :label="props.row.Act_Inact == 1 ? 'Activo' : 'Inactivo'"
                 unelevated
                 @click="confirmarInactivar(props.row)"
+                :disable="!authStore.usuario?.edit_gage"
               />
             </q-td>
           </template>
 
           <template v-slot:body-cell-actions="props">
             <q-td :props="props" class="q-gutter-sm">
-              <q-btn
-                outline
-                round
-                color="warning"
-                icon="edit"
-                @click="prepararEdicion(props.row)"
-              >
+              <q-btn v-if="authStore.usuario?.edit_gage" outline round color="warning" icon="edit" @click="prepararEdicion(props.row)">
                 <q-tooltip>Editar</q-tooltip>
               </q-btn>
 
-              <q-btn
-                outline
-                round
-                color="info"
-                icon="visibility"
-                @click="verDetalles(props.row)"
-              >
+              <q-btn outline round color="info" icon="visibility" @click="verDetalles(props.row)">
                 <q-tooltip>Ver ficha técnica</q-tooltip>
               </q-btn>
             </q-td>
@@ -101,162 +90,173 @@
       <q-card-section class="bg-primary text-white">
         <div class="text-h4">{{ modoEdicion ? 'Editar Gage' : 'Nuevo Gage' }}</div>
       </q-card-section>
-      
+
       <q-form @submit="onSubmit" @reset="onReset">
-        <q-scroll-area style="width: 1300px; height: 450px; ">
-          
-        <q-card-section>
-          <div class="row q-col-gutter-md">
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.GageSerie" label="Gage Serie" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input
-                :readonly="soloLectura"
-                v-model="formModel.Descripcion"
-                label="Nombre del Gage"
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-select
-                :readonly="soloLectura"
-                v-model="formModel.Tipo"
-                :options="opcionesTipo"
-                label="Tipo"
-                option-value="value"
-                option-label="label"
-                emit-value
-                map-options
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-select
-                :readonly="soloLectura"
-                v-model="formModel.Estado"
-                :options="opcionesEstado"
-                label="Estado"
-                option-value="value"
-                option-label="label"
-                emit-value
-                map-options
-              />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Locacion" label="Localización" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Vendedor" label="Vendedor" />
-            </div>
-
-            <div class="col-12 col-md-4">
-              <q-input
-                :readonly="soloLectura"
-                v-model="formModel.FechaAlta"
-                mask="date"
-                label="Fecha de Alta"
-              >
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer"
-                    ><q-popup-proxy><q-date v-model="formModel.FechaAlta" /></q-popup-proxy
-                  ></q-icon>
-                </template>
-              </q-input>
-            </div>
-            <div class="col-12 col-md-4">
-              <q-select
-                :readonly="soloLectura"
-                v-model="formModel.Frecuencia"
-                :options="opcionesFrecuencias"
-                label="Frequencia de calibración"
-                option-value="value"
-                option-label="label"
-                emit-value
-                map-options
-              />
-            </div>
-            <div class="col-12 col-md-4">
-              <q-select
-                :readonly="soloLectura"
-                v-model="formModel.Nombre_extint"
-                :options="opcionesCalibracion"
-                label="Calibración Int/Ext."
-                option-value="value"
-                option-label="label"
-                emit-value
-                map-options
-              />
-            </div>
-
-            <div class="col-12 col-md-6">
-              <q-select
-                :readonly="soloLectura"
-                v-model="formModel.ProcedimientoId"
-                :options="Procedimientolista"
-                label="Procedimientos"
-                option-value="ProceId"      
-                option-label="NombreProce"  
-                emit-value                  
-                map-options                 
+        <q-scroll-area style="width: 1300px; height: 450px">
+          <q-card-section>
+            <div class="row q-col-gutter-md">
+              <div class="col-12 col-md-6">
+                <q-input
+                  v-model="formModel.GageSerie"
+                  label="Gage Serie"
+                  :readonly="soloLectura || (modoEdicion && !authStore.usuario?.edit_gageId)"
+                />
                 
-              />
-            </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.Descripcion"
+                  label="Nombre del Gage"
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-select
+                  :readonly="soloLectura"
+                  v-model="formModel.Tipo"
+                  :options="opcionesTipo"
+                  label="Tipo"
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-select
+                  :readonly="soloLectura"
+                  v-model="formModel.Estado"
+                  :options="opcionesEstado"
+                  label="Estado"
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.Locacion"
+                  label="Localización"
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input :readonly="soloLectura" v-model="formModel.Vendedor" label="Vendedor" />
+              </div>
 
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Marca" label="Marca" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Modelo" label="Modelo" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Serie" label="Numero de Serie " />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Codigo" label="Codigo" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Rango" label="Rango" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input :readonly="soloLectura" v-model="formModel.Resolucion" label="Resolucion" />
-            </div>
-            <div class="col-12 col-md-6">
-              <q-input
-                :readonly="soloLectura"
-                v-model="formModel.OrdenCompra"
-                label="Orden De Compra"
-              />
-            </div>
+              <div class="col-12 col-md-4">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.FechaAlta"
+                  mask="date"
+                  label="Fecha de Alta"
+                >
+                  <template v-slot:append>
+                    <q-icon name="event" class="cursor-pointer"
+                      ><q-popup-proxy><q-date v-model="formModel.FechaAlta" /></q-popup-proxy
+                    ></q-icon>
+                  </template>
+                </q-input>
+              </div>
+              <div class="col-12 col-md-4">
+                <q-select
+                  :readonly="soloLectura"
+                  v-model="formModel.Frecuencia"
+                  :options="opcionesFrecuencias"
+                  label="Frequencia de calibración"
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                />
+              </div>
+              <div class="col-12 col-md-4">
+                <q-select
+                  :readonly="soloLectura"
+                  v-model="formModel.Nombre_extint"
+                  :options="opcionesCalibracion"
+                  label="Calibración Int/Ext."
+                  option-value="value"
+                  option-label="label"
+                  emit-value
+                  map-options
+                />
+              </div>
 
-            <div class="col-12">
-              <q-input
-                outlined
-                :readonly="soloLectura"
-                v-model="formModel.Informacion"
-                type="textarea"
-                label="Información adicional"
-              />
+              <div class="col-12 col-md-6">
+                <q-select
+                  :readonly="soloLectura"
+                  v-model="formModel.ProcedimientoId"
+                  :options="Procedimientolista"
+                  label="Procedimientos"
+                  option-value="ProceId"
+                  option-label="NombreProce"
+                  emit-value
+                  map-options
+                />
+              </div>
+
+              <div class="col-12 col-md-6">
+                <q-input :readonly="soloLectura" v-model="formModel.Marca" label="Marca" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input :readonly="soloLectura" v-model="formModel.Modelo" label="Modelo" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.Serie"
+                  label="Numero de Serie "
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input :readonly="soloLectura" v-model="formModel.Codigo" label="Codigo" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input :readonly="soloLectura" v-model="formModel.Rango" label="Rango" />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.Resolucion"
+                  label="Resolucion"
+                />
+              </div>
+              <div class="col-12 col-md-6">
+                <q-input
+                  :readonly="soloLectura"
+                  v-model="formModel.OrdenCompra"
+                  label="Orden De Compra"
+                />
+              </div>
+
+              <div class="col-12">
+                <q-input
+                  outlined
+                  :readonly="soloLectura"
+                  v-model="formModel.Informacion"
+                  type="textarea"
+                  label="Información adicional"
+                />
+              </div>
             </div>
-          </div>
-        </q-card-section>
+          </q-card-section>
         </q-scroll-area>
 
         <q-card-actions align="right">
-          
-            <q-btn
-              v-if="!soloLectura"
-              :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
-              type="submit"
-              color="primary"
-              
-            />
-            <q-btn
-              :label="soloLectura ? 'Cerrar' : 'CANCELAR'"
-              
-              color="negative"
-              v-close-popup
-              class="q-ml-sm"
-            />
-          
+          <q-btn
+            v-if="!soloLectura"
+            :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
+            type="submit"
+            color="primary"
+          />
+          <q-btn
+            :label="soloLectura ? 'Cerrar' : 'CANCELAR'"
+            color="negative"
+            v-close-popup
+            class="q-ml-sm"
+          />
         </q-card-actions>
       </q-form>
     </q-card>
@@ -281,7 +281,9 @@ import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth' // Importamos
 
+const authStore = useAuthStore()
 const $q = useQuasar()
 const router = useRouter()
 const index = () => router.push('/') // Redirige a la raíz
@@ -356,7 +358,13 @@ const Manuales = async () => {
 const columns = [
   { name: 'GageId', label: '#', field: 'GageId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
   { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
-  {name: 'description', label: 'Nombre del Gage', field: 'Descripcion', align: 'left', sortable: true }, // Era 'Descripcion', no 'description'
+  {
+    name: 'description',
+    label: 'Nombre del Gage',
+    field: 'Descripcion',
+    align: 'left',
+    sortable: true,
+  }, // Era 'Descripcion', no 'description'
   { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true }, // 'Act_Inact' es el campo de tu DB
   { name: 'actions', label: 'Acciones', align: 'center' },
 ]
@@ -582,5 +590,6 @@ const onReset = () => {
 onMounted(() => {
   obtenerGages()
   Manuales()
+  console.log('Datos del usuario en el store:', authStore.usuario)
 })
 </script>

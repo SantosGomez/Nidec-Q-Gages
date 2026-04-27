@@ -133,7 +133,7 @@
 
                 <template v-else-if="col.name === 'actions'">
                   <q-btn
-                    v-if="props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0"
+                    v-if="authStore.usuario?.edit_gage && (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)"
                     color="positive"
                     icon="build"
                     label="Calibrar"
@@ -148,6 +148,7 @@
                       color="warning"
                       icon="edit"
                       @click="prepararEdicion(props.row)"
+                      v-if="authStore.usuario?.edit_gage"
                     >
                       <q-tooltip>EDITAR CALIBRACION</q-tooltip>
                     </q-btn>
@@ -169,6 +170,7 @@
                       color="primary"
                       icon="build"
                       @click="seleccionarParaCalibrar(props.row)"
+                      v-if="authStore.usuario?.edit_gage"
                     >
                       <q-tooltip>CALIBRAR</q-tooltip>
                     </q-btn>
@@ -441,7 +443,9 @@ function index() {
 import { ref, onMounted, watch, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth' // Importamos
 
+const authStore = useAuthStore()
 const $q = useQuasar()
 
 const procedimientos = ref(false)

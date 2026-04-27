@@ -6,7 +6,7 @@ import {
   createWebHashHistory,
 } from 'vue-router'
 import routes from './routes'
-
+import { useAuthStore } from 'src/stores/auth'
 /*
  * If not building with SSR mode, you can
  * directly export the Router instantiation;
@@ -34,22 +34,37 @@ export default defineRouter(function (/* { store, ssrContext } */) {
   })
 
   Router.beforeEach((to, from, next) => {
-    // 1. Buscamos el token en el localStorage
-    const isAuthenticated = localStorage.getItem('token_qgage')
+    const authStore = useAuthStore()
+    // Usamos el token del store o del localStorage
+    const isAuthenticated = authStore.token || localStorage.getItem('token_qgage')
+    const user = authStore.usuario
 
-    // 2. Verificamos si la ruta a la que va el usuario requiere estar logueado
-    // Como tu login está bajo '/auth', cualquier otra ruta (como '/') está protegida
+    // 1. REGLA DE ORO: Si no está logueado y no va al login, directo a login
     if (to.name !== 'login' && !isAuthenticated) {
-      // Si no está autenticado y no va al login, lo mandamos para allá
       next({ name: 'login' })
-    } else if (to.name === 'login' && isAuthenticated) {
-      // Si ya está logueado e intenta ir al login, lo mandamos al inicio
+    }
+
+    // 2. Si ya está logueado e intenta ir al login, lo mandamos al inicio
+    else if (to.name === 'login' && isAuthenticated) {
       next({ path: '/' })
-    } else {
-      // En cualquier otro caso, lo dejamos pasar
-      next()
+    }
+
+    // 3. CONTROL DE PERMISOS (Solo si ya pasó las reglas anteriores)
+    else {
+      // Si la ruta requiere Admin y el usuario no lo es...
+      if (to.meta.requiereAdmin && user?.Rol !== 'Admin' && user?.Rol !== 'SuperAdmin') {
+        next('/')
+      }
+      // Si la ruta requiere un permiso específico (ej. ver_gage) y no lo tiene...
+      else if (to.meta.permiso && !user?.[to.meta.permiso]) {
+        next('/')
+      }
+      // Si pasa todas las pruebas, lo dejamos entrar
+      else {
+        next()
+      }
     }
   })
-  
+
   return Router
 })
