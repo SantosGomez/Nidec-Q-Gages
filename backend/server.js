@@ -158,6 +158,33 @@ app.post("/api/usuarios/registro", async (req, res) => {
   }
 });
 
+
+//------ Reseteo de Password -------
+
+app.put("/api/usuarios/:id/reset-password", async (req, res) => {
+  const { id } = req.params;
+  const { Password } = req.body; // Nueva contraseña enviada por el SuperAdmin
+
+  try {
+    if (!Password) {
+      return res.status(400).json({ error: "La nueva contraseña es requerida" });
+    }
+
+    // 1. Encriptar la nueva contraseña
+    const saltRounds = 10;
+    const hashedPass = await bcrypt.hash(Password, saltRounds);
+
+    // 2. Actualizar en la base de datos
+    const query = "UPDATE usuarios SET Password = ? WHERE UserID = ?";
+    await db.query(query, [hashedPass, id]);
+
+    res.json({ success: true, message: "Contraseña reseteada con éxito" });
+  } catch (error) {
+    console.error("Error al resetear contraseña:", error);
+    res.status(500).json({ error: "Error interno del servidor" });
+  }
+});
+
 // ======== API para Login =========
 
 app.post("/api/login", async (req, res) => {

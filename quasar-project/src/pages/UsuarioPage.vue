@@ -68,9 +68,13 @@
   </div>
 
   <q-dialog v-model="UserInfo" persistent>
-    <q-card style="min-width: 550px">
+    <q-card style="min-width: 600px">
       <q-card-section class="row items-center bg-primary text-white">
-        <q-icon :name="!puedeEditar ? 'visibility' : (esEdicion ? 'edit' : 'person_add')" size="30px" class="q-mr-sm" />
+        <q-icon
+          :name="!puedeEditar ? 'visibility' : esEdicion ? 'edit' : 'person_add'"
+          size="30px"
+          class="q-mr-sm"
+        />
         <div class="text-h6">
           {{
             esEdicion
@@ -80,6 +84,19 @@
               : 'Registrar Nuevo Usuario'
           }}
         </div>
+        <q-btn v-if="esEdicion && authStore.usuario?.Rol === 'SuperAdmin'" color="white" flat round icon="more_horiz" >
+
+          <q-menu>
+            <q-list style="min-width: 100px">
+              <q-item clickable v-close-popup @click="abrirReset">
+                <q-item-section avatar>
+                <q-icon color="primary" name="lock_reset" size="sm" />
+              </q-item-section>
+                <q-item-section>Resetear Contraseña</q-item-section>
+              </q-item>
+            </q-list>
+          </q-menu>
+        </q-btn>
         <q-space />
         <q-btn icon="close" flat round dense v-close-popup />
       </q-card-section>
@@ -87,11 +104,11 @@
       <q-card-section>
         <q-form class="q-gutter-md">
           <q-banner v-if="!puedeEditar" class="bg-amber-1 text-amber-9 q-mb-md" rounded dense>
-          <template v-slot:avatar>
-            <q-icon name="lock" />
-          </template>
-          Modo de solo lectura. No tienes permisos para modificar usuarios.
-        </q-banner>
+            <template v-slot:avatar>
+              <q-icon name="lock" />
+            </template>
+            Modo de solo lectura. No tienes permisos para modificar usuarios.
+          </q-banner>
           <div class="row q-col-gutter-sm">
             <div
               class="col-4"
@@ -115,7 +132,6 @@
       </q-card-section>
 
       <q-card-section>
-        
         <div class="text-subtitle2 text-primary q-mb-xs">Acceso para Editar:</div>
         <div class="row">
           <q-checkbox
@@ -149,12 +165,35 @@
           v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
           unelevated
           :label="esEdicion ? 'Actualizar Permisos' : 'Crear Usuario'"
-          :color="esEdicion ? 'orange-9' : 'primary'"
+          :color="esEdicion ? 'orange' : 'primary'"
           @click="ejecutarGuardado"
         />
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <q-dialog v-model="promptReset" :backdrop-filter="'blur(4px) brightness(60%)'" persistent>
+  <q-card style="min-width: 350px">
+    <q-card-section>
+      <div class="text-h6">Nueva Contraseña para {{ usuarioSeleccionado?.Usuario }}</div>
+    </q-card-section>
+
+    <q-card-section class="q-pt-none">
+      <q-input 
+        v-model="nuevaPassword" 
+        autofocus 
+        type="password" 
+        label="Escribe la nueva Contraseña"
+        @keyup.enter="ejecutarReset"
+      />
+    </q-card-section>
+
+    <q-card-actions align="right" class="text-primary">
+      <q-btn flat label="Cancelar" v-close-popup />
+      <q-btn flat label="Cambiar Contraseña" @click="ejecutarReset" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
 <script setup>
@@ -175,6 +214,8 @@ const UserInfo = ref(false) // Controla el diálogo
 const esEdicion = ref(false) // Switch entre Registro y Edición
 const usuarioSeleccionado = ref(null)
 const authStore = useAuthStore()
+const promptReset = ref(false)
+const nuevaPassword = ref('')
 
 const formModel = ref({
   Usuario: '',
@@ -265,6 +306,11 @@ const AbrirRegistro = () => {
   UserInfo.value = true
 }
 
+const abrirReset = () => {
+  nuevaPassword.value = ''
+  promptReset.value = true
+}
+
 const abrirDetalle = (user) => {
   esEdicion.value = true
   usuarioSeleccionado.value = user
@@ -328,6 +374,28 @@ const AgregarUsuario = async () => {
     $q.notify({ type: 'negative', message: 'Error al registrar usuario' })
   } finally {
     $q.loading.hide()
+  }
+}
+
+const ejecutarReset = async () => {
+  if (nuevaPassword.value.length < 4) {
+    $q.notify({ type: 'warning', message: 'La contraseña es muy corta' });
+    return;
+  }
+
+  $q.loading.show({ message: 'Cambiando contraseña...' });
+  try {
+    await api.put(`/api/usuarios/${usuarioSeleccionado.value.UserID}/reset-password`, {
+      Password: nuevaPassword.value
+    });
+
+    $q.notify({ type: 'positive', message: '¡Contraseña actualizada!' });
+    promptReset.value = false;
+  } catch (error) {
+    console.error('Error al resetear contraseña del usuario:', error)
+    $q.notify({ type: 'negative', message: 'No se pudo resetear' });
+  } finally {
+    $q.loading.hide();
   }
 }
 
