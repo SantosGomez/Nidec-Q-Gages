@@ -263,6 +263,35 @@ app.get("/api/procedimiento/manual", async (req, res) => {
   }
 });
 
+//------- Agregar nuevo procedimiento -------
+
+app.post("/api/procedimientos", async (req, res) => {
+  const p = req.body; 
+  console.log("Datos recibidos:", p); // Esto ya no debería ser undefined
+
+  if (!p.NombreProce) {
+    return res.status(400).json({ success: false, message: "Nombre requerido" });
+  }
+
+  try {
+    const query = `
+      INSERT INTO procedimiento 
+      (NombreProce, Proposito, Alcance, Materiales, Instrucciones, Precauciones, Tolerancia, ImgProce, ManualPDF, Activo) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const values = [
+      p.NombreProce, p.Proposito || null, p.Alcance || null, 
+      p.Materiales || null, p.Instrucciones || null, p.Precauciones || null, 
+      p.Tolerancia || null, p.ImgProce || null, p.ManualPDF || null, 1
+    ];
+
+    await db.query(query, values);
+    res.json({ success: true, message: "Procedimiento agregado" });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 //========= Gages ===========
 
 //--- OBTENER GAGES ---
@@ -564,6 +593,12 @@ app.get("/api/calibracion", async (req, res) => {
         f.NomFreq,
         f.ValorMeses AS FreqMeses,
         p.NombreProce,
+        p.Proposito,
+        p.Alcance,
+        p.Materiales,
+        p.Precauciones,
+        p.Tolerancia,
+        p.Instrucciones,
         -- Esta bandera le dice a Vue si debe mostrar el botón "Calibrar" o "Editar"
         CASE WHEN c.CalibracionId IS NULL THEN 1 ELSE 0 END as EsNuevo 
       FROM gage_master g

@@ -382,53 +382,102 @@
 
   <!-- dialog de procedimientos de calibracion -->
   <q-dialog
-    v-model="procedimientos"
-    maximized
-    transition-show="slide-up"
-    transition-hide="slide-down"
-  >
-    <q-card>
-      <q-bar class="bg-primary text-white q-pa-lg">
-        <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce || 'NombreProce' }}</div>
-        <q-space />
-        <q-btn flat icon="close" v-close-popup>
-          <q-tooltip>Cerrar</q-tooltip>
-        </q-btn>
-      </q-bar>
+      v-model="procedimientos"
+      maximized
+      transition-show="slide-up"
+      transition-hide="slide-down"
+    >
+      <q-card class="bg-grey-1">
+        <q-bar class="bg-primary text-white q-pa-lg">
+          <q-icon name="description" />
+          <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce }}</div>
+          <q-space />
+          <q-btn dense flat icon="close" v-close-popup />
+        </q-bar>
 
-      <q-card-section class="q-pa-md">
-        <div class="row q-col-gutter-lg">
-          <div class="col-12 col-md-6">
-            <div class="text-h5 q-mb-sm">Instrucciones de Calibración</div>
-            <p class="text-body1">{{ procedimientoSeleccionado?.DescripcionProce }}</p>
+        <q-scroll-area style="height: calc(100vh - 50px)">
+          <q-card-section class="q-pa-md">
+            <div class="row q-col-gutter-lg">
+              <div class="col-12 col-md-8">
+                <q-card flat bordered class="q-mb-md">
+                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                    1.0 Propósito y 2.0 Alcance
+                  </q-card-section>
+                  <q-card-section>
+                    <div class="text-weight-bold text-primary">Propósito:</div>
+                    <p>{{ procedimientoSeleccionado?.Proposito }}</p>
+                    <q-separator class="q-my-sm" />
+                    <div class="text-weight-bold text-primary">Alcance:</div>
+                    <p>{{ procedimientoSeleccionado?.Alcance }}</p>
+                  </q-card-section>
+                </q-card>
 
-            <q-banner rounded class="bg-amber-1 q-mb-md">
-              <template v-slot:avatar>
-                <q-icon name="warning" color="amber-9" />
-              </template>
-              Asegúrese de desconectar la fuente de poder antes de iniciar.
-            </q-banner>
-          </div>
+                <q-card flat bordered class="q-mb-md">
+                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                    3.0 Materiales Requeridos
+                  </q-card-section>
+                  <q-card-section>
+                    <div
+                      v-html="procedimientoSeleccionado?.Materiales || 'Sin materiales registrados'"
+                    ></div>
+                  </q-card-section>
+                </q-card>
 
-          <div class="col-12 col-md-6">
-            <div class="text-h5 q-mb-sm">Apoyo Visual</div>
-            <q-img
-              :src="'/procedimientos/' + procedimientoSeleccionado?.ImgProce"
-              class="rounded-borders shadow-2"
-              style="max-height: 300px"
-            />
-            <q-btn
-              color="red-9"
-              icon="picture_as_pdf"
-              label="Abrir Manual PDF Completo"
-              class="full-width q-mt-md"
-              @click="viewPDF(currentManual.pdfUrl)"
-            />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-  </q-dialog>
+                <q-card flat bordered>
+                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                    6.0 Procedimiento y 7.0 Correcciones
+                  </q-card-section>
+                  <q-card-section>
+                    <div v-html="procedimientoSeleccionado?.Instrucciones"></div>
+                  </q-card-section>
+                </q-card>
+              </div>
+
+              <div class="col-12 col-md-4">
+                <q-banner rounded class="bg-amber-1 text-amber-10 q-mb-md border-amber">
+                  <template v-slot:avatar>
+                    <q-icon name="warning" color="amber-9" size="md" />
+                  </template>
+                  <div class="text-weight-bold">4.0 Precauciones:</div>
+                  {{ procedimientoSeleccionado?.Precauciones }}
+                </q-banner>
+
+                <q-card dark class="bg-indigo-9 q-mb-md">
+                  <q-card-section>
+                    <div class="text-subtitle2">5.0 Tolerancia de Aceptación</div>
+                    <div class="text-h5 text-weight-bolder">
+                      {{ procedimientoSeleccionado?.Tolerancia }}
+                    </div>
+                  </q-card-section>
+                </q-card>
+
+                <div class="text-h6 q-mb-sm"><q-icon name="perm_media" /> Apoyo Visual</div>
+                <q-img
+                  v-if="procedimientoSeleccionado?.ImgProce"
+                  :src="'http://tu-api-url/uploads/' + procedimientoSeleccionado.ImgProce"
+                  class="rounded-borders shadow-2 q-mb-md"
+                >
+                  <template v-slot:error>
+                    <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
+                      Sin imagen de apoyo
+                    </div>
+                  </template>
+                </q-img>
+
+                <q-btn
+                  v-if="procedimientoSeleccionado?.ManualPDF"
+                  color="red-9"
+                  icon="picture_as_pdf"
+                  label="Descargar Manual PDF"
+                  class="full-width"
+                  @click="descargarPDF(procedimientoSeleccionado.ManualPDF)"
+                />
+              </div>
+            </div>
+          </q-card-section>
+        </q-scroll-area>
+      </q-card>
+    </q-dialog>
 </template>
 
 <script setup>
@@ -812,6 +861,7 @@ const columnsHistorial = [
     format: (val) => formatearFecha(val),
   },
   { name: 'FolioCertificado', label: 'Folio', field: 'FolioCertificado', align: 'left' },
+  { name: 'NombreProce', label: 'Manual', field: 'NombreProce', align: 'left' },
   { name: 'EstatusPasa', label: 'Resultado', field: 'EstatusPasa', align: 'center' },
   { name: 'CalibracionBy', label: 'Técnico', field: 'CalibracionBy', align: 'left' },
 ]
