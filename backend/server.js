@@ -116,11 +116,13 @@ app.post("/api/usuarios/registro", async (req, res) => {
     ver_gage,
     ver_calibracion,
     ver_reportes,
-    ver_procedimientos
+    ver_procedimientos,
   } = req.body;
   try {
     if (!Password) {
-      return res.status(400).json({ success: false, error: "Password es requerido" });
+      return res
+        .status(400)
+        .json({ success: false, error: "Password es requerido" });
     }
     // Generamos el "salt" y el hash
     const saltRounds = 10;
@@ -129,35 +131,34 @@ app.post("/api/usuarios/registro", async (req, res) => {
     const query = `INSERT INTO usuarios (Usuario, Password, Rol,  edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos,
         ver_gage, ver_calibracion, ver_reportes, ver_procedimientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const values = [
-    Usuario,
-    hashedPass,
-    Rol,
-    edit_gage || 0, // Usamos || 0 por si algún valor llega undefined
-    edit_gageId || 0,
-    edit_calibracion || 0,
-    edit_reportes || 0,
-    edit_procedimientos || 0,
-    ver_gage || 0,
-    ver_calibracion || 0,
-    ver_reportes || 0,
-    ver_procedimientos || 0
+      Usuario,
+      hashedPass,
+      Rol,
+      edit_gage || 0, // Usamos || 0 por si algún valor llega undefined
+      edit_gageId || 0,
+      edit_calibracion || 0,
+      edit_reportes || 0,
+      edit_procedimientos || 0,
+      ver_gage || 0,
+      ver_calibracion || 0,
+      ver_reportes || 0,
+      ver_procedimientos || 0,
     ];
-    
+
     await db.query(query, values);
 
-    res.json({ 
-      success: true, 
-      message: "Usuario creado con éxito en el sistema Q-GAGE" 
+    res.json({
+      success: true,
+      message: "Usuario creado con éxito en el sistema Q-GAGE",
     });
   } catch (error) {
     console.error("Error al registrar en la base de datos:", error);
-    res.status(500).json({ 
-      success: false, 
-      error: "Error interno al procesar el registro" 
+    res.status(500).json({
+      success: false,
+      error: "Error interno al procesar el registro",
     });
   }
 });
-
 
 //------ Reseteo de Password -------
 
@@ -167,7 +168,9 @@ app.put("/api/usuarios/:id/reset-password", async (req, res) => {
 
   try {
     if (!Password) {
-      return res.status(400).json({ error: "La nueva contraseña es requerida" });
+      return res
+        .status(400)
+        .json({ error: "La nueva contraseña es requerida" });
     }
 
     // 1. Encriptar la nueva contraseña
@@ -266,11 +269,13 @@ app.get("/api/procedimiento/manual", async (req, res) => {
 //------- Agregar nuevo procedimiento -------
 
 app.post("/api/procedimientos", async (req, res) => {
-  const p = req.body; 
+  const p = req.body;
   console.log("Datos recibidos:", p); // Esto ya no debería ser undefined
 
   if (!p.NombreProce) {
-    return res.status(400).json({ success: false, message: "Nombre requerido" });
+    return res
+      .status(400)
+      .json({ success: false, message: "Nombre requerido" });
   }
 
   try {
@@ -281,9 +286,16 @@ app.post("/api/procedimientos", async (req, res) => {
     `;
 
     const values = [
-      p.NombreProce, p.Proposito || null, p.Alcance || null, 
-      p.Materiales || null, p.Instrucciones || null, p.Precauciones || null, 
-      p.Tolerancia || null, p.ImgProce || null, p.ManualPDF || null, 1
+      p.NombreProce,
+      p.Proposito || null,
+      p.Alcance || null,
+      p.Materiales || null,
+      p.Instrucciones || null,
+      p.Precauciones || null,
+      p.Tolerancia || null,
+      p.ImgProce || null,
+      p.ManualPDF || null,
+      1,
     ];
 
     await db.query(query, values);
@@ -292,7 +304,6 @@ app.post("/api/procedimientos", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
-
 
 //========= Gages ===========
 
@@ -347,7 +358,9 @@ app.get("/api/gages", async (req, res) => {
 // ------ Nombres de plantillas para el formulario --------
 app.get("/api/plantillas/nombres", async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT DISTINCT GageTipo FROM plantilla_puntos ORDER BY GageTipo ASC");
+    const [rows] = await db.query(
+      "SELECT DISTINCT GageTipo FROM plantilla_puntos ORDER BY GageTipo ASC",
+    );
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener nombres de plantillas" });
@@ -668,7 +681,7 @@ app.get("/api/calibracion/detalle/:id", async (req, res) => {
     const [rows] = await db.query(
       `
       SELECT 
-        cd.MedicionId, cd.PuntoNominal, cd.ToleranciaMin,
+        cd.MedicionId, cd.PuntoNominal, cd.ToleranciaMin,cd.Categoria,
         cd.ToleranciaMax, cd.ValorLeido, cd.Diferencia,
         c.FolioCertificado, g.GageSerie, p.NombreProce
       FROM calibraciondtl cd
@@ -689,66 +702,43 @@ app.get("/api/calibracion/detalle/:id", async (req, res) => {
 // ----- Insertar Nueva Calibracion -------
 
 app.post("/api/registrar-calibracion", async (req, res) => {
-  const {
-    GagesId,
-    FechaCalibracion,
-    Resultado,
-    EstatusPasa,
-    CalibracionBy,
-    FechaProxima,
-    CapturadoPor,
-    FolioCertificado,
-    PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia,
-    E_Pusados, Temperatura, Humedad
-  } = req.body;
-
+  const { GagesId, FechaCalibracion, Mediciones, ...datos } = req.body;
   const connection = await db.getConnection();
+  
   try {
     await connection.beginTransaction();
 
-    // 1. Insertar registro
-    const sqlInsertCabecera = `
-      INSERT INTO calibracion 
-      (GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, CalibracionBy, FechaProxima, CapturadoPor, E_Pusados, Temperatura, Humedad)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    // 1. Insertar Cabecera (Asegúrate que los campos coincidan con tu DB)
+    const [result] = await connection.query(
+      "INSERT INTO calibracion (GageId, FechaCalibracion, EstatusPasa, CalibracionBy, ...) VALUES (?, ?, ?, ?, ...)",
+      [GagesId, FechaCalibracion, datos.EstatusPasa, datos.CalibracionBy]
+    );
+    
+    const newId = result.insertId;
 
-      const [result] = await connection.query(sqlInsertCabecera, [
-      GagesId, FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, 
-      CalibracionBy, FechaProxima, CapturadoPor, E_Pusados, Temperatura, Humedad
-    ]);
-
-    const newCalibracionId = result.insertId; // Obtenemos el ID generado
-
-    const sqlInsertDetalle = `
-      INSERT INTO calibraciondtl 
-      (CalibracionId, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia)
-      VALUES (?, ?, ?, ?, ?, ?)`;
-
-    await connection.query(sqlInsertDetalle, [
-      newCalibracionId, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia
-    ]);
-
-    // 2. Actualizar Maestro de Gages
-    // Nota: El ID del estado debe coincidir con tu tabla 'estado_gage'
-   const nuevoEstado = (EstatusPasa == 1) ? 1 : 2; // 1=Activo/Pasa, 2=Rechazado (ajustar según tu tabla estado_gage)
-    await connection.query("UPDATE gage_master SET Estado = ? WHERE GageId = ?", [nuevoEstado, GagesId]);
+    // 2. Insertar Detalle (Bucle de mediciones)
+    for (const med of Mediciones) {
+      await connection.query(
+        "INSERT INTO calibraciondtl (CalibracionId, Categoria, PuntoNominal, ValorLeido, Diferencia) VALUES (?, ?, ?, ?, ?)",
+        [newId, med.Categoria, med.PuntoNominal, med.ValorLeido, med.Diferencia]
+      );
+    }
 
     await connection.commit();
-    res.json({ success: true, message: "Registro completo con detalles" });
+    res.json({ success: true });
   } catch (error) {
     await connection.rollback();
-    console.error(error);
-    res.status(500).json({ error: "Error en el servidor" });
+    res.status(500).json({ error: error.message });
   } finally {
     connection.release();
   }
 });
-
 // --------- Historial de Calibraciones por Gage -----------
 app.get("/api/historial/:gageId", async (req, res) => {
   const { gageId } = req.params;
   try {
-    const [rows] = await db.query(`
+    const [rows] = await db.query(
+      `
       SELECT 
         c.CalibracionId, 
         c.FechaCalibracion, 
@@ -762,7 +752,9 @@ app.get("/api/historial/:gageId", async (req, res) => {
       INNER JOIN calibraciondtl cd ON c.CalibracionId = cd.CalibracionId
       WHERE c.GagesId = ?
       ORDER BY c.FechaCalibracion DESC
-    `, [gageId]);
+    `,
+      [gageId],
+    );
     res.json(rows);
   } catch (error) {
     res.status(500).json({ error: "Error al obtener el historial" });
@@ -775,7 +767,7 @@ app.put("/api/actualizar-calibracion/:id", async (req, res) => {
   const { id } = req.params;
   const p = req.body;
 
-  const{
+  const {
     GagesId,
     FechaCalibracion,
     Resultado,
@@ -783,8 +775,10 @@ app.put("/api/actualizar-calibracion/:id", async (req, res) => {
     CalibracionBy,
     FechaProxima,
     FolioCertificado,
-    PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia,
-    E_Pusados, Temperatura, Humedad
+    E_Pusados,
+    Temperatura,
+    Humedad,
+    Mediciones, // Arreglo de objetos [{Categoria, PuntoNominal, ValorLeido...}]
   } = req.body;
 
   const connection = await db.getConnection();
@@ -793,46 +787,95 @@ app.put("/api/actualizar-calibracion/:id", async (req, res) => {
 
     const sqlUpdateCabecera = `
       UPDATE calibracion SET 
-        FolioCertificado = ?, 
-        FechaCalibracion = ?, 
-        Resultado = ?, 
-        EstatusPasa = ?, 
-        CalibracionBy = ?, 
-        FechaProxima = ?, 
-        E_Pusados = ?, 
-        Temperatura = ?, 
-        Humedad = ?
+        FolioCertificado = ?, FechaCalibracion = ?, Resultado = ?, 
+        EstatusPasa = ?, CalibracionBy = ?, FechaProxima = ?, 
+        E_Pusados = ?, Temperatura = ?, Humedad = ?
       WHERE CalibracionId = ?`;
 
     await connection.query(sqlUpdateCabecera, [
-      FolioCertificado, FechaCalibracion, Resultado, EstatusPasa, 
-      CalibracionBy, FechaProxima, E_Pusados, Temperatura, Humedad, id
+      FolioCertificado,
+      FechaCalibracion,
+      Resultado,
+      EstatusPasa,
+      CalibracionBy,
+      FechaProxima,
+      E_Pusados,
+      Temperatura,
+      Humedad,
+      id,
     ]);
 
-    const sqlUpdateDetalle = `
-      UPDATE calibraciondtl SET 
-        PuntoNominal = ?, 
-        ToleranciaMin = ?, 
-        ToleranciaMax = ?, 
-        ValorLeido = ?, 
-        Diferencia = ?
-      WHERE CalibracionId = ?`;
+    await connection.query(
+      "DELETE FROM calibraciondtl WHERE CalibracionId = ?",
+      [id],
+    );
 
-    await connection.query(sqlUpdateDetalle, [
-      PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia, id
-    ]);
-
-    const nuevoEstado = (EstatusPasa == 1) ? 1 : 2; 
-    await connection.query("UPDATE gage_master SET Estado = ? WHERE GageId = ?", [nuevoEstado, GagesId]);
+    for (const med of Mediciones) {
+      await connection.query(sqlInsertDetalle, [
+        id,
+        med.Categoria,
+        med.PuntoNominal,
+        med.ToleranciaMin,
+        med.ToleranciaMax,
+        med.ValorLeido,
+        med.Diferencia,
+      ]);
+    }
+    const nuevoEstado = EstatusPasa == 1 ? 1 : 2;
+    await connection.query(
+      "UPDATE gage_master SET Estado = ? WHERE GageId = ?",
+      [nuevoEstado, GagesId],
+    );
 
     await connection.commit();
-    res.json({ success: true, message: "Calibración actualizada correctamente" });
+    res.json({ success: true, message: "Calibración y detalles actualizados" });
   } catch (error) {
     await connection.rollback();
     console.error("Error al actualizar:", error);
-    res.status(500).json({ error: "Error interno del servidor" });
+    res.status(500).json({ error: error.message });
   } finally {
     connection.release();
+  }
+});
+
+// --------- Preparar Datos para Calibrar (Formulario) ---------
+app.get("/api/preparar-calibracion/:gageId", async (req, res) => {
+  const { gageId } = req.params;
+  try {
+    // 1. Obtener datos del Gage
+    const [gageRes] = await db.query(
+      "SELECT g.*, f.ValorMeses FROM gage_master g JOIN frecuencia_gage f ON g.FreqCalibracion = f.FreqId WHERE g.GageId = ?",
+      [gageId]
+    );
+
+    // Si no hay gage, respondemos con error y salimos
+    if (!gageRes || gageRes.length === 0) {
+      return res.status(404).json({ error: "Gage no encontrado" });
+    }
+
+    const infoGage = gageRes[0];
+
+    // 2. Obtener puntos usando el PlantillaNombre del gage encontrado
+    const [puntos] = await db.query(
+      "SELECT * FROM plantilla_puntos WHERE GageTipo = ? ORDER BY Orden ASC",
+      [infoGage.PlantillaNombre]
+    );
+
+    // 3. Obtener patrones
+    const [patrones] = await db.query(
+      "SELECT PatronId, CodigoPatron, Descripcion FROM patrones_maestro WHERE Estatus = 'Activo'"
+    );
+
+    // IMPORTANTE: Enviamos el objeto con las propiedades claras
+    res.json({
+      gage: infoGage,
+      puntos: puntos || [],
+      patrones: patrones || []
+    });
+
+  } catch (error) {
+    console.error("Error en preparar-calibracion:", error);
+    res.status(500).json({ error: error.message });
   }
 });
 

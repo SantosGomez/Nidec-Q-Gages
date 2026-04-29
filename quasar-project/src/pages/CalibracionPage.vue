@@ -26,7 +26,19 @@
             <div class="row q-gutter-md">
               <q-select
                 v-model="filtroEstado"
-                :options="['Todos','NUEVO','CALIBRADO','PROXIMO A CALIBRAR','VENCIDO','RECHAZADO',]" label="Filtrar por Estado" dense outlined style="min-width: 170px"/>
+                :options="[
+                  'Todos',
+                  'NUEVO',
+                  'CALIBRADO',
+                  'PROXIMO A CALIBRAR',
+                  'VENCIDO',
+                  'RECHAZADO',
+                ]"
+                label="Filtrar por Estado"
+                dense
+                outlined
+                style="min-width: 170px"
+              />
 
               <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
                 <template v-slot:append>
@@ -133,7 +145,10 @@
 
                 <template v-else-if="col.name === 'actions'">
                   <q-btn
-                    v-if="authStore.usuario?.edit_gage && (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)"
+                    v-if="
+                      authStore.usuario?.edit_gage &&
+                      (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)
+                    "
                     color="positive"
                     icon="build"
                     label="Calibrar"
@@ -230,133 +245,166 @@
       <q-tab-panels v-model="tabActual" animated>
         <q-tab-panel name="registro" class="q-pa-md">
           <q-form @submit="onSubmit" @reset="onReset">
-            <div class="row q-col-gutter-md">
-              <div class="col-12 col-md-6">
-                <q-input filled v-model="formModel.GageSerie" label="Gage ID" readonly />
-              </div>
-              <div class="col-12 col-md-6">
-                <q-input filled v-model="formModel.Descripcion" label="Equipo" readonly />
-              </div>
+              <q-scroll-area style="width: 100%; height: 450px;">
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-md-6">
+                  <q-input  v-model="formModel.GageSerie" label="Gage ID" readonly />
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-input  v-model="formModel.Descripcion" label="Equipo" readonly />
+                </div>
 
-              <div class="col-12 col-md-4">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.FolioCertificado"
-                  label="No. de Certificado / Folio"
-                />
-              </div>
-              <div class="col-12 col-md-4">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.E_Pusados"
-                  label="Patrón/Equipo Usado"
-                />
-              </div>
-              <div class="col-12 col-md-2">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.Temperatura"
-                  label="Temp (°C)"
-                  type="number"
-                  step="0.1"
-                />
-              </div>
-              <div class="col-12 col-md-2">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.Humedad"
-                  label="Humedad (%)"
-                  type="number"
-                  step="0.1"
-                />
-              </div>
+                <div class="col-12 col-md-4">
+                  <q-input
+                    
+                    :readonly="soloLectura"
+                    v-model="formModel.FolioCertificado"
+                    label="No. de Certificado / Folio"
+                  />
+                </div>
+                <div class="col-12 col-md-4">
+                  <q-select
+                    v-model="formModel.E_Pusados"
+                    :options="listaPatrones"
+                    option-label="CodigoPatron"
+                    option-value="CodigoPatron"
+                    emit-value
+                    map-options
+                    multiple
+                    use-chips
+                    stack-label
+                    label="Patrones Utilizados"
+                    :readonly="soloLectura"
+                    class="col-12 col-md-4"
+                    bg-color="white"
+                  >
+                    <template v-slot:no-option>
+                      <q-item>
+                        <q-item-section class="text-grey"
+                          >No hay patrones disponibles</q-item-section
+                        >
+                      </q-item>
+                    </template>
+                  </q-select>
+                </div>
+                <div class="col-12 col-md-2">
+                  <q-input
+                    
+                    :readonly="soloLectura"
+                    v-model="formModel.Temperatura"
+                    label="Temp (°C)"
+                    type="number"
+                    step="0.1"
+                  />
+                </div>
+                <div class="col-12 col-md-2">
+                  <q-input
+                    
+                    :readonly="soloLectura"
+                    v-model="formModel.Humedad"
+                    label="Humedad (%)"
+                    type="number"
+                    step="0.1"
+                  />
+                </div>
 
-              <div class="col-12 col-md-3">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.PuntoNominal"
-                  type="number"
-                  step="0.0001"
-                  label="Punto Nominal"
-                />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.ValorLeido"
-                  label="Valor Leído"
-                  type="number"
-                  step="0.0001"
-                />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-input
-                  filled
-                  readonly
-                  v-model="formModel.Diferencia"
-                  label="Diferencia"
-                  bg-color="grey-2"
-                />
-              </div>
-              <div class="col-12 col-md-3">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.CalibracionBy"
-                  label="Calibrado por"
-                />
-              </div>
+                <div class="col-12 q-mt-md">
+                  <div class="text-subtitle1 text-weight-bold q-mb-sm">Puntos de Medición</div>
+                  <q-markup-table flat bordered dense>
+                    <thead class="bg-blue-grey-1">
+                      <tr>
+                        <th class="text-left">Categoría</th>
+                        <th class="text-left">Nominal</th>
+                        <th class="text-left" style="width: 150px">Valor Leído</th>
+                        <th class="text-left">Dif.</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr v-for="(med, index) in mediciones" :key="index">
+                        <td class="text-blue-9 text-weight-bold">{{ med.Categoria }}</td>
+                        <td>{{ med.PuntoNominal }}</td>
+                        <td>
+                          <q-input
+                            v-model.number="med.ValorLeido"
+                            type="number"
+                            step="0.0001"
+                            dense
+                            outlined
+                            bg-color="white"
+                            @update:model-value="calcularDiferencia(index)"
+                            :readonly="soloLectura"
+                          />
+                        </td>
+                        <td
+                          :class="
+                            Math.abs(med.Diferencia) > 0.001
+                              ? 'text-red text-weight-bold'
+                              : 'text-green'
+                          "
+                        >
+                          {{ med.Diferencia }}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </q-markup-table>
+                </div>
 
-              <div class="col-12 col-md-4">
-                <q-input
-                  filled
-                  :readonly="soloLectura"
-                  v-model="formModel.FechaCalibracion"
-                  mask="date"
-                  label="Fecha Calibración"
-                >
-                  <template v-slot:append>
-                    <q-icon name="event" class="cursor-pointer">
-                      <q-popup-proxy><q-date v-model="formModel.FechaCalibracion" /></q-popup-proxy>
-                    </q-icon>
-                  </template>
-                </q-input>
-              </div>
+                <div class="col-12 col-md-4">
+                  <q-input
+                    
+                    :readonly="soloLectura"
+                    v-model="formModel.CalibracionBy"
+                    label="Calibrado por"
+                  />
+                </div>
 
-              <div class="col-12 col-md-8 flex items-center justify-around">
-                <span class="text-weight-bold">Resultado Final:</span>
-                <q-radio
-                  v-model="formModel.EstatusPasa"
-                  :val="1"
-                  label="APROBADO"
-                  color="positive"
-                  :disable="soloLectura"
-                />
-                <q-radio
-                  v-model="formModel.EstatusPasa"
-                  :val="0"
-                  label="RECHAZADO"
-                  color="negative"
-                  :disable="soloLectura"
+                <div class="col-12 col-md-4">
+                  <q-input
+                    
+                    :readonly="soloLectura"
+                    v-model="formModel.FechaCalibracion"
+                    mask="date"
+                    label="Fecha Calibración"
+                  >
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy
+                          ><q-date v-model="formModel.FechaCalibracion"
+                        /></q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                </div>
+
+                <div class="col-12 col-md-4 flex items-center justify-around">
+                  <span class="text-weight-bold">Resultado Final:</span>
+                  <q-radio
+                    v-model="formModel.EstatusPasa"
+                    :val="1"
+                    label="APROBADO"
+                    color="positive"
+                    :disable="soloLectura"
+                  />
+                  <q-radio
+                    v-model="formModel.EstatusPasa"
+                    :val="0"
+                    label="RECHAZADO"
+                    color="negative"
+                    :disable="soloLectura"
+                  />
+                </div>
+              </div>
+              
+            </q-scroll-area>
+              <div class="row justify-end q-mt-lg q-gutter-sm">
+                <q-btn
+                  v-if="!soloLectura"
+                  :label="modoEdicion ? 'Actualizar' : 'Registrar'"
+                  type="submit"
+                  color="primary"
                 />
               </div>
-            </div>
-
-            <div class="row justify-end q-mt-lg q-gutter-sm">
-              <q-btn
-                v-if="!soloLectura"
-                :label="modoEdicion ? 'Actualizar' : 'Registrar'"
-                type="submit"
-                color="primary"
-              />
-            </div>
-          </q-form>
+            </q-form>
         </q-tab-panel>
 
         <q-tab-panel name="historial" class="q-pa-none">
@@ -382,102 +430,102 @@
 
   <!-- dialog de procedimientos de calibracion -->
   <q-dialog
-      v-model="procedimientos"
-      maximized
-      transition-show="slide-up"
-      transition-hide="slide-down"
-    >
-      <q-card class="bg-grey-1">
-        <q-bar class="bg-primary text-white q-pa-lg">
-          <q-icon name="description" />
-          <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce }}</div>
-          <q-space />
-          <q-btn dense flat icon="close" v-close-popup />
-        </q-bar>
+    v-model="procedimientos"
+    maximized
+    transition-show="slide-up"
+    transition-hide="slide-down"
+  >
+    <q-card class="bg-grey-1">
+      <q-bar class="bg-primary text-white q-pa-lg">
+        <q-icon name="description" />
+        <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce }}</div>
+        <q-space />
+        <q-btn dense flat icon="close" v-close-popup />
+      </q-bar>
 
-        <q-scroll-area style="height: calc(100vh - 50px)">
-          <q-card-section class="q-pa-md">
-            <div class="row q-col-gutter-lg">
-              <div class="col-12 col-md-8">
-                <q-card flat bordered class="q-mb-md">
-                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
-                    1.0 Propósito y 2.0 Alcance
-                  </q-card-section>
-                  <q-card-section>
-                    <div class="text-weight-bold text-primary">Propósito:</div>
-                    <p>{{ procedimientoSeleccionado?.Proposito }}</p>
-                    <q-separator class="q-my-sm" />
-                    <div class="text-weight-bold text-primary">Alcance:</div>
-                    <p>{{ procedimientoSeleccionado?.Alcance }}</p>
-                  </q-card-section>
-                </q-card>
+      <q-scroll-area style="height: calc(100vh - 50px)">
+        <q-card-section class="q-pa-md">
+          <div class="row q-col-gutter-lg">
+            <div class="col-12 col-md-8">
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                  1.0 Propósito y 2.0 Alcance
+                </q-card-section>
+                <q-card-section>
+                  <div class="text-weight-bold text-primary">Propósito:</div>
+                  <p>{{ procedimientoSeleccionado?.Proposito }}</p>
+                  <q-separator class="q-my-sm" />
+                  <div class="text-weight-bold text-primary">Alcance:</div>
+                  <p>{{ procedimientoSeleccionado?.Alcance }}</p>
+                </q-card-section>
+              </q-card>
 
-                <q-card flat bordered class="q-mb-md">
-                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
-                    3.0 Materiales Requeridos
-                  </q-card-section>
-                  <q-card-section>
-                    <div
-                      v-html="procedimientoSeleccionado?.Materiales || 'Sin materiales registrados'"
-                    ></div>
-                  </q-card-section>
-                </q-card>
+              <q-card flat bordered class="q-mb-md">
+                <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                  3.0 Materiales Requeridos
+                </q-card-section>
+                <q-card-section>
+                  <div
+                    v-html="procedimientoSeleccionado?.Materiales || 'Sin materiales registrados'"
+                  ></div>
+                </q-card-section>
+              </q-card>
 
-                <q-card flat bordered>
-                  <q-card-section class="bg-blue-grey-1 text-weight-bold">
-                    6.0 Procedimiento y 7.0 Correcciones
-                  </q-card-section>
-                  <q-card-section>
-                    <div v-html="procedimientoSeleccionado?.Instrucciones"></div>
-                  </q-card-section>
-                </q-card>
-              </div>
-
-              <div class="col-12 col-md-4">
-                <q-banner rounded class="bg-amber-1 text-amber-10 q-mb-md border-amber">
-                  <template v-slot:avatar>
-                    <q-icon name="warning" color="amber-9" size="md" />
-                  </template>
-                  <div class="text-weight-bold">4.0 Precauciones:</div>
-                  {{ procedimientoSeleccionado?.Precauciones }}
-                </q-banner>
-
-                <q-card dark class="bg-indigo-9 q-mb-md">
-                  <q-card-section>
-                    <div class="text-subtitle2">5.0 Tolerancia de Aceptación</div>
-                    <div class="text-h5 text-weight-bolder">
-                      {{ procedimientoSeleccionado?.Tolerancia }}
-                    </div>
-                  </q-card-section>
-                </q-card>
-
-                <div class="text-h6 q-mb-sm"><q-icon name="perm_media" /> Apoyo Visual</div>
-                <q-img
-                  v-if="procedimientoSeleccionado?.ImgProce"
-                  :src="'http://tu-api-url/uploads/' + procedimientoSeleccionado.ImgProce"
-                  class="rounded-borders shadow-2 q-mb-md"
-                >
-                  <template v-slot:error>
-                    <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
-                      Sin imagen de apoyo
-                    </div>
-                  </template>
-                </q-img>
-
-                <q-btn
-                  v-if="procedimientoSeleccionado?.ManualPDF"
-                  color="red-9"
-                  icon="picture_as_pdf"
-                  label="Descargar Manual PDF"
-                  class="full-width"
-                  @click="descargarPDF(procedimientoSeleccionado.ManualPDF)"
-                />
-              </div>
+              <q-card flat bordered>
+                <q-card-section class="bg-blue-grey-1 text-weight-bold">
+                  6.0 Procedimiento y 7.0 Correcciones
+                </q-card-section>
+                <q-card-section>
+                  <div v-html="procedimientoSeleccionado?.Instrucciones"></div>
+                </q-card-section>
+              </q-card>
             </div>
-          </q-card-section>
-        </q-scroll-area>
-      </q-card>
-    </q-dialog>
+
+            <div class="col-12 col-md-4">
+              <q-banner rounded class="bg-amber-1 text-amber-10 q-mb-md border-amber">
+                <template v-slot:avatar>
+                  <q-icon name="warning" color="amber-9" size="md" />
+                </template>
+                <div class="text-weight-bold">4.0 Precauciones:</div>
+                {{ procedimientoSeleccionado?.Precauciones }}
+              </q-banner>
+
+              <q-card dark class="bg-indigo-9 q-mb-md">
+                <q-card-section>
+                  <div class="text-subtitle2">5.0 Tolerancia de Aceptación</div>
+                  <div class="text-h5 text-weight-bolder">
+                    {{ procedimientoSeleccionado?.Tolerancia }}
+                  </div>
+                </q-card-section>
+              </q-card>
+
+              <div class="text-h6 q-mb-sm"><q-icon name="perm_media" /> Apoyo Visual</div>
+              <q-img
+                v-if="procedimientoSeleccionado?.ImgProce"
+                :src="'http://tu-api-url/uploads/' + procedimientoSeleccionado.ImgProce"
+                class="rounded-borders shadow-2 q-mb-md"
+              >
+                <template v-slot:error>
+                  <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
+                    Sin imagen de apoyo
+                  </div>
+                </template>
+              </q-img>
+
+              <q-btn
+                v-if="procedimientoSeleccionado?.ManualPDF"
+                color="red-9"
+                icon="picture_as_pdf"
+                label="Descargar Manual PDF"
+                class="full-width"
+                @click="descargarPDF(procedimientoSeleccionado.ManualPDF)"
+              />
+            </div>
+          </div>
+        </q-card-section>
+      </q-scroll-area>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -510,7 +558,10 @@ const soloLectura = ref(false) // Controla si los inputs están bloqueados (para
 const tabActual = ref('registro') // Controla la pestaña activa
 const rowsHistorial = ref([]) // Se llenará al abrir el diálogo
 const search = ref('')
+const listaPatrones = ref([])
 const rows = ref([])
+const mediciones = ref([]) // Aquí se guardarán los puntos de la plantilla
+const patronesSeleccionados = ref([])
 const backdropFilter = 'blur(5px)'
 const selectedGage = ref(null)
 const filtroEstado = ref('Todos')
@@ -580,14 +631,9 @@ const formModel = ref({
   EstatusPasa: 1,
   CalibracionBy: '',
   fechaProxima: '',
-  E_Pusados: '',
+  E_Pusados: [],
   Temperatura: '',
   Humedad: '',
-  PuntoNominal: '',
-  ToleranciaMin: '',
-  ToleranciaMax: '',
-  ValorLeido: '',
-  Diferencia: '',
 })
 
 watch(
@@ -622,12 +668,44 @@ watch([() => formModel.value.PuntoNominal, () => formModel.value.ValorLeido], ()
   // Si la diferencia absoluta es mayor a la tolerancia, podrías sugerir el cambio de radio
 })
 
+const calcularDiferencia = (index) => {
+  const item = mediciones.value[index]
+  if (item.ValorLeido !== null && item.PuntoNominal !== null) {
+    item.Diferencia = (item.ValorLeido - item.PuntoNominal).toFixed(4)
+  }
+}
+
+const prepararNuevaCalibracion = async (gageId) => {
+  try {
+    const res = await api.get(`/api/preparar-calibracion/${gageId}`)
+
+    // Si res.data existe, intentamos mapear puntos. Si no, array vacío.
+    const puntosServidor = res.data?.puntos || []
+
+    mediciones.value = puntosServidor.map((punto) => ({
+      Categoria: punto.Categoria,
+      PuntoNominal: punto.PuntoNominal,
+      ToleranciaMin: punto.ToleranciaMin,
+      ToleranciaMax: punto.ToleranciaMax,
+      ValorLeido: null,
+      Diferencia: 0,
+    }))
+
+    listaPatrones.value = res.data?.patrones || []
+  } catch (error) {
+    console.error('Error al preparar los datos:', error)
+    mediciones.value = [] // Limpiamos para evitar basura en pantalla
+  }
+}
+
 const seleccionarParaCalibrar = async (row) => {
   onReset()
   formModel.value.GagesId = row.GageId
   formModel.value.GageSerie = row.GageSerie
   formModel.value.Descripcion = row.Descripcion
   selectedGage.value = row
+
+  await prepararNuevaCalibracion(row.GageId)
 
   // CARGAR HISTORIAL AL ABRIR
   tabActual.value = 'registro' // Resetear a la primera pestaña
@@ -643,7 +721,7 @@ const seleccionarParaCalibrar = async (row) => {
 // Prepara el formulario con los datos de la fila seleccionada
 const prepararEdicion = async (row) => {
   onReset()
-  soloLectura.value = false // IMPORTANTE: Desbloquear para editar
+  soloLectura.value = false
   modoEdicion.value = true
   selectedGage.value = row
   formModel.value = { ...row }
@@ -651,15 +729,11 @@ const prepararEdicion = async (row) => {
   if (row.CalibracionId) {
     try {
       const respDetalle = await api.get(`/api/calibracion/detalle/${row.CalibracionId}`)
-      if (respDetalle.data.length > 0) {
-        // Mapeamos los campos del detalle al modelo del formulario
-        const dtl = respDetalle.data[0] // Tomamos el primer registro de detalle
-        formModel.value.PuntoNominal = dtl.PuntoNominal
-        formModel.value.ToleranciaMin = dtl.ToleranciaMin
-        formModel.value.ToleranciaMax = dtl.ToleranciaMax
-        formModel.value.ValorLeido = dtl.ValorLeido
-        formModel.value.Diferencia = dtl.Diferencia
-      }
+      mediciones.value = respDetalle.data.map((d) => ({
+        ...d,
+        ValorLeido: d.ValorLeido,
+        Diferencia: d.Diferencia || 0,
+      }))
 
       // 3. Traer el historial de este Gage específico
       const respHistorial = await api.get(`/api/historial/${row.GageId}`)
@@ -675,31 +749,28 @@ const prepararEdicion = async (row) => {
 }
 
 const verDetalles = async (row) => {
-  soloLectura.value = true // Activamos el bloqueo de inputs
-  modoEdicion.value = false
+  soloLectura.value = true
   selectedGage.value = row
-  formModel.value = { ...row } // Pasamos los datos al formModel
 
-  if (row.CalibracionId) {
-    try {
-      const respDetalle = await api.get(`/api/calibracion/detalle/${row.CalibracionId}`)
-      if (respDetalle.data.length > 0) {
-        const dtl = respDetalle.data[0]
-        formModel.value.PuntoNominal = dtl.PuntoNominal
-        formModel.value.ToleranciaMin = dtl.ToleranciaMin
-        formModel.value.ToleranciaMax = dtl.ToleranciaMax
-        formModel.value.ValorLeido = dtl.ValorLeido
-        formModel.value.Diferencia = dtl.Diferencia
-      }
+  // Clonamos el objeto para no afectar la fila original
+  const datosCargados = { ...row }
 
-      const respHistorial = await api.get(`/api/historial/${row.GageId}`)
-      rowsHistorial.value = respHistorial.data
-    } catch (error) {
-      console.error('Error al ver detalles:', error)
-    }
+  // CLAVE: Si vienen patrones en texto, los separamos por la coma
+  if (datosCargados.E_Pusados && typeof datosCargados.E_Pusados === 'string') {
+    datosCargados.E_Pusados = datosCargados.E_Pusados.split(', ')
+  } else if (!datosCargados.E_Pusados) {
+    datosCargados.E_Pusados = [] // Si no hay nada, inicializar array vacío
   }
 
-  Form.value = true // Abrimos el diálogo
+  formModel.value = datosCargados
+
+  // Cargar mediciones (tabla hija)
+  if (row.CalibracionId) {
+    const res = await api.get(`/api/calibracion/detalle/${row.CalibracionId}`)
+    mediciones.value = res.data
+  }
+
+  Form.value = true
 }
 
 const onReset = () => {
@@ -712,39 +783,29 @@ const onReset = () => {
     EstatusPasa: 1,
     CalibracionBy: '',
     fechaProxima: '',
-    E_Pusados: '',
+    E_Pusados: [],
     Temperatura: '',
     Humedad: '',
-    PuntoNominal: '',
-    ToleranciaMin: '',
-    ToleranciaMax: '',
-    ValorLeido: '',
-    Diferencia: '',
   }
+  mediciones.value = [] // <--- Limpiar la tabla de puntos
+  patronesSeleccionados.value = []
 }
 
 const insertarCalibracion = async () => {
   try {
     $q.loading.show({ message: 'Registrando calibración...' })
 
+    const patronesSeleccionados = Array.isArray(formModel.value.E_Pusados)
+      ? formModel.value.E_Pusados.join(', ')
+      : formModel.value.E_Pusados
+
     // Mapeo de campos para que coincidan con lo que espera tu server.js
     const payload = {
-      GagesId: formModel.value.GagesId,
+      ...formModel.value,
+      E_Pusados: patronesSeleccionados, // Aquí ya va como texto
+      Mediciones: mediciones.value, // La tabla de puntos
       FechaCalibracion: formModel.value.FechaCalibracion.replace(/\//g, '-'),
-      Resultado: formModel.value.Resultado, // Antes era valorMedido
-      EstatusPasa: formModel.value.EstatusPasa,
-      CalibracionBy: formModel.value.CalibracionBy, // Antes era calibradoPor
       FechaProxima: formModel.value.fechaProxima.replace(/\//g, '-'),
-      CapturadoPor: 1,
-      FolioCertificado: formModel.value.FolioCertificado, // Antes era folio
-      E_Pusados: formModel.value.E_Pusados,
-      Temperatura: formModel.value.Temperatura,
-      Humedad: formModel.value.Humedad,
-      PuntoNominal: formModel.value.PuntoNominal,
-      ToleranciaMin: formModel.value.ToleranciaMin,
-      ToleranciaMax: formModel.value.ToleranciaMax,
-      ValorLeido: formModel.value.ValorLeido,
-      Diferencia: formModel.value.Diferencia,
     }
 
     const res = await api.post('/api/registrar-calibracion', payload)
@@ -766,33 +827,13 @@ const actualizarCalibracion = async () => {
   try {
     $q.loading.show({ message: 'Actualizando registro...' })
 
-    const datos = formModel.value
-
-    let fechaLimpia = datos.FechaCalibracion
-    if (fechaLimpia && fechaLimpia.includes('T')) {
-      fechaLimpia = fechaLimpia.split('T')[0] // Si viene con ISO Time, nos quedamos solo con la fecha
-    }
-
     const bodyEnvio = {
-      CalibracionId: datos.CalibracionId, // ID de la calibración
-      GagesId: datos.GageId || datos.GagesId, // Aseguramos el ID del Gage
-      FechaCalibracion: fechaLimpia,
-      Resultado: datos.Resultado,
-      EstatusPasa: datos.EstatusPasa,
-      CalibracionBy: datos.CalibracionBy,
-      FechaProxima: datos.fechaProxima,
-      FolioCertificado: datos.FolioCertificado,
-      E_Pusados: datos.E_Pusados,
-      Temperatura: datos.Temperatura,
-      Humedad: datos.Humedad,
-      PuntoNominal: datos.PuntoNominal,
-      ToleranciaMin: datos.ToleranciaMin,
-      ToleranciaMax: datos.ToleranciaMax,
-      ValorLeido: datos.ValorLeido,
-      Diferencia: datos.Diferencia,
+      ...formModel.value,
+      Mediciones: mediciones.value,
     }
 
-    await api.put(`/api/actualizar-calibracion/${datos.CalibracionId}`, bodyEnvio)
+    // Cambiamos 'datos.CalibracionId' por 'formModel.value.CalibracionId'
+    await api.put(`/api/actualizar-calibracion/${formModel.value.CalibracionId}`, bodyEnvio)
 
     Form.value = false
     obtenerCalibraciones()
