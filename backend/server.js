@@ -328,7 +328,8 @@ app.get("/api/gages", async (req, res) => {
     gage_master.Serie,
     gage_master.Rango,
     gage_master.Resolucion,
-    gage_master.OrdenCompra
+    gage_master.OrdenCompra,
+    gage_master.PlantillaNombre
     FROM gage_master
     INNER JOIN procedimiento ON gage_master.ProcedimientoId = procedimiento.ProceId
     INNER JOIN usuarios ON gage_master.Usuario = usuarios.UserID
@@ -343,18 +344,29 @@ app.get("/api/gages", async (req, res) => {
   }
 });
 
-//--- AGREGAR NUEVO GAGE ---
+// ------ Nombres de plantillas para el formulario --------
+app.get("/api/plantillas/nombres", async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT DISTINCT GageTipo FROM plantilla_puntos ORDER BY GageTipo ASC");
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener nombres de plantillas" });
+  }
+});
+
+//------ AGREGAR NUEVO GAGE -------
 app.post("/api/gages", async (req, res) => {
   const p = req.body; // Aquí vienen los datos del nuevo gage desde Quasar
   try {
     const query = `
       INSERT INTO gage_master 
-      (GageSerie, Descripcion, Vendedor, Tipo, Estado, FechaAlta, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId, Marca, Modelo, Codigo, Serie, Rango, Resolucion, OrdenCompra) 
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      (GageSerie, Descripcion, PlantillaNombre, Vendedor, Tipo, Estado, FechaAlta, FreqCalibracion, Usuario, Informacion, Ex_Int, Act_Inact, Locacion, ProcedimientoId, Marca, Modelo, Codigo, Serie, Rango, Resolucion, OrdenCompra) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `;
     await db.query(query, [
       p.GageSerie,
       p.Descripcion,
+      p.PlantillaNombre,
       p.Vendedor,
       p.Tipo,
       p.Estado,
@@ -394,7 +406,7 @@ app.put("/api/gages/:id", async (req, res) => {
   try {
     const query = `
       UPDATE gage_master SET 
-        GageSerie = ?, Descripcion = ?, Vendedor = ?, Tipo = ?, 
+        GageSerie = ?, Descripcion = ?, PlantillaNombre = ?, Vendedor = ?, Tipo = ?, 
         Estado = ?, FechaAlta = ?, FreqCalibracion = ?, 
         Usuario = ?, Informacion = ?, Ex_Int = ?, Act_Inact = ?, 
         Locacion = ?, ProcedimientoId = ?, Marca = ?, Modelo = ?, 
@@ -406,6 +418,7 @@ app.put("/api/gages/:id", async (req, res) => {
     const values = [
       p.GageSerie,
       p.Descripcion,
+      p.PlantillaNombre,
       p.Vendedor,
       toInt(p.Tipo),
       toInt(p.Estado),

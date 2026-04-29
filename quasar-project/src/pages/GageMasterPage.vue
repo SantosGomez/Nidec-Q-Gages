@@ -34,6 +34,7 @@
           row-key="GageId"
           flat
           bordered
+          dense
         >
           <template v-slot:top-right>
             <q-input
@@ -110,7 +111,7 @@
                   label="Nombre del Gage"
                 />
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
                 <q-select
                   :readonly="soloLectura"
                   v-model="formModel.Tipo"
@@ -122,7 +123,27 @@
                   map-options
                 />
               </div>
-              <div class="col-12 col-md-6">
+              <div class="col-12 col-md-4">
+                <q-select
+                  v-model="formModel.PlantillaNombre"
+                  :options="opcionesPlantillas"
+                  option-value="GageTipo"
+                  option-label="GageTipo"
+                  emit-value
+                  map-options
+                  label="Plantilla de Calibración"
+                  class="q-mb-md"
+                >
+                  <template v-slot:no-option>
+                    <q-item>
+                      <q-item-section class="text-italic text-grey">
+                        No hay plantillas creadas
+                      </q-item-section>
+                    </q-item>
+                  </template>
+                </q-select>
+              </div>
+              <div class="col-12 col-md-4">
                 <q-select
                   :readonly="soloLectura"
                   v-model="formModel.Estado"
@@ -299,12 +320,14 @@ const soloLectura = ref(false)
 const GageSeleccionado = ref(null)
 const backdropFilter = ref('blur(4px)')
 const Procedimientolista = ref([])
+const opcionesPlantillas = ref([]);
 
 // --- MODELO DEL FORMULARIO ---
 const formModel = ref({
   GageId: '', // Antes gageId
   GageSerie: '', // Nuevo campo para el número de serie
   Descripcion: '', // Antes description
+  PlantillaNombre: '', // Nuevo campo para el nombre de la plantilla
   Tipo: null, // Antes tipo
   Estado: null, // Antes estado
   Locacion: '', // Antes localizacion (revisa si es Locacion o LocacionId)
@@ -353,6 +376,16 @@ const Manuales = async () => {
     console.error('Error al cargar Procedimientos', error)
   }
 }
+
+const cargarPlantillas = async () => {
+  try {
+    const response = await api.get('/api/plantillas/nombres');
+    // Mapeamos para que Quasar lea los strings directamente si es necesario
+    opcionesPlantillas.value = response.data.map(p => p.GageTipo);
+  } catch (error) {
+    console.error("Error cargando plantillas:", error);
+  }
+};
 
 // --- CONFIGURACIÓN DE TABLA ---
 const columns = [
@@ -430,6 +463,7 @@ const insertarGage = async () => {
       Rango: p.Rango,
       Resolucion: p.Resolucion,
       OrdenCompra: p.OrdenCompra,
+      PlantillaNombre: p.PlantillaNombre, // Nuevo campo
     }
 
     await api.post('/api/gages', bodyEnvio)
@@ -480,6 +514,7 @@ const actualizarGage = async () => {
       Rango: payload.Rango,
       Resolucion: payload.Resolucion,
       OrdenCompra: payload.OrdenCompra,
+      PlantillaNombre: payload.PlantillaNombre, // Nuevo campo
     }
 
     await api.put(`/api/gages/${formModel.value.GageId}`, bodyEnvio)
@@ -526,6 +561,7 @@ function abrirFormulario() {
     Rango: '',
     Resolucion: '',
     OrdenCompra: '',
+    PlantillaNombre: '', // Nuevo campo
   }
   Form.value = true
 }
@@ -590,6 +626,6 @@ const onReset = () => {
 onMounted(() => {
   obtenerGages()
   Manuales()
-  console.log('Datos del usuario en el store:', authStore.usuario)
+  cargarPlantillas();
 })
 </script>
