@@ -292,6 +292,8 @@ app.post("/api/procedimientos", async (req, res) => {
     res.status(500).json({ success: false, error: error.message });
   }
 });
+
+
 //========= Gages ===========
 
 //--- OBTENER GAGES ---

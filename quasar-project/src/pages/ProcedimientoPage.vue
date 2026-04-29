@@ -27,7 +27,7 @@
         <q-card class="my-card cursor-pointer q-hoverable" @click="abrirDetalle(procedimiento)">
           <span class="q-focus-helper"></span>
           <q-card-section class="text-center bg-primary text-white">
-            <q-icon name="settings_input_component" size="4rem" />
+            <q-icon name="construction" size="4rem" />
             <div class="text-h6">{{ procedimiento.NombreProce }}</div>
           </q-card-section>
           <q-card-actions align="center">
