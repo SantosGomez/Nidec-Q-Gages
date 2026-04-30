@@ -702,37 +702,85 @@ app.get("/api/calibracion/detalle/:id", async (req, res) => {
 // ----- Insertar Nueva Calibracion -------
 
 app.post("/api/registrar-calibracion", async (req, res) => {
-  const { GagesId, FechaCalibracion, Mediciones, ...datos } = req.body;
+  // Extraemos todos los campos que vienen en tu Payload
+  const { 
+    GagesId, 
+    FechaCalibracion, 
+    Mediciones, 
+    EstatusPasa, 
+    CalibracionBy, 
+    FechaProxima, 
+    FolioCertificado, 
+    E_Pusados, 
+    Temperatura, 
+    Humedad 
+  } = req.body;
+
   const connection = await db.getConnection();
   
   try {
     await connection.beginTransaction();
 
-    // 1. Insertar Cabecera (Asegúrate que los campos coincidan con tu DB)
-    const [result] = await connection.query(
-      "INSERT INTO calibracion (GageId, FechaCalibracion, EstatusPasa, CalibracionBy, ...) VALUES (?, ?, ?, ?, ...)",
-      [GagesId, FechaCalibracion, datos.EstatusPasa, datos.CalibracionBy]
-    );
+    // 1. Insertar Cabecera (Eliminamos los '...' y ponemos las columnas reales)
+    const sqlCabecera = `
+      INSERT INTO calibracion 
+      (GagesId, FechaCalibracion, EstatusPasa, CalibracionBy, FechaProxima, FolioCertificado, E_Pusados, Temperatura, Humedad) 
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    const [result] = await connection.query(sqlCabecera, [
+      GagesId, 
+      FechaCalibracion, 
+      EstatusPasa, 
+      CalibracionBy, 
+      FechaProxima, 
+      FolioCertificado, 
+      E_Pusados, 
+      Temperatura, 
+      Humedad
+    ]);
     
     const newId = result.insertId;
 
-    // 2. Insertar Detalle (Bucle de mediciones)
+    // 2. Insertar Detalle (Aprovechamos para guardar también las tolerancias si las tienes)
+    const sqlDetalle = `
+      INSERT INTO calibraciondtl 
+      (CalibracionId, Categoria, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
     for (const med of Mediciones) {
-      await connection.query(
-        "INSERT INTO calibraciondtl (CalibracionId, Categoria, PuntoNominal, ValorLeido, Diferencia) VALUES (?, ?, ?, ?, ?)",
-        [newId, med.Categoria, med.PuntoNominal, med.ValorLeido, med.Diferencia]
-      );
+      await connection.query(sqlDetalle, [
+        newId, 
+        med.Categoria, 
+        med.PuntoNominal, 
+        med.ToleranciaMin || 0, // Por si vienen vacíos
+        med.ToleranciaMax || 0, 
+        med.ValorLeido || 0, 
+        med.Diferencia
+      ]);
     }
 
+    // 3. ACTUALIZACIÓN AUTOMÁTICA: Cambiamos el estado en gage_master
+    // Si EstatusPasa es 1 (Aprobado), el estado es 1 (Calibrado). Si no, 2 (Rechazado/Vencido).
+    const nuevoEstado = (EstatusPasa == 1) ? 1 : 2; 
+    await connection.query(
+      "UPDATE gage_master SET Estado = ? WHERE GageId = ?",
+      [nuevoEstado, GagesId]
+    );
+
     await connection.commit();
-    res.json({ success: true });
+    res.json({ success: true, message: "Registro guardado y Gage actualizado" });
+
   } catch (error) {
     await connection.rollback();
-    res.status(500).json({ error: error.message });
+    console.error("Error en la transacción:", error);
+    res.status(500).json({ error: "Error al registrar: " + error.message });
   } finally {
     connection.release();
   }
 });
+
 // --------- Historial de Calibraciones por Gage -----------
 app.get("/api/historial/:gageId", async (req, res) => {
   const { gageId } = req.params;
@@ -745,19 +793,32 @@ app.get("/api/historial/:gageId", async (req, res) => {
         c.FolioCertificado, 
         c.EstatusPasa, 
         c.CalibracionBy,
-        cd.PuntoNominal, 
-        cd.ValorLeido, 
-        cd.Diferencia
+        p.NombreProce -- Ahora sí traemos el nombre del manual
       FROM calibracion c
-      INNER JOIN calibraciondtl cd ON c.CalibracionId = cd.CalibracionId
-      WHERE c.GagesId = ?
+      INNER JOIN gage_master gm ON c.GagesId = gm.GageId
+      LEFT JOIN procedimiento p ON gm.ProcedimientoId = p.ProceId
+      WHERE c.GagesId = ? 
       ORDER BY c.FechaCalibracion DESC
     `,
       [gageId],
     );
     res.json(rows);
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: "Error al obtener el historial" });
+  }
+});
+
+app.get("/api/calibracion-detalle/:CalibracionId", async (req, res) => {
+  const { CalibracionId } = req.params;
+  try {
+    const [rows] = await db.query(
+      "SELECT * FROM calibraciondtl WHERE CalibracionId = ?", 
+      [CalibracionId]
+    );
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: "Error al obtener detalles" });
   }
 });
 
@@ -787,22 +848,28 @@ app.put("/api/actualizar-calibracion/:id", async (req, res) => {
 
     const sqlUpdateCabecera = `
       UPDATE calibracion SET 
-        FolioCertificado = ?, FechaCalibracion = ?, Resultado = ?, 
-        EstatusPasa = ?, CalibracionBy = ?, FechaProxima = ?, 
-        E_Pusados = ?, Temperatura = ?, Humedad = ?
+        FolioCertificado = ?, 
+        FechaCalibracion = ?, 
+        Resultado = ?, 
+        EstatusPasa = ?, 
+        CalibracionBy = ?, 
+        FechaProxima = ?, 
+        E_Pusados = ?, 
+        Temperatura = ?, 
+        Humedad = ?
       WHERE CalibracionId = ?`;
 
     await connection.query(sqlUpdateCabecera, [
-      FolioCertificado,
-      FechaCalibracion,
-      Resultado,
-      EstatusPasa,
-      CalibracionBy,
-      FechaProxima,
-      E_Pusados,
-      Temperatura,
-      Humedad,
-      id,
+      FolioCertificado, 
+      FechaCalibracion, 
+      Resultado, 
+      EstatusPasa, 
+      CalibracionBy, 
+      FechaProxima, 
+      E_Pusados, 
+      Temperatura, 
+      Humedad, 
+      id
     ]);
 
     await connection.query(
@@ -810,14 +877,19 @@ app.put("/api/actualizar-calibracion/:id", async (req, res) => {
       [id],
     );
 
+    const sqlDetalleInsert = `
+      INSERT INTO calibraciondtl 
+      (CalibracionId, Categoria, PuntoNominal, ToleranciaMin, ToleranciaMax, ValorLeido, Diferencia) 
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
     for (const med of Mediciones) {
-      await connection.query(sqlInsertDetalle, [
+      await connection.query(sqlDetalleInsert, [
         id,
         med.Categoria,
         med.PuntoNominal,
-        med.ToleranciaMin,
-        med.ToleranciaMax,
-        med.ValorLeido,
+        med.ToleranciaMin || 0,
+        med.ToleranciaMax || 0,
+        med.ValorLeido || 0,
         med.Diferencia,
       ]);
     }

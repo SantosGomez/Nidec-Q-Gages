@@ -245,24 +245,69 @@
       <q-tab-panels v-model="tabActual" animated>
         <q-tab-panel name="registro" class="q-pa-md">
           <q-form @submit="onSubmit" @reset="onReset">
-              <q-scroll-area style="width: 100%; height: 450px;">
+            <q-scroll-area style="width: 100%; height: 450px">
               <div class="row q-col-gutter-md">
-                <div class="col-12 col-md-6">
-                  <q-input  v-model="formModel.GageSerie" label="Gage ID" readonly />
+                <div class="col-12 col-md-4">
+                  <q-input v-model="formModel.GageSerie" label="Gage ID" readonly />
                 </div>
-                <div class="col-12 col-md-6">
-                  <q-input  v-model="formModel.Descripcion" label="Equipo" readonly />
+                <div class="col-12 col-md-4">
+                  <q-input v-model="formModel.Descripcion" label="Equipo" readonly />
                 </div>
 
                 <div class="col-12 col-md-4">
                   <q-input
-                    
                     :readonly="soloLectura"
                     v-model="formModel.FolioCertificado"
                     label="No. de Certificado / Folio"
                   />
                 </div>
+                
+                <div class="col-12 col-md-2">
+                  <q-input
+                    :readonly="soloLectura"
+                    v-model="formModel.Temperatura"
+                    label="Temp (°C)"
+                    type="number"
+                    step="0.1"
+                  />
+                </div>
+                <div class="col-12 col-md-2">
+                  <q-input
+                    :readonly="soloLectura"
+                    v-model="formModel.Humedad"
+                    label="Humedad (%)"
+                    type="number"
+                    step="0.1"
+                  />
+                </div>
+
+                
+
                 <div class="col-12 col-md-4">
+                  <q-input
+                    :readonly="soloLectura"
+                    v-model="formModel.CalibracionBy"
+                    label="Calibrado por"
+                  />
+                </div>
+
+                <div class="col-12 col-md-4">
+                  <q-input
+                    :readonly="soloLectura"
+                    v-model="formModel.FechaCalibracion"
+                    mask="date"
+                    label="Fecha Calibración"
+                  >
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy
+                          ><q-date v-model="formModel.FechaCalibracion"
+                        /></q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
+                </div>
+                <div class="col-12 col-md-8">
                   <q-select
                     v-model="formModel.E_Pusados"
                     :options="listaPatrones"
@@ -287,42 +332,64 @@
                     </template>
                   </q-select>
                 </div>
-                <div class="col-12 col-md-2">
-                  <q-input
-                    
-                    :readonly="soloLectura"
-                    v-model="formModel.Temperatura"
-                    label="Temp (°C)"
-                    type="number"
-                    step="0.1"
+                <div class="col-12 col-md-4 flex items-center justify-around">
+                  <span class="text-weight-bold">Resultado Final:</span>
+                  <q-radio
+                    v-model="formModel.EstatusPasa"
+                    :val="1"
+                    label="APROBADO"
+                    color="positive"
+                    :disable="soloLectura"
+                  />
+                  <q-radio
+                    v-model="formModel.EstatusPasa"
+                    :val="0"
+                    label="RECHAZADO"
+                    color="negative"
+                    :disable="soloLectura"
                   />
                 </div>
-                <div class="col-12 col-md-2">
-                  <q-input
-                    
-                    :readonly="soloLectura"
-                    v-model="formModel.Humedad"
-                    label="Humedad (%)"
-                    type="number"
-                    step="0.1"
-                  />
-                </div>
-
-                <div class="col-12 q-mt-md">
-                  <div class="text-subtitle1 text-weight-bold q-mb-sm">Puntos de Medición</div>
-                  <q-markup-table flat bordered dense>
+                <div class="col-12 col-md-12">
+                  <div class="text-subtitle1 text-weight-bold ">Puntos de Medición</div>
+                  <q-markup-table flat bordered dense class="markup-sticky">
                     <thead class="bg-blue-grey-1">
                       <tr>
                         <th class="text-left">Categoría</th>
                         <th class="text-left">Nominal</th>
                         <th class="text-left" style="width: 150px">Valor Leído</th>
                         <th class="text-left">Dif.</th>
+                        <th class="text-center" v-if="!soloLectura">Acciones</th>
                       </tr>
                     </thead>
                     <tbody>
                       <tr v-for="(med, index) in mediciones" :key="index">
-                        <td class="text-blue-9 text-weight-bold">{{ med.Categoria }}</td>
-                        <td>{{ med.PuntoNominal }}</td>
+                        <td>
+                          <q-select
+                            v-if="med.esNuevo && !soloLectura"
+                            v-model="med.Categoria"
+                            :options="opcionesCategorias"
+                            dense
+                            outlined
+                            options-dense
+                            bg-color="white"
+                            style="min-width: 120px"
+                          />
+                          <span v-else class="text-blue-9 text-weight-bold">
+                            {{ med.Categoria }}
+                          </span>
+                        </td>
+                        <td>
+                          <q-input 
+                              v-if="med.esNuevo && !soloLectura" 
+                              v-model.number="med.PuntoNominal" 
+                              type="number" 
+                              dense 
+                              outlined
+                              bg-color="white"
+                              @update:model-value="calcularDiferencia(index)"
+                            />
+                          <span v-else>{{ med.PuntoNominal }}</span>
+                        </td>
                         <td>
                           <q-input
                             v-model.number="med.ValorLeido"
@@ -344,77 +411,60 @@
                         >
                           {{ med.Diferencia }}
                         </td>
+                        <td class="text-center" v-if="!soloLectura">
+                          <q-btn 
+                            flat 
+                            round 
+                            dense 
+                            color="negative" 
+                            icon="delete" 
+                            @click="eliminarMedicion(index)"
+                          >
+                            <q-tooltip>Eliminar fila</q-tooltip>
+                          </q-btn>
+                        </td>
                       </tr>
                     </tbody>
                   </q-markup-table>
-                </div>
-
-                <div class="col-12 col-md-4">
-                  <q-input
-                    
-                    :readonly="soloLectura"
-                    v-model="formModel.CalibracionBy"
-                    label="Calibrado por"
-                  />
-                </div>
-
-                <div class="col-12 col-md-4">
-                  <q-input
-                    
-                    :readonly="soloLectura"
-                    v-model="formModel.FechaCalibracion"
-                    mask="date"
-                    label="Fecha Calibración"
-                  >
-                    <template v-slot:append>
-                      <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy
-                          ><q-date v-model="formModel.FechaCalibracion"
-                        /></q-popup-proxy>
-                      </q-icon>
-                    </template>
-                  </q-input>
-                </div>
-
-                <div class="col-12 col-md-4 flex items-center justify-around">
-                  <span class="text-weight-bold">Resultado Final:</span>
-                  <q-radio
-                    v-model="formModel.EstatusPasa"
-                    :val="1"
-                    label="APROBADO"
-                    color="positive"
-                    :disable="soloLectura"
-                  />
-                  <q-radio
-                    v-model="formModel.EstatusPasa"
-                    :val="0"
-                    label="RECHAZADO"
-                    color="negative"
-                    :disable="soloLectura"
-                  />
+                  <div class="row justify-end q-mt-sm" v-if="!soloLectura">
+                    <q-btn 
+                      outline 
+                      icon="add" 
+                      color="primary" 
+                      label="Agregar Medición Extra" 
+                      @click="agregarMedicion" 
+                    />
+                  </div>
                 </div>
               </div>
-              
             </q-scroll-area>
-              <div class="row justify-end q-mt-lg q-gutter-sm">
-                <q-btn
-                  v-if="!soloLectura"
-                  :label="modoEdicion ? 'Actualizar' : 'Registrar'"
-                  type="submit"
-                  color="primary"
-                />
-              </div>
-            </q-form>
+            <div class="row justify-end q-mt-lg q-gutter-sm">
+              <q-btn
+                v-if="!soloLectura"
+                :label="modoEdicion ? 'Actualizar' : 'Registrar'"
+                type="submit"
+                color="primary"
+              />
+            </div>
+          </q-form>
         </q-tab-panel>
 
         <q-tab-panel name="historial" class="q-pa-none">
-          <q-table
-            flat
-            :rows="rowsHistorial"
-            :columns="columnsHistorial"
-            row-key="CalibracionId"
-            placeholder="No hay registros previos"
-          >
+          <q-table flat :rows="rowsHistorial" :columns="columnsHistorial" row-key="CalibracionId" class="tabla-sticky">
+            <!-- Slot para el Botón de Detalles -->
+            <template v-slot:body-cell-acciones="props">
+              <q-td :props="props">
+                <q-btn
+                  flat
+                  round
+                  color="blue"
+                  icon="visibility"
+                  @click="verDetalleCalibracion(props.row)"
+                />
+              </q-td>
+            </template>
+
+            <!-- Slot para el Estatus (Tu código actual) -->
             <template v-slot:body-cell-EstatusPasa="props">
               <q-td :props="props">
                 <q-badge :color="props.value === 1 ? 'positive' : 'negative'">
@@ -526,6 +576,40 @@
       </q-scroll-area>
     </q-card>
   </q-dialog>
+
+  <q-dialog v-model="mostrarDetalle" style="width: 700px; max-width: 80vw">
+    <q-card>
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Detalles de la Calibración del {{ fechaSeleccionada }}</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
+      </q-card-section>
+
+      <q-card-section class="q-pa-md">
+        <q-table
+          class="tabla-sticky"
+          flat
+          bordered
+          :rows="rowsDetalle"
+          :columns="columnsDetalle"
+          row-key="MedicionId"
+          :pagination="{ rowsPerPage: 0 }"
+          hide-bottom
+        >
+          <!-- Opcional: Colorear la diferencia si sale de rango -->
+          <template v-slot:body-cell-Diferencia="props">
+            <q-td :props="props">
+              {{ props.value }}
+            </q-td>
+          </template>
+        </q-table>
+      </q-card-section>
+
+      <q-card-actions align="right" class="bg-white text-teal">
+        <q-btn flat label="Cerrar" v-close-popup />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -565,7 +649,9 @@ const patronesSeleccionados = ref([])
 const backdropFilter = 'blur(5px)'
 const selectedGage = ref(null)
 const filtroEstado = ref('Todos')
-
+const mostrarDetalle = ref(false)
+const rowsDetalle = ref([])
+const fechaSeleccionada = ref('')
 const rowsFiltradas = computed(() => {
   let lista = rows.value
 
@@ -630,7 +716,7 @@ const formModel = ref({
   Resultado: '',
   EstatusPasa: 1,
   CalibracionBy: '',
-  fechaProxima: '',
+  FechaProxima: '',
   E_Pusados: [],
   Temperatura: '',
   Humedad: '',
@@ -649,7 +735,7 @@ watch(
         fecha.setMonth(fecha.getMonth() + selectedGage.value.FreqMeses)
 
         // Guardamos el resultado de vuelta en el modelo
-        formModel.value.fechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/')
+        formModel.value.FechaProxima = fecha.toISOString().split('T')[0].replace(/-/g, '/')
       }
     }
   },
@@ -667,6 +753,31 @@ watch([() => formModel.value.PuntoNominal, () => formModel.value.ValorLeido], ()
   // Opcional: Lógica automática para marcar Aprobado/Rechazado
   // Si la diferencia absoluta es mayor a la tolerancia, podrías sugerir el cambio de radio
 })
+
+const opcionesCategorias = [
+  'Interno',
+  'Externa',
+  'Altura',
+  'Profundidad',
+]
+
+const agregarMedicion = () => {
+  mediciones.value.push({
+    Categoria: 'Externa', // Le ponemos un valor por defecto
+    PuntoNominal: 0,
+    ToleranciaMin: 0,
+    ToleranciaMax: 0,
+    ValorLeido: null,
+    Diferencia: 0,
+    esNuevo: true
+  })
+}
+
+// Eliminar la fila específica
+const eliminarMedicion = (index) => {
+  // Elimina 1 elemento en la posición "index"
+  mediciones.value.splice(index, 1)
+}
 
 const calcularDiferencia = (index) => {
   const item = mediciones.value[index]
@@ -700,6 +811,8 @@ const prepararNuevaCalibracion = async (gageId) => {
 
 const seleccionarParaCalibrar = async (row) => {
   onReset()
+  modoEdicion.value = false; 
+  soloLectura.value = false;
   formModel.value.GagesId = row.GageId
   formModel.value.GageSerie = row.GageSerie
   formModel.value.Descripcion = row.Descripcion
@@ -750,27 +863,43 @@ const prepararEdicion = async (row) => {
 
 const verDetalles = async (row) => {
   soloLectura.value = true
+  modoEdicion.value = false // Asegúrate de resetear el modo
   selectedGage.value = row
 
-  // Clonamos el objeto para no afectar la fila original
   const datosCargados = { ...row }
 
-  // CLAVE: Si vienen patrones en texto, los separamos por la coma
+  // Convertir patrones de String a Array para el q-select
   if (datosCargados.E_Pusados && typeof datosCargados.E_Pusados === 'string') {
     datosCargados.E_Pusados = datosCargados.E_Pusados.split(', ')
   } else if (!datosCargados.E_Pusados) {
-    datosCargados.E_Pusados = [] // Si no hay nada, inicializar array vacío
+    datosCargados.E_Pusados = []
   }
 
   formModel.value = datosCargados
 
-  // Cargar mediciones (tabla hija)
   if (row.CalibracionId) {
+    // 1. Cargar mediciones actuales
     const res = await api.get(`/api/calibracion/detalle/${row.CalibracionId}`)
     mediciones.value = res.data
+
+    // 2. ¡IMPORTANTE! Cargar el historial del Gage
+    await cargarHistorialGage(row.GageId)
   }
 
   Form.value = true
+}
+
+const verDetalleCalibracion = async (row) => {
+  try {
+    // Guardamos la fecha formateada para el título del modal
+    fechaSeleccionada.value = formatearFecha(row.FechaCalibracion)
+
+    const response = await api.get(`/api/calibracion-detalle/${row.CalibracionId}`)
+    rowsDetalle.value = response.data
+    mostrarDetalle.value = true
+  } catch (error) {
+    console.error('Error al cargar detalle:', error)
+  }
 }
 
 const onReset = () => {
@@ -782,7 +911,7 @@ const onReset = () => {
     Resultado: '',
     EstatusPasa: 1,
     CalibracionBy: '',
-    fechaProxima: '',
+    FechaProxima: '',
     E_Pusados: [],
     Temperatura: '',
     Humedad: '',
@@ -805,7 +934,7 @@ const insertarCalibracion = async () => {
       E_Pusados: patronesSeleccionados, // Aquí ya va como texto
       Mediciones: mediciones.value, // La tabla de puntos
       FechaCalibracion: formModel.value.FechaCalibracion.replace(/\//g, '-'),
-      FechaProxima: formModel.value.fechaProxima.replace(/\//g, '-'),
+      FechaProxima: formModel.value.FechaProxima.replace(/\//g, '-'),
     }
 
     const res = await api.post('/api/registrar-calibracion', payload)
@@ -826,13 +955,22 @@ const insertarCalibracion = async () => {
 const actualizarCalibracion = async () => {
   try {
     $q.loading.show({ message: 'Actualizando registro...' })
+    
+    const patronesString = Array.isArray(formModel.value.E_Pusados)
+      ? formModel.value.E_Pusados.join(', ')
+      : formModel.value.E_Pusados
 
     const bodyEnvio = {
       ...formModel.value,
+      E_Pusados: patronesString,
       Mediciones: mediciones.value,
     }
 
     // Cambiamos 'datos.CalibracionId' por 'formModel.value.CalibracionId'
+    if (!formModel.value.CalibracionId) {
+      throw new Error("No se encontró el ID de la calibración");
+    }
+    
     await api.put(`/api/actualizar-calibracion/${formModel.value.CalibracionId}`, bodyEnvio)
 
     Form.value = false
@@ -894,6 +1032,7 @@ const columns = [
 ]
 
 const columnsHistorial = [
+  { name: 'acciones', label: 'Ver', field: 'acciones', align: 'center' }, // Columna para el botón
   {
     name: 'FechaCalibracion',
     label: 'Fecha',
@@ -905,6 +1044,19 @@ const columnsHistorial = [
   { name: 'NombreProce', label: 'Manual', field: 'NombreProce', align: 'left' },
   { name: 'EstatusPasa', label: 'Resultado', field: 'EstatusPasa', align: 'center' },
   { name: 'CalibracionBy', label: 'Técnico', field: 'CalibracionBy', align: 'left' },
+]
+
+const columnsDetalle = [
+  { name: 'Categoria', label: 'Categoría', field: 'Categoria', align: 'left' },
+  { name: 'PuntoNominal', label: 'Nominal', field: 'PuntoNominal', align: 'right' },
+  { name: 'ValorLeido', label: 'Leído', field: 'ValorLeido', align: 'right' },
+  {
+    name: 'Diferencia',
+    label: 'Dif.',
+    field: 'Diferencia',
+    align: 'right',
+    classes: (val) => (Math.abs(val) > 0.005 ? 'text-red text-bold' : 'text-green'),
+  },
 ]
 
 const obtenerCalibraciones = async () => {
@@ -928,25 +1080,29 @@ const cargarHistorialGage = async (id) => {
   }
 }
 
-const formatearFecha = (fechaString) => {
+const formatearFecha = (fecha) => {
+  if (!fecha) return '-- : --'
+
+  // Convertimos a String para validar casos vacíos de la DB
+  const fStr = String(fecha)
+
   if (
-    !fechaString ||
-    fechaString === '0000-00-00' ||
-    fechaString.startsWith('1969') ||
-    fechaString.startsWith('1970') ||
-    fechaString === 'null'
+    fStr === '0000-00-00' ||
+    fStr.startsWith('1969') ||
+    fStr.startsWith('1970') ||
+    fStr === 'null'
   ) {
     return '-- : --'
   }
 
-  const fecha = new Date(fechaString)
-  if (isNaN(fecha)) return '-- : --'
+  const dateObj = new Date(fecha)
+  if (isNaN(dateObj.getTime())) return '-- : --'
 
   return new Intl.DateTimeFormat('es-MX', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
-  }).format(fecha)
+  }).format(dateObj)
 }
 
 const abrirProcedimiento = (row) => {
@@ -1005,4 +1161,33 @@ onMounted(() => {
   background-color: #e8eaf6 !important; /* Azul lavanda para equipo nuevo */
   border-left: 5px solid #3f51b5; /* Una línea para que resalte más */
 }
+
+.markup-sticky {
+  max-height: 165px; /* Altura donde empezará el scroll */
+  overflow: auto;
+}
+
+.markup-sticky thead tr th {
+  position: sticky;
+  top: 0;
+  z-index: 2; /* Mayor que las celdas del cuerpo */
+  background-color: #f5f5f5; /* Color grisáceo que ya usas en bg-blue-grey-1 */
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+}
+
+/* Estilo para cabecera fija */
+.tabla-sticky {
+  height: 400px; /* Ajusta esta altura según prefieras */
+}
+
+.tabla-sticky :deep(thead tr th) {
+  position: sticky;
+  z-index: 1;
+  /* El color de fondo es vital para que las filas no se vean detrás del texto */
+  background-color: #eceff1; 
+}
+
+.tabla-sticky :deep(thead tr:first-child th) {
+  top: 0;
+} 
 </style>
