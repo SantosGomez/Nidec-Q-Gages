@@ -56,8 +56,8 @@ app.get("/api/usuarios", async (req, res) => {
     const [rows] = await db.query(`
       SELECT 
         UserID, Usuario, Rol, 
-        edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos,
-        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos 
+        edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos, edit_prestamo,
+        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos, ver_prestamo
       FROM usuarios
     `);
     res.json(rows);
@@ -74,8 +74,8 @@ app.put("/api/usuarios/:id", async (req, res) => {
   try {
     const query = `
       UPDATE usuarios SET 
-        Usuario = ?, Rol = ?, edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?,
-        ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?
+        Usuario = ?, Rol = ?, edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?, edit_prestamo = ?,
+        ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?, ver_prestamo = ?
       WHERE UserID = ?
     `;
 
@@ -88,10 +88,12 @@ app.put("/api/usuarios/:id", async (req, res) => {
       p.edit_calibracion,
       p.edit_reportes,
       p.edit_procedimientos,
+      p.edit_prestamo,
       p.ver_gage,
       p.ver_calibracion,
       p.ver_reportes,
       p.ver_procedimientos,
+      p.ver_prestamo,
       id,
     ]);
 
@@ -113,10 +115,12 @@ app.post("/api/usuarios/registro", async (req, res) => {
     edit_calibracion,
     edit_reportes,
     edit_procedimientos,
+    edit_prestamo,
     ver_gage,
     ver_calibracion,
     ver_reportes,
     ver_procedimientos,
+    ver_prestamo
   } = req.body;
   try {
     if (!Password) {
@@ -128,8 +132,8 @@ app.post("/api/usuarios/registro", async (req, res) => {
     const saltRounds = 10;
     const hashedPass = await bcrypt.hash(Password, saltRounds);
 
-    const query = `INSERT INTO usuarios (Usuario, Password, Rol,  edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos,
-        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+    const query = `INSERT INTO usuarios (Usuario, Password, Rol,  edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos, edit_prestamo,
+        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos, ver_prestamo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const values = [
       Usuario,
       hashedPass,
@@ -139,10 +143,12 @@ app.post("/api/usuarios/registro", async (req, res) => {
       edit_calibracion || 0,
       edit_reportes || 0,
       edit_procedimientos || 0,
+      edit_prestamo || 0,
       ver_gage || 0,
       ver_calibracion || 0,
       ver_reportes || 0,
       ver_procedimientos || 0,
+      ver_prestamo || 0
     ];
 
     await db.query(query, values);
@@ -559,16 +565,20 @@ app.post("/api/prestamo", async (req, res) => {
       VALUES (?, ?, ?, ?, ?, NOW())
     `;
 
-    // FORZAMOS QUE NADA LLEGUE COMO UNDEFINED O NULL
-    const values = [
-      Number(p.NoEmpleado) || 0,
-      p.Nombre || "Sin Nombre",
-      Number(p.GageId) || 0,
-      Number(p.TurnoId) || 0,
-      p.Area || "N/A",
-    ];
+    const gagesArray = Array.isArray(p.GageId) ? p.GageId : [p.GageId];
 
-    await db.query(query, values);
+    // FORZAMOS QUE NADA LLEGUE COMO UNDEFINED O NULL
+    for (const idGage of gagesArray) {
+      const values = [
+        Number(p.NoEmpleado) || 0,
+        p.Nombre || "Sin Nombre",
+        Number(idGage) || 0, // Usamos el ID individual de esta vuelta del ciclo
+        Number(p.TurnoId) || 0,
+        p.Area || "N/A",
+      ];
+
+      await db.query(query, values);
+    }
     res.json({ message: "Préstamo registrado correctamente" });
   } catch (error) {
     console.error("Error en INSERT:", error.sqlMessage);
@@ -581,23 +591,47 @@ app.post("/api/prestamo", async (req, res) => {
 
 app.put("/api/prestamo/:id", async (req, res) => {
   const { id } = req.params;
+  const p = req.body;
   try {
-    const query = `
-      UPDATE prestamo 
-      SET HDevolucion = NOW() 
+   if (!p.Nombre) {
+      const queryDevolucion = `
+        UPDATE prestamo 
+        SET HDevolucion = NOW() 
+        WHERE PrestamoId = ?
+      `;
+      await db.query(queryDevolucion, [id]);
+      return res.json({ message: "Devolución exitosa" });
+    }
+    const queryUpdate = `
+      UPDATE prestamo SET 
+        NoEmpleado = ?, 
+        Nombre = ?, 
+        GageId = ?, 
+        TurnoId = ?, 
+        Area = ? 
       WHERE PrestamoId = ?
     `;
-    await db.query(query, [id]);
-    res.json({ message: "Devolución exitosa" });
+    const idGage = Array.isArray(p.GageId) ? p.GageId[0] : p.GageId;
+
+    const values = [
+      Number(p.NoEmpleado),
+      p.Nombre,
+      Number(idGage),
+      Number(p.TurnoId),
+      p.Area,
+      id
+    ];
+
+    await db.query(queryUpdate, values);
+    res.json({ success: true, message: "Registro de Q-GAGE actualizado" });
   } catch (error) {
-    console.error("Error en devolución:", error);
-    res.status(500).json({
-      error: "Error en la base de datos",
-      detalle: error.sqlMessage || error.message,
+    console.error("Error al editar préstamo:", error);
+    res.status(500).json({ 
+      error: "Error en la base de datos", 
+      detalle: error.sqlMessage || error.message 
     });
   }
 });
-
 // ============ Calibracion ===============
 
 // --------- Ver Calibraciones ------------

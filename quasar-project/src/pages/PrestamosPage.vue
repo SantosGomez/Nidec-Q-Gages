@@ -72,6 +72,26 @@
         </template>
         <template v-slot:body-cell-actions="props">
           <q-td :props="props" class="text-center">
+            <!-- La condición va aquí adentro, en el botón -->
+            <q-btn
+              v-if="!!authStore.usuario?.edit_prestamo"
+              round
+              outline
+              color="warning"
+              icon="edit"
+              @click="EditarRegistro(props.row)"
+            >
+              <q-tooltip>Editar registro</q-tooltip>
+            </q-btn>
+            
+            <!-- Opcional: Un mensaje o icono candado si no tiene permiso -->
+            <q-icon v-else name="lock" color="grey-4">
+              <q-tooltip>Sin permisos de edición</q-tooltip>
+            </q-icon>
+          </q-td>
+        </template>
+        <template v-slot:body-cell-devolucion="props">
+          <q-td :props="props" class="text-center">
             <q-btn
               v-if="!props.row.HDevolucion || props.row.HDevolucion.startsWith('0000')"
               color="warning"
@@ -88,56 +108,69 @@
   </q-card>
 
   <q-dialog v-model="mostrarFormulario" persistent :backdrop-filter="backdropFilter">
-    <q-card style="min-width: 500px">
+    <q-card style="max-width: 800px; width: 100%; " >
       <q-card-section class="bg-primary text-white">
-        <div class="text-h6">Nuevo Registro de Préstamo</div>
+        <div class="text-h6">{{ esEdicion ? 'Editar Préstamo' : 'Nuevo Registro de Préstamo' }}</div>
       </q-card-section>
 
       <q-card-section class="row q-col-gutter-md q-pt-lg">
-        <div class="col-6">
-          <q-input filled dense v-model="formPrestamo.Nombre" label="Nombre" />
+        <div class="col-12 col-md-6" >
+          <q-input outlined dense v-model="formPrestamo.Nombre" label="Nombre" />
         </div>
-        <div class="col-6">
-          <q-input filled dense v-model="formPrestamo.NoEmpleado" label="No. Empleado" />
+        <div class="col-12 col-md-6">
+          <q-input outlined dense v-model="formPrestamo.NoEmpleado" label="No. Empleado" />
         </div>
-        <div class="col-6">
+        <div class="col-12 col-md-6 ">
           <q-select
-            filled
+            outlined
             dense
             v-model="formPrestamo.TurnoId"
             :options="opcionesTurnos"
             label="Seleccionar Turno"
             emit-value
             map-options
-            @update:model-value="
-              (val) =>
-                $q.notify({ message: `Turno ${val} seleccionado`, color: 'info', timeout: 500 })
-            "
-          >
+            >
             <template v-slot:prepend>
               <q-icon name="schedule" />
             </template>
           </q-select>
         </div>
-        <div class="col-6">
+        <div class="col-12 col-md-6">
           <q-select
-            filled
+            outlined
             dense
             v-model="formPrestamo.GageId"
             label="Seleccionar Gage Disponible"
             :options="opcionesGages"
+            option-label="label"
+            option-value="value"
             emit-value
             map-options
-          />
+            multiple
+            use-chips
+            counter
+            stack-label
+            hide-dropdown-icon
+            :readonly="true"
+          >
+            <template v-slot:append>
+              <q-btn icon="add" flat @click.stop="GagesDisponles = true" />
+            </template>
+        
+          </q-select>
         </div>
-        <div class="col-12">
-          <q-input filled dense v-model="formPrestamo.Area" label="Área" />
+        <div class="col-12 col-md-12">
+          <q-input outlined dense v-model="formPrestamo.Area" label="Área" />
         </div>
       </q-card-section>
 
       <q-card-actions align="right" class="q-pb-md q-pr-md">
         <q-btn flat label="Cancelar" color="grey" v-close-popup />
-        <q-btn label="Registrar Prestamo" color="primary" @click="registrarPrestamo" />
+        <q-btn 
+          :label="esEdicion ? 'Guardar Cambios' : 'Registrar Prestamo'" 
+          color="primary" 
+          @click="esEdicion ? ActualizarPrestamo() : registrarPrestamo()" 
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -165,6 +198,39 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+  <q-dialog v-model="GagesDisponles" persistent :backdrop-filter="backdropFilter" >
+  <q-card style="width: 600px;">
+    <q-card-section class="row items-center q-pb-none">
+      <div class="text-h6">Seleccionar Gages Disponibles</div>
+      <q-space />
+      <q-btn icon="close" flat round dense v-close-popup />
+    </q-card-section>
+
+    <q-card-section>
+      <!-- Tabla con selección múltiple -->
+      <q-table
+        :rows="opcionesGagesRaw" 
+        :columns="columnasSelector"
+        row-key="GageId"
+        selection="multiple"
+        v-model:selected="seleccionadosEnTabla"
+        :filter="filtroBusqueda"
+      >
+        <template v-slot:top-right>
+          <q-input dense debounce="300" v-model="filtroBusqueda" placeholder="Buscar Gage...">
+            <template v-slot:append><q-icon name="search" /></template>
+          </q-input>
+        </template>
+      </q-table>
+    </q-card-section>
+
+    <q-card-actions align="right">
+      <q-btn flat label="Cancelar" color="primary" v-close-popup />
+      <q-btn label="Seleccionar" color="primary" @click="confirmarGages" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
 <script setup>
@@ -172,7 +238,9 @@ import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth'
 
+const authStore = useAuthStore()
 const $q = useQuasar()
 const router = useRouter()
 const index = () => router.push('/')
@@ -185,14 +253,20 @@ const horaActual = ref('')
 const mostrarFormulario = ref(false)
 const mostrarReloj = ref(false)
 const itemSeleccionado = ref(null)
+const GagesDisponles = ref(false)
+const seleccionadosEnTabla = ref([])
+const filtroBusqueda = ref('')
+const opcionesGagesRaw = ref([])
 const backdropFilter = ref('blur(4px)')
+const esEdicion = ref(false)
+const prestamoIdParaEditar = ref(null)
 
 // --- FORMULARIO ---
 const formPrestamo = ref({
   NoEmpleado: '',
   Nombre: '',
   TurnoId: '',
-  GageId: '',
+  GageId: [],
   Area: '',
 })
 
@@ -206,6 +280,12 @@ const columns = [
   { name: 'horaEntrega', label: 'Hora Préstamo', field: 'HPrestamo', align: 'left' },
   { name: 'horaDevuelto', label: 'Hora Devolución', field: 'HDevolucion', align: 'left' },
   { name: 'actions', label: 'Acciones', align: 'center' },
+  { name: 'devolucion', label: 'Estatus', align: 'center' },
+]
+
+const columnasSelector = [
+  { name: 'GageSerie', label: 'Gage ID', field: 'GageSerie', align: 'left', sortable: true },
+  { name: 'Descripcion', label: 'Nombre', field: 'Descripcion', align: 'left' },
 ]
 
 // --- LÓGICA DE FILTRADO ---
@@ -269,13 +349,50 @@ const obtenerPrestamos = async () => {
 }
 
 const abrirFormulario = () => {
+  esEdicion.value = false;
+  prestamoIdParaEditar.value = null;
   formPrestamo.value = {
     NoEmpleado: '',
     Nombre: '',
     TurnoId: '',
-    GageId: '',
+    GageId: [],
     Area: '',
   }
+  mostrarFormulario.value = true
+}
+
+const cerrarFormulario = () => {
+  mostrarFormulario.value = false;
+  esEdicion.value = false;
+  prestamoIdParaEditar.value = null;
+}
+
+const confirmarGages = () => {
+  // Mapeamos los seleccionados de la tabla al arreglo del formulario
+  formPrestamo.value.GageId = seleccionadosEnTabla.value.map(g => g.GageId)
+  
+  GagesDisponles.value = false
+  
+  // Limpiamos la selección de la tabla para la próxima vez
+  seleccionadosEnTabla.value = []
+  
+  $q.notify({
+    message: `${formPrestamo.value.GageId.length} gages seleccionados`,
+    color: 'positive'
+  })
+}
+
+const EditarRegistro = (row) => {
+  esEdicion.value = true
+  prestamoIdParaEditar.value = row.PrestamoId
+  formPrestamo.value = {
+    NoEmpleado: row.NoEmpleado,
+    Nombre: row.Nombre,
+    TurnoId: row.TurnoId, // Asegúrate que el TurnoId venga en la fila
+    Area: row.Area,
+    GageId: [row.GageId] // Lo ponemos como array porque tu select es múltiple[cite: 8]
+  }
+
   mostrarFormulario.value = true
 }
 
@@ -308,7 +425,7 @@ const registrarPrestamo = async () => {
     formPrestamo.value = {
       NoEmpleado: '',
       Nombre: '',
-      GageId: '',
+      GageId: [],
       TurnoId: '',
       Area: '',
     }
@@ -321,6 +438,40 @@ const registrarPrestamo = async () => {
     $q.notify({
       color: 'negative',
       message: 'Fallo al insertar: Revisa que el ID del Gage sea válido',
+    })
+  }
+}
+
+const ActualizarPrestamo = async () => {
+  try {
+    // Validamos que tengamos el ID del registro a editar
+    if (!prestamoIdParaEditar.value) return;
+
+    const bodyEnvio = {
+      NoEmpleado: Number(formPrestamo.value.NoEmpleado),
+      Nombre: formPrestamo.value.Nombre,
+      GageId: formPrestamo.value.GageId,    
+      TurnoId: formPrestamo.value.TurnoId,  
+      Area: formPrestamo.value.Area,
+    }
+
+    // Cambiamos POST por PUT y agregamos el ID a la ruta
+    await api.put(`/api/prestamo/${prestamoIdParaEditar.value}`, bodyEnvio)
+
+    $q.notify({
+      color: 'positive',
+      icon: 'cloud_done',
+      message: 'Registro actualizado con éxito',
+    })
+
+    cerrarFormulario(); // Función para limpiar todo
+    await obtenerPrestamos(); // Refresca la tabla
+    
+  } catch (error) {
+    console.error('Error al actualizar:', error)
+    $q.notify({
+      color: 'negative',
+      message: 'No se pudo actualizar el registro',
     })
   }
 }
@@ -360,7 +511,8 @@ const opcionesGages = ref([])
 const cargarGagesDisponibles = async () => {
   try {
     const { data } = await api.get('/api/gages/disponibles')
-    // Mapeamos para que Quasar lo entienda (label para mostrar, value para guardar)
+    opcionesGagesRaw.value = data // La data completa para la tabla del diálogo
+    
     opcionesGages.value = data.map((g) => ({
       label: `${g.GageSerie} - ${g.Descripcion}`,
       value: g.GageId,

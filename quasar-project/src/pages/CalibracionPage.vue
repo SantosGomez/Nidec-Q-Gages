@@ -205,7 +205,7 @@
 
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
-    <q-card class="my-card" style="max-width: 1200px; width: 100%; min-height: 500px">
+    <q-card class="my-card" style="max-width: 1200px; width: 100%; min-height: 630px">
       <q-card-section class="bg-primary text-white q-pa-sm">
         <div class="row items-center no-wrap">
           <div class="col">
@@ -237,7 +237,8 @@
         align="justify"
       >
         <q-tab name="registro" icon="edit" label="Captura / Detalle" />
-        <q-tab name="historial" icon="history" label="Historial de este Gage" />
+        <q-tab name="procedimiento" icon="description" label="Procedimiento" />
+        <q-tab name="historial" icon="history" label="Historial deL Gage" />
       </q-tabs>
 
       <q-separator />
@@ -307,7 +308,7 @@
                     </template>
                   </q-input>
                 </div>
-                <div class="col-12 col-md-8">
+                <div class="col-12 col-md-6">
                   <q-select
                     v-model="formModel.E_Pusados"
                     :options="listaPatrones"
@@ -331,6 +332,16 @@
                       </q-item>
                     </template>
                   </q-select>
+                </div>
+                <div class="col-12 col-md-1">
+                  <q-btn
+                    outline
+                    color="primary"
+                    icon="topic"
+                    @click="tabActual = 'procedimiento'" 
+                  >
+                    <q-tooltip>Ir al Manual</q-tooltip>
+                  </q-btn>
                 </div>
                 <div class="col-12 col-md-4 flex items-center justify-around">
                   <span class="text-weight-bold">Resultado Final:</span>
@@ -447,6 +458,51 @@
               />
             </div>
           </q-form>
+        </q-tab-panel>
+        <q-tab-panel name="procedimiento" class="q-pa-md">
+          <q-scroll-area style="width: 100%; height: 450px">
+            <div class="row q-col-gutter-md">
+              <!-- Columna Izquierda: Texto -->
+              <div class="col-12 col-md-8">
+                <div class="text-h6 text-primary q-mb-sm">
+                  Manual: {{ procedimientoSeleccionado?.NombreProce || 'Sin procedimiento asignado' }}
+                </div>
+                
+                <q-banner rounded class="bg-amber-1 text-amber-10 q-mb-md border-amber">
+                  <template v-slot:avatar><q-icon name="warning" color="amber-9" /></template>
+                  <div class="text-weight-bold">Precauciones:</div>
+                  <div>{{ procedimientoSeleccionado?.Precauciones }}</div>
+                </q-banner>
+
+                <div class="text-weight-bold text-subtitle1">6.0 Instrucciones de Calibración:</div>
+                <q-card flat bordered class="q-pa-sm bg-white">
+                  <div v-html="procedimientoSeleccionado?.Instrucciones || 'No hay instrucciones detalladas.'"></div>
+                </q-card>
+              </div>
+
+              <!-- Columna Derecha: Apoyo Visual y Tolerancias -->
+              <div class="col-12 col-md-4">
+                <q-card dark class="bg-indigo-9 q-mb-md">
+                  <q-card-section>
+                    <div class="text-subtitle2">Tolerancia de Aceptación</div>
+                    <div class="text-h5 text-weight-bolder">{{ procedimientoSeleccionado?.Tolerancia }}</div>
+                  </q-card-section>
+                </q-card>
+
+                <div class="text-weight-bold q-mb-xs">Apoyo Visual:</div>
+                <q-img
+                  v-if="formModel.ImgProce"
+                  :src="'http://tu-api-url/uploads/' + formModel.ImgProce"
+                  class="rounded-borders shadow-2"
+                  style="max-height: 250px"
+                >
+                  <template v-slot:error>
+                    <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">Sin imagen</div>
+                  </template>
+                </q-img>
+              </div>
+            </div>
+          </q-scroll-area>
         </q-tab-panel>
 
         <q-tab-panel name="historial" class="q-pa-none">

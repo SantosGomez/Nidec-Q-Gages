@@ -238,6 +238,7 @@ const permisosEdit = [
   { label: 'Calibración', val: 'edit_calibracion' },
   { label: 'Reportes', val: 'edit_reportes' },
   { label: 'Procedimientos', val: 'edit_procedimientos' },
+  { label: 'Prestamo', val: 'edit_prestamo' },
 ]
 
 const permisosVer = [
@@ -245,6 +246,7 @@ const permisosVer = [
   { label: 'Calibración', val: 'ver_calibracion' },
   { label: 'Reportes', val: 'ver_reportes' },
   { label: 'Procedimientos', val: 'ver_procedimientos' },
+  { label: 'Prestamo', val: 'ver_prestamo' },
 ]
 
 const puedeEditar = computed(() => {
@@ -292,10 +294,12 @@ const limpiarFormulario = () => {
     edit_calibracion: false,
     edit_reportes: false,
     edit_procedimientos: false,
+    edit_prestamo: false,
     ver_gage: false,
     ver_calibracion: false,
     ver_reportes: false,
     ver_procedimientos: false,
+    ver_prestamo: false,
   }
 }
 
@@ -323,10 +327,12 @@ const abrirDetalle = (user) => {
     edit_calibracion: !!user.edit_calibracion,
     edit_reportes: !!user.edit_reportes,
     edit_procedimientos: !!user.edit_procedimientos,
+    edit_prestamo: !!user.edit_prestamo,
     ver_gage: !!user.ver_gage,
     ver_calibracion: !!user.ver_calibracion,
     ver_reportes: !!user.ver_reportes,
     ver_procedimientos: !!user.ver_procedimientos,
+    ver_prestamo: !!user.ver_prestamo,
   }
   UserInfo.value = true
 }
