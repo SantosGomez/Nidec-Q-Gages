@@ -311,6 +311,43 @@ app.post("/api/procedimientos", async (req, res) => {
   }
 });
 
+//------- ACTUALIZAR PROCEDIMIENTO EXISTENTE -------
+app.put("/api/procedimientos/:id", async (req, res) => {
+  const { id } = req.params;
+  const p = req.body; // Capturamos los datos enviados desde Quasar
+
+  try {
+    const query = `
+      UPDATE procedimiento SET 
+        NombreProce = ?, 
+        Proposito = ?, 
+        Alcance = ?, 
+        Materiales = ?, 
+        Instrucciones = ?, 
+        Precauciones = ?, 
+        Tolerancia = ?
+      WHERE ProceId = ?
+    `;
+
+    const values = [
+      p.NombreProce,
+      p.Proposito || null,
+      p.Alcance || null,
+      p.Materiales || null,
+      p.Instrucciones || null,
+      p.Precauciones || null,
+      p.Tolerancia || null,
+      id
+    ];
+
+    await db.query(query, values);
+    res.json({ success: true, message: "Procedimiento actualizado en Q-GAGE" });
+  } catch (error) {
+    console.error("Error al editar procedimiento:", error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 //========= Gages ===========
 
 //--- OBTENER GAGES ---

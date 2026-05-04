@@ -48,6 +48,10 @@
           <q-icon name="description" />
           <div class="text-h6">{{ procedimientoSeleccionado?.NombreProce }}</div>
           <q-space />
+          <q-btn v-if="authStore.usuario?.edit_procedimientos" flat round icon="edit" @click="PrepararEdit(procedimientoSeleccionado)">
+            <q-tooltip>Editar este manual</q-tooltip>
+          </q-btn>
+
           <q-btn dense flat icon="close" v-close-popup />
         </q-bar>
 
@@ -267,29 +271,41 @@
             </q-file>
           </div>
         </q-step>
-
-        <template v-slot:navigation>
-          <q-stepper-navigation class="row justify-end q-gutter-sm q-pa-md">
-            <q-btn v-if="step > 1" flat color="primary" @click="step--" label="Atrás" />
-            <q-btn
-              v-if="step < 4"
-              @click="step++"
-              color="primary"
-              label="Siguiente"
-              :disable="!formProcedimiento.NombreProce"
-            />
-            <q-btn
-              v-else
-              color="positive"
-              label="Guardar Procedimiento"
-              @click="AgregarProcedimiento"
-            />
-          </q-stepper-navigation>
-        </template>
       </q-stepper>
 
-      <q-card-actions align="right" class="q-pb-md q-pr-md">
-        <q-btn flat label="Cancelar y Salir" color="negative" v-close-popup />
+      <q-card-actions align="right" class="q-pa-md bg-white">
+        <q-btn 
+          flat 
+          label="Cancelar" 
+          color="negative" 
+          v-close-popup 
+          class="q-mr-sm"
+        />
+        
+        <q-space /> <!-- Esto empuja los de navegación a la derecha -->
+
+        <q-btn 
+          v-if="step > 1" 
+          flat 
+          color="primary" 
+          @click="step--" 
+          label="Atrás" 
+        />
+
+        <q-btn
+          v-if="step < 4"
+          @click="step++"
+          color="primary"
+          label="Siguiente"
+          :disable="!formProcedimiento.NombreProce"
+        />
+
+        <q-btn
+          v-else
+          color="positive"
+          :label="ModoEdicion ? 'Actualizar' : 'Guardar'"
+          @click="ModoEdicion ? EditarProcedimiento() : AgregarProcedimiento()"
+        />
       </q-card-actions>
     </q-card>
   </q-dialog>
@@ -300,7 +316,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
+import { useAuthStore } from 'src/stores/auth'
 
+const authStore = useAuthStore()
 const $q = useQuasar()
 const search = ref('')
 const procedimientos = ref([])
@@ -310,6 +328,7 @@ const procedimientoInfo = ref(false)
 const NuevoProcedimiento = ref(false)
 const files = ref(null)
 const step = ref(1)
+const ModoEdicion = ref(false)
 
 const formProcedimiento = ref({
   NombreProce: '',
@@ -409,7 +428,10 @@ function abrirDetalle(procedimiento) {
   procedimientoSeleccionado.value = procedimiento
   procedimientoInfo.value = true
 }
+
 function nuevoProcedimiento() {
+  ModoEdicion.value = false;
+  resetForm()
   NuevoProcedimiento.value = true
 }
 
@@ -421,6 +443,42 @@ function getFileIcon(type) {
 
 function removeFile(index) {
   files.value.splice(index, 1)
+}
+
+const PrepararEdit = (procedimiento) => {
+  ModoEdicion.value = true;
+  formProcedimiento.value = { ...procedimiento }; // Clonamos los datos
+  procedimientoInfo.value = false; // Cerramos el detalle para ver el formulario
+  NuevoProcedimiento.value = true;
+};
+
+const EditarProcedimiento = async () => {
+  try {
+    if (!formProcedimiento.value.NombreProce) {
+      $q.notify({ type: 'negative', message: 'El nombre es obligatorio' })
+      return
+    }
+
+    const response = await api.put(`/api/procedimientos/${formProcedimiento.value.ProceId}`, formProcedimiento.value)
+
+    if (response.data.success) {
+      $q.notify({
+        type: 'positive',
+        message: 'Procedimiento actualizado con éxito',
+        icon: 'check',
+      })
+
+      NuevoProcedimiento.value = false
+      obtenerProcedimientos()
+      resetForm()
+    }
+  } catch (error) {
+    console.error('Error al actualizar:', error)
+    $q.notify({
+      type: 'negative',
+      message: error.response?.data?.message || 'Error al conectar con el servidor',
+    })
+  }
 }
 
 // Navegación a la página de inicio
