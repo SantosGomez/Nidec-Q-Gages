@@ -6,194 +6,196 @@
         <div class="text-h4 text-weight-bolder text-blue-grey-9">Calibracion de Gages</div>
       </div>
       <q-card class="my-card shadow-1 shadow-up-1">
+        <q-card-section>
           <q-table
-              :rows="rowsFiltradas"
-              :columns="columns"
-              :filter="search"
-              row-key="CalibracionId"
-              flat
-              dense
-              class="tabla-sticky"
-            >
-              <template v-slot:top-left>
-                <div class="row q-mt-md q-mb-md items-center q-gutter-sm">
-                  <q-select
-                    v-model="filtroEstado"
-                    :options="[
-                      'Todos',
-                      'NUEVO',
-                      'CALIBRADO',
-                      'PROXIMO A CALIBRAR',
-                      'VENCIDO',
-                      'RECHAZADO',
-                    ]"
-                    label="Filtrar por Estado"
-                    dense
-                    outlined
-                    style="min-width: 170px"
-                  />
+            :rows="rowsFiltradas"
+            :columns="columns"
+            :filter="search"
+            row-key="CalibracionId"
+            flat
+            dense
+            class="tabla-sticky"
+          >
+            <template v-slot:top-left>
+              <div class="row q-mt-md q-mb-md items-center q-gutter-sm">
+                <q-select
+                  v-model="filtroEstado"
+                  :options="[
+                    'Todos',
+                    'NUEVO',
+                    'CALIBRADO',
+                    'PROXIMO A CALIBRAR',
+                    'VENCIDO',
+                    'RECHAZADO',
+                  ]"
+                  label="Filtrar por Estado"
+                  dense
+                  outlined
+                  style="min-width: 170px"
+                />
 
-                  <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
-                    <template v-slot:append>
-                      <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                          <q-date v-model="fechaInicioProx">
-                            <div class="row items-center justify-end">
-                              <q-btn v-close-popup label="OK" color="primary" flat />
-                            </div>
-                          </q-date>
-                        </q-popup-proxy>
-                      </q-icon>
-                    </template>
-                  </q-input>
-
-                  <q-input dense outlined v-model="fechaFinProx" label="Vence Hasta" mask="date">
-                    <template v-slot:append>
-                      <q-icon name="event" class="cursor-pointer">
-                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                          <q-date v-model="fechaFinProx">
-                            <div class="row items-center justify-end">
-                              <q-btn v-close-popup label="OK" color="primary" flat />
-                            </div>
-                          </q-date>
-                        </q-popup-proxy>
-                      </q-icon>
-                    </template>
-                  </q-input>
-
-                  <q-btn
-                    v-if="fechaInicioProx || fechaFinProx"
-                    flat
-                    round
-                    dense
-                    icon="event_busy"
-                    color="negative"
-                    @click="
-                      fechaInicioProx = '';
-                      fechaFinProx = ''
-                    "
-                  >
-                    <q-tooltip>Limpiar Rango de Vencimiento</q-tooltip>
-                  </q-btn>
-                </div>
-              </template>
-
-              <template v-slot:top-right>
-                <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar Gage">
+                <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
                   <template v-slot:append>
-                    <q-icon name="search" />
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                        <q-date v-model="fechaInicioProx">
+                          <div class="row items-center justify-end">
+                            <q-btn v-close-popup label="OK" color="primary" flat />
+                          </div>
+                        </q-date>
+                      </q-popup-proxy>
+                    </q-icon>
                   </template>
                 </q-input>
-              </template>
 
-              <template v-slot:body="props">
-                <q-tr :props="props" :class="obtenerClaseFila(props.row)">
-                  <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                    <template v-if="col.name === 'FechaCalibracion' || col.name === 'FechaProxima'">
-                      {{ formatearFecha(props.row[col.field]) }}
-                    </template>
+                <q-input dense outlined v-model="fechaFinProx" label="Vence Hasta" mask="date">
+                  <template v-slot:append>
+                    <q-icon name="event" class="cursor-pointer">
+                      <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                        <q-date v-model="fechaFinProx">
+                          <div class="row items-center justify-end">
+                            <q-btn v-close-popup label="OK" color="primary" flat />
+                          </div>
+                        </q-date>
+                      </q-popup-proxy>
+                    </q-icon>
+                  </template>
+                </q-input>
 
-                    <template v-else-if="col.name === 'Calibracion'">
-                      <q-badge
-                        v-if="props.row.EsNuevo === 1"
-                        color="blue-7"
-                        class="text-weight-bold"
-                        label="NUEVO / PENDIENTE"
-                      />
+                <q-btn
+                  v-if="fechaInicioProx || fechaFinProx"
+                  flat
+                  round
+                  dense
+                  icon="event_busy"
+                  color="negative"
+                  @click="
+                    fechaInicioProx = '';
+                    fechaFinProx = ''
+                  "
+                >
+                  <q-tooltip>Limpiar Rango de Vencimiento</q-tooltip>
+                </q-btn>
+              </div>
+            </template>
 
-                      <q-badge
-                        v-else-if="calcularDias(props.row.FechaProxima) <= 0"
-                        color="orange-10"
-                        class="text-weight-bold"
-                        label="VENCIDO / RECALIBRAR"
-                      />
+            <template v-slot:top-right>
+              <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar Gage">
+                <template v-slot:append>
+                  <q-icon name="search" />
+                </template>
+              </q-input>
+            </template>
 
-                      <q-badge
-                        v-else-if="calcularDias(props.row.FechaProxima) <= 7"
+            <template v-slot:body="props">
+              <q-tr :props="props" :class="obtenerClaseFila(props.row)">
+                <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                  <template v-if="col.name === 'FechaCalibracion' || col.name === 'FechaProxima'">
+                    {{ formatearFecha(props.row[col.field]) }}
+                  </template>
+
+                  <template v-else-if="col.name === 'Calibracion'">
+                    <q-badge
+                      v-if="props.row.EsNuevo === 1"
+                      color="blue-7"
+                      class="text-weight-bold"
+                      label="NUEVO / PENDIENTE"
+                    />
+
+                    <q-badge
+                      v-else-if="calcularDias(props.row.FechaProxima) <= 0"
+                      color="orange-10"
+                      class="text-weight-bold"
+                      label="VENCIDO / RECALIBRAR"
+                    />
+
+                    <q-badge
+                      v-else-if="calcularDias(props.row.FechaProxima) <= 7"
+                      color="warning"
+                      class="text-weight-bold"
+                      label="PROXIMO A CALIBRAR"
+                    />
+
+                    <q-badge
+                      v-else
+                      :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
+                      class="text-weight-bold"
+                    >
+                      {{ props.row.EstatusPasa === 1 ? 'CALIBRADO' : 'RECHAZADO' }}
+                    </q-badge>
+                  </template>
+                  <template v-else-if="col.name === 'Procedimiento'">
+                    <q-btn
+                      outline
+                      round
+                      dense
+                      color="primary"
+                      icon="topic"
+                      @click="abrirProcedimiento(props.row)"
+                    >
+                      <q-tooltip>Manual de Procedimiento</q-tooltip>
+                    </q-btn>
+                  </template>
+
+                  <template v-else-if="col.name === 'actions'">
+                    <q-btn
+                      v-if="
+                        authStore.usuario?.edit_gage &&
+                        (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)
+                      "
+                      color="positive"
+                      icon="build"
+                      label="Calibrar"
+                      @click="seleccionarParaCalibrar(props.row)"
+                    />
+
+                    <div v-else class="q-gutter-xs">
+                      <q-btn
+                        outline
+                        round
+                        dense
                         color="warning"
-                        class="text-weight-bold"
-                        label="PROXIMO A CALIBRAR"
-                      />
-
-                      <q-badge
-                        v-else
-                        :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
-                        class="text-weight-bold"
+                        icon="edit"
+                        @click="prepararEdicion(props.row)"
+                        v-if="authStore.usuario?.edit_gage"
                       >
-                        {{ props.row.EstatusPasa === 1 ? 'CALIBRADO' : 'RECHAZADO' }}
-                      </q-badge>
-                    </template>
-                    <template v-else-if="col.name === 'Procedimiento'">
+                        <q-tooltip>EDITAR CALIBRACION</q-tooltip>
+                      </q-btn>
+
+                      <q-btn
+                        outline
+                        round
+                        dense
+                        color="info"
+                        icon="visibility"
+                        @click="verDetalles(props.row)"
+                      >
+                        <q-tooltip>VER DETALLES</q-tooltip>
+                      </q-btn>
                       <q-btn
                         outline
                         round
                         dense
                         color="primary"
-                        icon="topic"
-                        @click="abrirProcedimiento(props.row)"
-                      >
-                        <q-tooltip>Manual de Procedimiento</q-tooltip>
-                      </q-btn>
-                    </template>
-
-                    <template v-else-if="col.name === 'actions'">
-                      <q-btn
-                        v-if="
-                          authStore.usuario?.edit_gage &&
-                          (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)
-                        "
-                        color="positive"
                         icon="build"
-                        label="Calibrar"
                         @click="seleccionarParaCalibrar(props.row)"
-                      />
+                        v-if="authStore.usuario?.edit_gage"
+                      >
+                        <q-tooltip>CALIBRAR</q-tooltip>
+                      </q-btn>
+                    </div>
+                  </template>
 
-                      <div v-else class="q-gutter-xs">
-                        <q-btn
-                          outline
-                          round
-                          dense
-                          color="warning"
-                          icon="edit"
-                          @click="prepararEdicion(props.row)"
-                          v-if="authStore.usuario?.edit_gage"
-                        >
-                          <q-tooltip>EDITAR CALIBRACION</q-tooltip>
-                        </q-btn>
-
-                        <q-btn
-                          outline
-                          round
-                          dense
-                          color="info"
-                          icon="visibility"
-                          @click="verDetalles(props.row)"
-                        >
-                          <q-tooltip>VER DETALLES</q-tooltip>
-                        </q-btn>
-                        <q-btn
-                          outline
-                          round
-                          dense
-                          color="primary"
-                          icon="build"
-                          @click="seleccionarParaCalibrar(props.row)"
-                          v-if="authStore.usuario?.edit_gage"
-                        >
-                          <q-tooltip>CALIBRAR</q-tooltip>
-                        </q-btn>
-                      </div>
-                    </template>
-
-                    <template v-else>
-                      {{ col.value }}
-                    </template>
-                  </q-td>
-                </q-tr>
-              </template>
-            </q-table>
-        </q-card>
-      </div>
+                  <template v-else>
+                    {{ col.value }}
+                  </template>
+                </q-td>
+              </q-tr>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </div>
   </q-page>
 
   <!-- dialog de formulario para calibracion de gages -->
@@ -1192,7 +1194,7 @@ onMounted(() => {
 <style scoped>
 .my-card {
   border-radius: 12px;
-  border: 1px solid rgba(0,0,0,0.05);
+  border: 1px solid rgba(0, 0, 0, 0.05);
 }
 /* Rojo suave para equipos que fallaron */
 .fila-rechazada {

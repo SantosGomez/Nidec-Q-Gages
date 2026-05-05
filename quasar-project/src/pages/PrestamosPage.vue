@@ -3,7 +3,7 @@
     <div style="max-width: 1200px; width: 100%" class="q-px-md q-mx-auto">
       <div class="row items-center q-mb-xl">
         <q-btn flat round color="primary" icon="arrow_back" @click="index" class="q-mr-md" />
-        <div class="text-h4 text-weight-bolder text-blue-grey-9">Gestión de Gages</div>
+        <div class="text-h4 text-weight-bolder text-blue-grey-9">Prestamos de Gages</div>
         <q-space />
         <!-- Esto empuja lo que sigue a la derecha -->
         <q-btn
