@@ -1,25 +1,27 @@
 <template>
-  <div class="flex flex-center">
-    <q-card class="my-card" style="max-width: 600px; margin: 50px auto;">
-      <div class="flex flex-center">
+  <div class="flex flex-center bg-grey-2">
+    <q-card class="login-card q-col-gutter-lg justify-center"  style="max-width: 600px; margin: 50px auto;">
+      <div class="flex flex-center q-pa-md q-gutter-md" >
         <img
+          class="icon-shadow"
           style="width: 350px; height: auto"
           src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_Original Version.png"
+          fit="contain"    
         />
         <div
-          class="text-h2"
+          class="text-h3 text-weight-bolder text-primary q-mt-md"
           style="
             text-align: center;
             padding-left: 10px;
             padding-right: 10px;
             padding-bottom: 20px;
             font-weight: bold;
-          "
+          "               
         >
           Q-Gages
         </div>
       </div>
-      <q-card-section>
+      <q-card-section class="q-pa-md">
         <div class="flex flex-center">
           <q-form @submit="onSubmit" @reset="onReset" class="q-gutter-md">
             <div class="row q-col-gutter-md">
@@ -136,3 +138,22 @@ const onReset = () => {
   form.value.password = ''
 }
 </script>
+
+<style scoped>
+/* Efecto de elevación al pasar el mouse */
+.login-card {
+  border-radius: 15px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.icon-shadow {
+  filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1));
+}
+
+/* Para que los títulos no se vean pegados en móvil */
+@media (max-width: 600px) {
+  .text-h3 {
+    font-size: 2rem;
+  }
+}
+</style>

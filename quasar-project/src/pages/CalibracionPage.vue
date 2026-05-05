@@ -1,207 +1,200 @@
 <template>
-  <div style="margin: 20px">
-    <q-btn color="primary" icon="home" label="Inicio" @click="index" />
-  </div>
-  <div class="text-h3 flex flex-center" style="font-weight: bold">Calibracion De Gages</div>
-
-  <div class="row q-col-gutter-md" style="margin-top: 20px">
-    <q-card
-      class="my-card"
-      style="max-width: 1250px; width: 100%; margin: 0 auto; margin-top: 20px"
-    >
-      <q-card-section>
-        <div class="text-h5">Calibraciones</div>
-      </q-card-section>
-      <q-card-section>
-        <q-table
-          :rows="rowsFiltradas"
-          :columns="columns"
-          :filter="search"
-          row-key="CalibracionId"
-          flat
-          bordered
-          dense
-        >
-          <template v-slot:top-left>
-            <div class="row q-gutter-md">
-              <q-select
-                v-model="filtroEstado"
-                :options="[
-                  'Todos',
-                  'NUEVO',
-                  'CALIBRADO',
-                  'PROXIMO A CALIBRAR',
-                  'VENCIDO',
-                  'RECHAZADO',
-                ]"
-                label="Filtrar por Estado"
-                dense
-                outlined
-                style="min-width: 170px"
-              />
-
-              <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="fechaInicioProx">
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="OK" color="primary" flat />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-
-              <q-input dense outlined v-model="fechaFinProx" label="Vence Hasta" mask="date">
-                <template v-slot:append>
-                  <q-icon name="event" class="cursor-pointer">
-                    <q-popup-proxy cover transition-show="scale" transition-hide="scale">
-                      <q-date v-model="fechaFinProx">
-                        <div class="row items-center justify-end">
-                          <q-btn v-close-popup label="OK" color="primary" flat />
-                        </div>
-                      </q-date>
-                    </q-popup-proxy>
-                  </q-icon>
-                </template>
-              </q-input>
-
-              <q-btn
-                v-if="fechaInicioProx || fechaFinProx"
-                flat
-                round
-                dense
-                icon="event_busy"
-                color="negative"
-                @click="
-                  fechaInicioProx = '';
-                  fechaFinProx = ''
-                "
-              >
-                <q-tooltip>Limpiar Rango de Vencimiento</q-tooltip>
-              </q-btn>
-            </div>
-          </template>
-
-          <template v-slot:top-right>
-            <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar Gage">
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </template>
-
-          <template v-slot:body="props">
-            <q-tr :props="props" :class="obtenerClaseFila(props.row)">
-              <q-td v-for="col in props.cols" :key="col.name" :props="props">
-                <template v-if="col.name === 'FechaCalibracion' || col.name === 'FechaProxima'">
-                  {{ formatearFecha(props.row[col.field]) }}
-                </template>
-
-                <template v-else-if="col.name === 'Calibracion'">
-                  <q-badge
-                    v-if="props.row.EsNuevo === 1"
-                    color="blue-7"
-                    class="text-weight-bold"
-                    label="NUEVO / PENDIENTE"
+  <q-page class="bg-grey-2 q-pa-md">
+    <div style="max-width: 1200px; width: 100%" class="q-px-md q-mx-auto">
+      <div class="row items-center q-mb-xl">
+        <q-btn flat round color="primary" icon="arrow_back" @click="index" class="q-mr-md" />
+        <div class="text-h4 text-weight-bolder text-blue-grey-9">Calibracion de Gages</div>
+      </div>
+      <q-card class="my-card shadow-1 shadow-up-1">
+          <q-table
+              :rows="rowsFiltradas"
+              :columns="columns"
+              :filter="search"
+              row-key="CalibracionId"
+              flat
+              dense
+              class="tabla-sticky"
+            >
+              <template v-slot:top-left>
+                <div class="row q-mt-md q-mb-md items-center q-gutter-sm">
+                  <q-select
+                    v-model="filtroEstado"
+                    :options="[
+                      'Todos',
+                      'NUEVO',
+                      'CALIBRADO',
+                      'PROXIMO A CALIBRAR',
+                      'VENCIDO',
+                      'RECHAZADO',
+                    ]"
+                    label="Filtrar por Estado"
+                    dense
+                    outlined
+                    style="min-width: 170px"
                   />
 
-                  <q-badge
-                    v-else-if="calcularDias(props.row.FechaProxima) <= 0"
-                    color="orange-10"
-                    class="text-weight-bold"
-                    label="VENCIDO / RECALIBRAR"
-                  />
+                  <q-input dense outlined v-model="fechaInicioProx" label="Vence Desde" mask="date">
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                          <q-date v-model="fechaInicioProx">
+                            <div class="row items-center justify-end">
+                              <q-btn v-close-popup label="OK" color="primary" flat />
+                            </div>
+                          </q-date>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
 
-                  <q-badge
-                    v-else-if="calcularDias(props.row.FechaProxima) <= 7"
-                    color="warning"
-                    class="text-weight-bold"
-                    label="PROXIMO A CALIBRAR"
-                  />
+                  <q-input dense outlined v-model="fechaFinProx" label="Vence Hasta" mask="date">
+                    <template v-slot:append>
+                      <q-icon name="event" class="cursor-pointer">
+                        <q-popup-proxy cover transition-show="scale" transition-hide="scale">
+                          <q-date v-model="fechaFinProx">
+                            <div class="row items-center justify-end">
+                              <q-btn v-close-popup label="OK" color="primary" flat />
+                            </div>
+                          </q-date>
+                        </q-popup-proxy>
+                      </q-icon>
+                    </template>
+                  </q-input>
 
-                  <q-badge
-                    v-else
-                    :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
-                    class="text-weight-bold"
-                  >
-                    {{ props.row.EstatusPasa === 1 ? 'CALIBRADO' : 'RECHAZADO' }}
-                  </q-badge>
-                </template>
-                <template v-else-if="col.name === 'Procedimiento'">
                   <q-btn
-                    outline
+                    v-if="fechaInicioProx || fechaFinProx"
+                    flat
                     round
                     dense
-                    color="primary"
-                    icon="topic"
-                    @click="abrirProcedimiento(props.row)"
-                  >
-                    <q-tooltip>Manual de Procedimiento</q-tooltip>
-                  </q-btn>
-                </template>
-
-                <template v-else-if="col.name === 'actions'">
-                  <q-btn
-                    v-if="
-                      authStore.usuario?.edit_gage &&
-                      (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)
+                    icon="event_busy"
+                    color="negative"
+                    @click="
+                      fechaInicioProx = '';
+                      fechaFinProx = ''
                     "
-                    color="positive"
-                    icon="build"
-                    label="Calibrar"
-                    @click="seleccionarParaCalibrar(props.row)"
-                  />
+                  >
+                    <q-tooltip>Limpiar Rango de Vencimiento</q-tooltip>
+                  </q-btn>
+                </div>
+              </template>
 
-                  <div v-else class="q-gutter-xs">
-                    <q-btn
-                      outline
-                      round
-                      dense
-                      color="warning"
-                      icon="edit"
-                      @click="prepararEdicion(props.row)"
-                      v-if="authStore.usuario?.edit_gage"
-                    >
-                      <q-tooltip>EDITAR CALIBRACION</q-tooltip>
-                    </q-btn>
+              <template v-slot:top-right>
+                <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar Gage">
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+              </template>
 
-                    <q-btn
-                      outline
-                      round
-                      dense
-                      color="info"
-                      icon="visibility"
-                      @click="verDetalles(props.row)"
-                    >
-                      <q-tooltip>VER DETALLES</q-tooltip>
-                    </q-btn>
-                    <q-btn
-                      outline
-                      round
-                      dense
-                      color="primary"
-                      icon="build"
-                      @click="seleccionarParaCalibrar(props.row)"
-                      v-if="authStore.usuario?.edit_gage"
-                    >
-                      <q-tooltip>CALIBRAR</q-tooltip>
-                    </q-btn>
-                  </div>
-                </template>
+              <template v-slot:body="props">
+                <q-tr :props="props" :class="obtenerClaseFila(props.row)">
+                  <q-td v-for="col in props.cols" :key="col.name" :props="props">
+                    <template v-if="col.name === 'FechaCalibracion' || col.name === 'FechaProxima'">
+                      {{ formatearFecha(props.row[col.field]) }}
+                    </template>
 
-                <template v-else>
-                  {{ col.value }}
-                </template>
-              </q-td>
-            </q-tr>
-          </template>
-        </q-table>
-      </q-card-section>
-    </q-card>
-  </div>
+                    <template v-else-if="col.name === 'Calibracion'">
+                      <q-badge
+                        v-if="props.row.EsNuevo === 1"
+                        color="blue-7"
+                        class="text-weight-bold"
+                        label="NUEVO / PENDIENTE"
+                      />
+
+                      <q-badge
+                        v-else-if="calcularDias(props.row.FechaProxima) <= 0"
+                        color="orange-10"
+                        class="text-weight-bold"
+                        label="VENCIDO / RECALIBRAR"
+                      />
+
+                      <q-badge
+                        v-else-if="calcularDias(props.row.FechaProxima) <= 7"
+                        color="warning"
+                        class="text-weight-bold"
+                        label="PROXIMO A CALIBRAR"
+                      />
+
+                      <q-badge
+                        v-else
+                        :color="props.row.EstatusPasa === 1 ? 'positive' : 'negative'"
+                        class="text-weight-bold"
+                      >
+                        {{ props.row.EstatusPasa === 1 ? 'CALIBRADO' : 'RECHAZADO' }}
+                      </q-badge>
+                    </template>
+                    <template v-else-if="col.name === 'Procedimiento'">
+                      <q-btn
+                        outline
+                        round
+                        dense
+                        color="primary"
+                        icon="topic"
+                        @click="abrirProcedimiento(props.row)"
+                      >
+                        <q-tooltip>Manual de Procedimiento</q-tooltip>
+                      </q-btn>
+                    </template>
+
+                    <template v-else-if="col.name === 'actions'">
+                      <q-btn
+                        v-if="
+                          authStore.usuario?.edit_gage &&
+                          (props.row.EsNuevo === 1 || calcularDias(props.row.FechaProxima) <= 0)
+                        "
+                        color="positive"
+                        icon="build"
+                        label="Calibrar"
+                        @click="seleccionarParaCalibrar(props.row)"
+                      />
+
+                      <div v-else class="q-gutter-xs">
+                        <q-btn
+                          outline
+                          round
+                          dense
+                          color="warning"
+                          icon="edit"
+                          @click="prepararEdicion(props.row)"
+                          v-if="authStore.usuario?.edit_gage"
+                        >
+                          <q-tooltip>EDITAR CALIBRACION</q-tooltip>
+                        </q-btn>
+
+                        <q-btn
+                          outline
+                          round
+                          dense
+                          color="info"
+                          icon="visibility"
+                          @click="verDetalles(props.row)"
+                        >
+                          <q-tooltip>VER DETALLES</q-tooltip>
+                        </q-btn>
+                        <q-btn
+                          outline
+                          round
+                          dense
+                          color="primary"
+                          icon="build"
+                          @click="seleccionarParaCalibrar(props.row)"
+                          v-if="authStore.usuario?.edit_gage"
+                        >
+                          <q-tooltip>CALIBRAR</q-tooltip>
+                        </q-btn>
+                      </div>
+                    </template>
+
+                    <template v-else>
+                      {{ col.value }}
+                    </template>
+                  </q-td>
+                </q-tr>
+              </template>
+            </q-table>
+        </q-card>
+      </div>
+  </q-page>
 
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
@@ -262,7 +255,7 @@
                     label="No. de Certificado / Folio"
                   />
                 </div>
-                
+
                 <div class="col-12 col-md-2">
                   <q-input
                     :readonly="soloLectura"
@@ -281,8 +274,6 @@
                     step="0.1"
                   />
                 </div>
-
-                
 
                 <div class="col-12 col-md-4">
                   <q-input
@@ -334,12 +325,7 @@
                   </q-select>
                 </div>
                 <div class="col-12 col-md-1">
-                  <q-btn
-                    outline
-                    color="primary"
-                    icon="topic"
-                    @click="tabActual = 'procedimiento'" 
-                  >
+                  <q-btn outline color="primary" icon="topic" @click="tabActual = 'procedimiento'">
                     <q-tooltip>Ir al Manual</q-tooltip>
                   </q-btn>
                 </div>
@@ -361,7 +347,7 @@
                   />
                 </div>
                 <div class="col-12 col-md-12">
-                  <div class="text-subtitle1 text-weight-bold ">Puntos de Medición</div>
+                  <div class="text-subtitle1 text-weight-bold">Puntos de Medición</div>
                   <q-markup-table flat bordered dense class="markup-sticky">
                     <thead class="bg-blue-grey-1">
                       <tr>
@@ -390,15 +376,15 @@
                           </span>
                         </td>
                         <td>
-                          <q-input 
-                              v-if="med.esNuevo && !soloLectura" 
-                              v-model.number="med.PuntoNominal" 
-                              type="number" 
-                              dense 
-                              outlined
-                              bg-color="white"
-                              @update:model-value="calcularDiferencia(index)"
-                            />
+                          <q-input
+                            v-if="med.esNuevo && !soloLectura"
+                            v-model.number="med.PuntoNominal"
+                            type="number"
+                            dense
+                            outlined
+                            bg-color="white"
+                            @update:model-value="calcularDiferencia(index)"
+                          />
                           <span v-else>{{ med.PuntoNominal }}</span>
                         </td>
                         <td>
@@ -423,12 +409,12 @@
                           {{ med.Diferencia }}
                         </td>
                         <td class="text-center" v-if="!soloLectura">
-                          <q-btn 
-                            flat 
-                            round 
-                            dense 
-                            color="negative" 
-                            icon="delete" 
+                          <q-btn
+                            flat
+                            round
+                            dense
+                            color="negative"
+                            icon="delete"
                             @click="eliminarMedicion(index)"
                           >
                             <q-tooltip>Eliminar fila</q-tooltip>
@@ -438,12 +424,12 @@
                     </tbody>
                   </q-markup-table>
                   <div class="row justify-end q-mt-sm" v-if="!soloLectura">
-                    <q-btn 
-                      outline 
-                      icon="add" 
-                      color="primary" 
-                      label="Agregar Medición Extra" 
-                      @click="agregarMedicion" 
+                    <q-btn
+                      outline
+                      icon="add"
+                      color="primary"
+                      label="Agregar Medición Extra"
+                      @click="agregarMedicion"
                     />
                   </div>
                 </div>
@@ -465,9 +451,10 @@
               <!-- Columna Izquierda: Texto -->
               <div class="col-12 col-md-8">
                 <div class="text-h6 text-primary q-mb-sm">
-                  Manual: {{ procedimientoSeleccionado?.NombreProce || 'Sin procedimiento asignado' }}
+                  Manual:
+                  {{ procedimientoSeleccionado?.NombreProce || 'Sin procedimiento asignado' }}
                 </div>
-                
+
                 <q-banner rounded class="bg-amber-1 text-amber-10 q-mb-md border-amber">
                   <template v-slot:avatar><q-icon name="warning" color="amber-9" /></template>
                   <div class="text-weight-bold">Precauciones:</div>
@@ -476,7 +463,11 @@
 
                 <div class="text-weight-bold text-subtitle1">6.0 Instrucciones de Calibración:</div>
                 <q-card flat bordered class="q-pa-sm bg-white">
-                  <div v-html="procedimientoSeleccionado?.Instrucciones || 'No hay instrucciones detalladas.'"></div>
+                  <div
+                    v-html="
+                      procedimientoSeleccionado?.Instrucciones || 'No hay instrucciones detalladas.'
+                    "
+                  ></div>
                 </q-card>
               </div>
 
@@ -485,7 +476,9 @@
                 <q-card dark class="bg-indigo-9 q-mb-md">
                   <q-card-section>
                     <div class="text-subtitle2">Tolerancia de Aceptación</div>
-                    <div class="text-h5 text-weight-bolder">{{ procedimientoSeleccionado?.Tolerancia }}</div>
+                    <div class="text-h5 text-weight-bolder">
+                      {{ procedimientoSeleccionado?.Tolerancia }}
+                    </div>
                   </q-card-section>
                 </q-card>
 
@@ -497,7 +490,9 @@
                   style="max-height: 250px"
                 >
                   <template v-slot:error>
-                    <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">Sin imagen</div>
+                    <div class="absolute-full flex flex-center bg-grey-3 text-grey-8">
+                      Sin imagen
+                    </div>
                   </template>
                 </q-img>
               </div>
@@ -506,7 +501,13 @@
         </q-tab-panel>
 
         <q-tab-panel name="historial" class="q-pa-none">
-          <q-table flat :rows="rowsHistorial" :columns="columnsHistorial" row-key="CalibracionId" class="tabla-sticky">
+          <q-table
+            flat
+            :rows="rowsHistorial"
+            :columns="columnsHistorial"
+            row-key="CalibracionId"
+            class="tabla-sticky"
+          >
             <!-- Slot para el Botón de Detalles -->
             <template v-slot:body-cell-acciones="props">
               <q-td :props="props">
@@ -810,12 +811,7 @@ watch([() => formModel.value.PuntoNominal, () => formModel.value.ValorLeido], ()
   // Si la diferencia absoluta es mayor a la tolerancia, podrías sugerir el cambio de radio
 })
 
-const opcionesCategorias = [
-  'Interno',
-  'Externa',
-  'Altura',
-  'Profundidad',
-]
+const opcionesCategorias = ['Interno', 'Externa', 'Altura', 'Profundidad']
 
 const agregarMedicion = () => {
   mediciones.value.push({
@@ -825,7 +821,7 @@ const agregarMedicion = () => {
     ToleranciaMax: 0,
     ValorLeido: null,
     Diferencia: 0,
-    esNuevo: true
+    esNuevo: true,
   })
 }
 
@@ -867,8 +863,8 @@ const prepararNuevaCalibracion = async (gageId) => {
 
 const seleccionarParaCalibrar = async (row) => {
   onReset()
-  modoEdicion.value = false; 
-  soloLectura.value = false;
+  modoEdicion.value = false
+  soloLectura.value = false
   formModel.value.GagesId = row.GageId
   formModel.value.GageSerie = row.GageSerie
   formModel.value.Descripcion = row.Descripcion
@@ -1011,7 +1007,7 @@ const insertarCalibracion = async () => {
 const actualizarCalibracion = async () => {
   try {
     $q.loading.show({ message: 'Actualizando registro...' })
-    
+
     const patronesString = Array.isArray(formModel.value.E_Pusados)
       ? formModel.value.E_Pusados.join(', ')
       : formModel.value.E_Pusados
@@ -1024,9 +1020,9 @@ const actualizarCalibracion = async () => {
 
     // Cambiamos 'datos.CalibracionId' por 'formModel.value.CalibracionId'
     if (!formModel.value.CalibracionId) {
-      throw new Error("No se encontró el ID de la calibración");
+      throw new Error('No se encontró el ID de la calibración')
     }
-    
+
     await api.put(`/api/actualizar-calibracion/${formModel.value.CalibracionId}`, bodyEnvio)
 
     Form.value = false
@@ -1194,6 +1190,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.my-card {
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
 /* Rojo suave para equipos que fallaron */
 .fila-rechazada {
   background-color: #ffcdd2 !important;
@@ -1228,7 +1228,7 @@ onMounted(() => {
   top: 0;
   z-index: 2; /* Mayor que las celdas del cuerpo */
   background-color: #f5f5f5; /* Color grisáceo que ya usas en bg-blue-grey-1 */
-  border-bottom: 1px solid rgba(0,0,0,0.12);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.12);
 }
 
 /* Estilo para cabecera fija */
@@ -1239,11 +1239,20 @@ onMounted(() => {
 .tabla-sticky :deep(thead tr th) {
   position: sticky;
   z-index: 1;
-  /* El color de fondo es vital para que las filas no se vean detrás del texto */
-  background-color: #eceff1; 
+  background-color: #f5f5f5; /* Asegura que el fondo de la cabecera sea sólido */
 }
 
 .tabla-sticky :deep(thead tr:first-child th) {
   top: 0;
-} 
+}
+.q-table__container {
+  border-radius: 8px;
+}
+
+/* Ajuste para que los badges de estado tengan un ancho uniforme */
+.q-badge {
+  padding: 4px 8px;
+  min-width: 110px;
+  justify-content: center;
+}
 </style>

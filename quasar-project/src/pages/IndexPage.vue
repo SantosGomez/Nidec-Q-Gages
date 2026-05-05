@@ -1,86 +1,128 @@
 <template>
-  <q-page class="flex flex-center">
-    <q-card class="my-card row q-col-gutter-md" style="max-width: 1000px; width: 100%; margin: auto; margin-top: 20px; padding: 20px;">
-      <q-card-section class="flex flex-center col-12">
-        <div class="text-h4">Bienvenido a Nidec Q-Gages</div>
-      </q-card-section>
+  <q-page class="bg-grey-2 flex flex-center q-pa-md">
+    <div style="max-width: 1400px; width: 100%">
+
+      <div class="text-center q-mb-xl">
+        <div class="text-h3 text-weight-bolder text-primary">Nidec Q-GAGES</div>
+        <div class="text-subtitle1 text-grey-7">Sistema de Control y Calibración de Instrumentos</div>
+      </div>
       
-      <div class="row q-col-gutter-md full-width">
+      <div class="row q-col-gutter-lg justify-center">
         
-        <div v-if="authStore.usuario?.ver_gage" class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Master" v-ripple>
+        <div v-if="authStore.usuario?.ver_gage" class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Master" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/GageMaster.png" style="width: 50px; height: auto" />
+              <img src="src/assets/iconosGAGES/GageMaster.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow"
+              />
             </q-card-section>
             <q-separator inset />
             <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="Gage Master" />
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                Gage Master
+              </div>
+            </q-card-section>
+            <q-inner-loading :showing="loading">
+              <q-spinner-gears size="50px" color="primary" />
+            </q-inner-loading>
+          </q-card>
+        </div>
+
+        <div v-if="authStore.usuario?.ver_calibracion" class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Calibracion" v-ripple>
+            <q-card-section class="flex flex-center">
+              <img src="src/assets/iconosGAGES/calibracion.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow" />
+            </q-card-section>
+            <q-separator inset />
+            <q-card-section>
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                Calibracion
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
-        <div v-if="authStore.usuario?.ver_calibracion" class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Calibracion" v-ripple>
+        <div v-if="authStore.usuario?.ver_reportes" class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Reportes" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/calibracion.png" style="width: 50px; height: auto" />
+              <img src="src/assets/iconosGAGES/Reporte.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow" />
             </q-card-section>
             <q-separator inset />
             <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="Calibracion" />
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                Reportes
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
-        <div v-if="authStore.usuario?.ver_reportes" class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Reportes" v-ripple>
+        <div v-if="authStore.usuario?.ver_procedimientos" class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Procedimientos" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/Reporte.png" style="width: 50px; height: auto" />
+              <img src="src/assets/iconosGAGES/Procedimiento.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow" />
             </q-card-section>
             <q-separator inset />
             <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="Reportes" />
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                Procedimientos
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
-        <div v-if="authStore.usuario?.ver_procedimientos" class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Procedimientos" v-ripple>
+        <div class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Checkout" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/Procedimiento.png" style="width: 50px; height: auto" />
+              <img src="src/assets/iconosGAGES/registro.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow" />
             </q-card-section>
             <q-separator inset />
             <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="Procedimientos" />
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                PRESTAMO
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
-        <div class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Checkout" v-ripple>
+        <div v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'" class="col-12 col-sm-6 col-md-4">
+          <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Usuario" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/registro.png" style="width: 50px; height: auto" />
+              <img src="src/assets/iconosGAGES/usuario.png" 
+                width="70px" 
+                height="70px" 
+                fit="contain"
+                class="q-mb-sm icon-shadow" />
             </q-card-section>
             <q-separator inset />
             <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="PRESTAMO" />
-            </q-card-section>
-          </q-card>
-        </div>
-
-        <div v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'" class="col-12 col-sm-4">
-          <q-card class="my-card cursor-pointer" @click="Usuario" v-ripple>
-            <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/usuario.png" style="width: 50px; height: auto" />
-            </q-card-section>
-            <q-separator inset />
-            <q-card-section>
-              <q-btn style="width: 100%" color="primary" label="Usuarios" />
+              <div class="text-h6 text-uppercase text-weight-bold text-blue-grey-9">
+                Usuarios
+              </div>
             </q-card-section>
           </q-card>
         </div>
 
       </div>
-    </q-card>
+    </div>
   </q-page>
 </template>
 
@@ -100,3 +142,28 @@ const Usuario = () => router.push('Usuarios')
 
 
 </script>
+<style scoped>
+/* Efecto de elevación al pasar el mouse */
+.dashboard-card {
+  transition: all 0.3s ease;
+  border-radius: 15px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+
+.dashboard-card:hover {
+  transform: translateY(-10px); /* Se eleva */
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1) !important;
+  background: white;
+}
+
+.icon-shadow {
+  filter: drop-shadow(0px 4px 4px rgba(0,0,0,0.1));
+}
+
+/* Para que los títulos no se vean pegados en móvil */
+@media (max-width: 600px) {
+  .text-h3 {
+    font-size: 2rem;
+  }
+}
+</style>

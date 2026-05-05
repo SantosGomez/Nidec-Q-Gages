@@ -55,9 +55,7 @@ app.get("/api/usuarios", async (req, res) => {
     // Es mejor pedir las columnas específicas para estar seguros
     const [rows] = await db.query(`
       SELECT 
-        UserID, Usuario, Rol, 
-        edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos, edit_prestamo,
-        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos, ver_prestamo
+        *
       FROM usuarios
     `);
     res.json(rows);
@@ -75,7 +73,7 @@ app.put("/api/usuarios/:id", async (req, res) => {
     const query = `
       UPDATE usuarios SET 
         Usuario = ?, Rol = ?, edit_gage = ?, edit_gageId = ?, edit_calibracion = ?, edit_reportes = ?, edit_procedimientos = ?, edit_prestamo = ?,
-        ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?, ver_prestamo = ?
+        ver_prestamo = ?, ver_gage = ?, ver_calibracion = ?, ver_reportes = ?, ver_procedimientos = ?
       WHERE UserID = ?
     `;
 
@@ -89,11 +87,11 @@ app.put("/api/usuarios/:id", async (req, res) => {
       p.edit_reportes,
       p.edit_procedimientos,
       p.edit_prestamo,
+      p.ver_prestamo,
       p.ver_gage,
       p.ver_calibracion,
       p.ver_reportes,
       p.ver_procedimientos,
-      p.ver_prestamo,
       id,
     ]);
 
@@ -116,11 +114,11 @@ app.post("/api/usuarios/registro", async (req, res) => {
     edit_reportes,
     edit_procedimientos,
     edit_prestamo,
+    ver_prestamo,
     ver_gage,
     ver_calibracion,
     ver_reportes,
     ver_procedimientos,
-    ver_prestamo
   } = req.body;
   try {
     if (!Password) {
@@ -133,7 +131,7 @@ app.post("/api/usuarios/registro", async (req, res) => {
     const hashedPass = await bcrypt.hash(Password, saltRounds);
 
     const query = `INSERT INTO usuarios (Usuario, Password, Rol,  edit_gage, edit_gageId, edit_calibracion, edit_reportes, edit_procedimientos, edit_prestamo,
-        ver_gage, ver_calibracion, ver_reportes, ver_procedimientos, ver_prestamo) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+        ver_prestamo, ver_gage, ver_calibracion, ver_reportes, ver_procedimientos) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
     const values = [
       Usuario,
       hashedPass,
@@ -144,11 +142,11 @@ app.post("/api/usuarios/registro", async (req, res) => {
       edit_reportes || 0,
       edit_procedimientos || 0,
       edit_prestamo || 0,
+      ver_prestamo || 0,
       ver_gage || 0,
       ver_calibracion || 0,
       ver_reportes || 0,
-      ver_procedimientos || 0,
-      ver_prestamo || 0
+      ver_procedimientos || 0
     ];
 
     await db.query(query, values);

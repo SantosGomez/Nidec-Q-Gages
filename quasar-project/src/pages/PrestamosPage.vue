@@ -1,126 +1,134 @@
 <template>
-  <div style="margin: 15px">
-    <q-btn color="primary" icon="home" label="Inicio" @click="index" />
-  </div>
+  <q-page class="bg-grey-2 q-pa-md">
+    <div style="max-width: 1200px; width: 100%" class="q-px-md q-mx-auto">
+      <div class="row items-center q-mb-xl">
+        <q-btn flat round color="primary" icon="arrow_back" @click="index" class="q-mr-md" />
+        <div class="text-h4 text-weight-bolder text-blue-grey-9">Gestión de Gages</div>
+        <q-space />
+        <!-- Esto empuja lo que sigue a la derecha -->
+        <q-btn
+          padding="sm lg"
+          label="Nuevo registro"
+          icon="add"
+          color="primary"
+          @click="abrirFormulario"
+        />
+      </div>
+      <q-card class="my-card shadow-1 shadow-up-1">
+        <q-card-section>
+          <q-table
+            :rows="prestamoFiltrados"
+            :columns="columns"
+            :loading="loading"
+            row-key="PrestamoId"
+            flat
+            class="tabla-sticky"
+          >
+            <template v-slot:top>
+              <div class="row q-gutter-md full-width items-center">
+                <q-select
+                  v-model="filtroArea"
+                  :options="opcionesAreas"
+                  label="Filtrar por Area"
+                  dense
+                  outlined
+                  style="min-width: 150px"
+                />
+                <q-select
+                  v-model="filtroTurno"
+                  :options="['Todos', 'Turno A', 'Turno B', 'Turno C', 'Turno D']"
+                  label="Filtrar por Turno"
+                  dense
+                  outlined
+                  style="min-width: 150px"
+                />
 
-  <div class="text-h3 flex flex-center" style="font-weight: bold; margin: 6px">Préstamos</div>
+                <q-toggle
+                  v-model="soloPendientes"
+                  label="Solo pendientes de entrega"
+                  color="orange"
+                />
+                <q-space />
+                <q-input
+                  v-model="search"
+                  dense
+                  outlined
+                  debounce="300"
+                  placeholder="Buscar Empleado o Gage..."
+                  style="width: 300px"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+              </div>
+            </template>
+            <template v-slot:body-cell-horaEntrega="props">
+              <q-td :props="props">
+                {{ formatearFecha(props.value) }}
+              </q-td>
+            </template>
 
-  <q-card
-    class="my-card"
-    style="max-width: 1200px; width: 100%; margin: 0 auto; margin-top: 10px; margin-bottom: 10px"
-  >
-    <q-card-section class="row items-center q-pb-none">
-      <div class="text-h4 q-mb-md">Historial de préstamos</div>
-      <q-space />
-      <q-btn label="Nuevo registro" icon="add" color="primary" @click="abrirFormulario" />
-    </q-card-section>
+            <template v-slot:body-cell-horaDevuelto="props">
+              <q-td :props="props" class="text-grey-9">
+                {{ formatearFecha(props.value) }}
+              </q-td>
+            </template>
+            <template v-slot:body-cell-actions="props">
+              <q-td :props="props" class="text-center">
+                <!-- La condición va aquí adentro, en el botón -->
+                <q-btn
+                  v-if="!!authStore.usuario?.edit_prestamo"
+                  round
+                  outline
+                  color="warning"
+                  icon="edit"
+                  @click="EditarRegistro(props.row)"
+                >
+                  <q-tooltip>Editar registro</q-tooltip>
+                </q-btn>
 
-    <q-card-section>
-      <q-table
-        :rows="prestamoFiltrados"
-        :columns="columns"
-        :loading="loading"
-        row-key="PrestamoId"
-        flat
-        bordered
-      >
-        <template v-slot:top>
-          <div class="row q-gutter-md full-width items-center">
-            <q-select
-              v-model="filtroArea"
-              :options="opcionesAreas"
-              label="Filtrar por Area"
-              dense
-              outlined
-              style="min-width: 150px"
-            />
-            <q-select
-              v-model="filtroTurno"
-              :options="['Todos', 'Turno A', 'Turno B', 'Turno C', 'Turno D']"
-              label="Filtrar por Turno"
-              dense
-              outlined
-              style="min-width: 150px"
-            />
-
-            <q-toggle v-model="soloPendientes" label="Solo pendientes de entrega" color="orange" />
-            <q-space />
-            <q-input
-              v-model="search"
-              dense
-              outlined
-              debounce="300"
-              placeholder="Buscar Empleado o Gage..."
-              style="width: 300px"
-            >
-              <template v-slot:append>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </div>
-        </template>
-        <template v-slot:body-cell-horaEntrega="props">
-          <q-td :props="props">
-            {{ formatearFecha(props.value) }}
-          </q-td>
-        </template>
-
-        <template v-slot:body-cell-horaDevuelto="props">
-          <q-td :props="props" class="text-grey-9">
-            {{ formatearFecha(props.value) }}
-          </q-td>
-        </template>
-        <template v-slot:body-cell-actions="props">
-          <q-td :props="props" class="text-center">
-            <!-- La condición va aquí adentro, en el botón -->
-            <q-btn
-              v-if="!!authStore.usuario?.edit_prestamo"
-              round
-              outline
-              color="warning"
-              icon="edit"
-              @click="EditarRegistro(props.row)"
-            >
-              <q-tooltip>Editar registro</q-tooltip>
-            </q-btn>
-            
-            <!-- Opcional: Un mensaje o icono candado si no tiene permiso -->
-            <q-icon v-else name="lock" color="grey-4">
-              <q-tooltip>Sin permisos de edición</q-tooltip>
-            </q-icon>
-          </q-td>
-        </template>
-        <template v-slot:body-cell-devolucion="props">
-          <q-td :props="props" class="text-center">
-            <q-btn
-              v-if="!props.row.HDevolucion || props.row.HDevolucion.startsWith('0000')"
-              color="warning"
-              icon="history"
-              label="Devolver"
-              size="sm"
-              @click="prepararDevolucion(props.row)"
-            />
-            <q-badge v-else color="green" label="Completado" padding="5px 10px" />
-          </q-td>
-        </template>
-      </q-table>
-    </q-card-section>
-  </q-card>
+                <!-- Opcional: Un mensaje o icono candado si no tiene permiso -->
+                <q-icon v-else name="lock" color="grey-4">
+                  <q-tooltip>Sin permisos de edición</q-tooltip>
+                </q-icon>
+              </q-td>
+            </template>
+            <template v-slot:body-cell-devolucion="props">
+              <q-td :props="props" class="text-center">
+                <q-btn
+                  v-if="!props.row.HDevolucion || props.row.HDevolucion.startsWith('0000')"
+                  color="warning"
+                  icon="history"
+                  label="Devolver"
+                  size="sm"
+                  @click="prepararDevolucion(props.row)"
+                />
+                <q-badge v-else color="green" label="Completado" padding="5px 10px" />
+              </q-td>
+            </template>
+          </q-table>
+        </q-card-section>
+      </q-card>
+    </div>
+  </q-page>
 
   <q-dialog v-model="mostrarFormulario" persistent :backdrop-filter="backdropFilter">
-    <q-card style="max-width: 800px; width: 100%; " >
+    <q-card style="max-width: 800px; width: 100%">
       <q-card-section class="bg-primary text-white">
-        <div class="text-h6">{{ esEdicion ? 'Editar Préstamo' : 'Nuevo Registro de Préstamo' }}</div>
+        <div class="text-h6">
+          {{ esEdicion ? 'Editar Préstamo' : 'Nuevo Registro de Préstamo' }}
+        </div>
       </q-card-section>
 
       <q-card-section class="row q-col-gutter-md q-pt-lg">
-        <div class="col-12 col-md-6" >
+        <div class="col-12 col-md-6">
           <q-input outlined dense v-model="formPrestamo.Nombre" label="Nombre" />
         </div>
         <div class="col-12 col-md-6">
           <q-input outlined dense v-model="formPrestamo.NoEmpleado" label="No. Empleado" />
         </div>
-        <div class="col-12 col-md-6 ">
+        <div class="col-12 col-md-6">
           <q-select
             outlined
             dense
@@ -129,7 +137,7 @@
             label="Seleccionar Turno"
             emit-value
             map-options
-            >
+          >
             <template v-slot:prepend>
               <q-icon name="schedule" />
             </template>
@@ -156,7 +164,6 @@
             <template v-slot:append>
               <q-btn icon="add" flat @click.stop="GagesDisponles = true" />
             </template>
-        
           </q-select>
         </div>
         <div class="col-12 col-md-12">
@@ -166,10 +173,10 @@
 
       <q-card-actions align="right" class="q-pb-md q-pr-md">
         <q-btn flat label="Cancelar" color="grey" v-close-popup />
-        <q-btn 
-          :label="esEdicion ? 'Guardar Cambios' : 'Registrar Prestamo'" 
-          color="primary" 
-          @click="esEdicion ? ActualizarPrestamo() : registrarPrestamo()" 
+        <q-btn
+          :label="esEdicion ? 'Guardar Cambios' : 'Registrar Prestamo'"
+          color="primary"
+          @click="esEdicion ? ActualizarPrestamo() : registrarPrestamo()"
         />
       </q-card-actions>
     </q-card>
@@ -199,38 +206,38 @@
     </q-card>
   </q-dialog>
 
-  <q-dialog v-model="GagesDisponles" persistent :backdrop-filter="backdropFilter" >
-  <q-card style="width: 600px;">
-    <q-card-section class="row items-center q-pb-none">
-      <div class="text-h6">Seleccionar Gages Disponibles</div>
-      <q-space />
-      <q-btn icon="close" flat round dense v-close-popup />
-    </q-card-section>
+  <q-dialog v-model="GagesDisponles" persistent :backdrop-filter="backdropFilter">
+    <q-card style="width: 600px">
+      <q-card-section class="row items-center q-pb-none">
+        <div class="text-h6">Seleccionar Gages Disponibles</div>
+        <q-space />
+        <q-btn icon="close" flat round dense v-close-popup />
+      </q-card-section>
 
-    <q-card-section>
-      <!-- Tabla con selección múltiple -->
-      <q-table
-        :rows="opcionesGagesRaw" 
-        :columns="columnasSelector"
-        row-key="GageId"
-        selection="multiple"
-        v-model:selected="seleccionadosEnTabla"
-        :filter="filtroBusqueda"
-      >
-        <template v-slot:top-right>
-          <q-input dense debounce="300" v-model="filtroBusqueda" placeholder="Buscar Gage...">
-            <template v-slot:append><q-icon name="search" /></template>
-          </q-input>
-        </template>
-      </q-table>
-    </q-card-section>
+      <q-card-section>
+        <!-- Tabla con selección múltiple -->
+        <q-table
+          :rows="opcionesGagesRaw"
+          :columns="columnasSelector"
+          row-key="GageId"
+          selection="multiple"
+          v-model:selected="seleccionadosEnTabla"
+          :filter="filtroBusqueda"
+        >
+          <template v-slot:top-right>
+            <q-input dense debounce="300" v-model="filtroBusqueda" placeholder="Buscar Gage...">
+              <template v-slot:append><q-icon name="search" /></template>
+            </q-input>
+          </template>
+        </q-table>
+      </q-card-section>
 
-    <q-card-actions align="right">
-      <q-btn flat label="Cancelar" color="primary" v-close-popup />
-      <q-btn label="Seleccionar" color="primary" @click="confirmarGages" />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+      <q-card-actions align="right">
+        <q-btn flat label="Cancelar" color="primary" v-close-popup />
+        <q-btn label="Seleccionar" color="primary" @click="confirmarGages" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -349,8 +356,8 @@ const obtenerPrestamos = async () => {
 }
 
 const abrirFormulario = () => {
-  esEdicion.value = false;
-  prestamoIdParaEditar.value = null;
+  esEdicion.value = false
+  prestamoIdParaEditar.value = null
   formPrestamo.value = {
     NoEmpleado: '',
     Nombre: '',
@@ -362,23 +369,23 @@ const abrirFormulario = () => {
 }
 
 const cerrarFormulario = () => {
-  mostrarFormulario.value = false;
-  esEdicion.value = false;
-  prestamoIdParaEditar.value = null;
+  mostrarFormulario.value = false
+  esEdicion.value = false
+  prestamoIdParaEditar.value = null
 }
 
 const confirmarGages = () => {
   // Mapeamos los seleccionados de la tabla al arreglo del formulario
-  formPrestamo.value.GageId = seleccionadosEnTabla.value.map(g => g.GageId)
-  
+  formPrestamo.value.GageId = seleccionadosEnTabla.value.map((g) => g.GageId)
+
   GagesDisponles.value = false
-  
+
   // Limpiamos la selección de la tabla para la próxima vez
   seleccionadosEnTabla.value = []
-  
+
   $q.notify({
     message: `${formPrestamo.value.GageId.length} gages seleccionados`,
-    color: 'positive'
+    color: 'positive',
   })
 }
 
@@ -390,7 +397,7 @@ const EditarRegistro = (row) => {
     Nombre: row.Nombre,
     TurnoId: row.TurnoId, // Asegúrate que el TurnoId venga en la fila
     Area: row.Area,
-    GageId: [row.GageId] // Lo ponemos como array porque tu select es múltiple[cite: 8]
+    GageId: [row.GageId], // Lo ponemos como array porque tu select es múltiple[cite: 8]
   }
 
   mostrarFormulario.value = true
@@ -407,8 +414,8 @@ const registrarPrestamo = async () => {
     const bodyEnvio = {
       NoEmpleado: Number(formPrestamo.value.NoEmpleado),
       Nombre: formPrestamo.value.Nombre,
-      GageId: formPrestamo.value.GageId,    
-      TurnoId: formPrestamo.value.TurnoId,  
+      GageId: formPrestamo.value.GageId,
+      TurnoId: formPrestamo.value.TurnoId,
       Area: formPrestamo.value.Area,
     }
 
@@ -445,13 +452,13 @@ const registrarPrestamo = async () => {
 const ActualizarPrestamo = async () => {
   try {
     // Validamos que tengamos el ID del registro a editar
-    if (!prestamoIdParaEditar.value) return;
+    if (!prestamoIdParaEditar.value) return
 
     const bodyEnvio = {
       NoEmpleado: Number(formPrestamo.value.NoEmpleado),
       Nombre: formPrestamo.value.Nombre,
-      GageId: formPrestamo.value.GageId,    
-      TurnoId: formPrestamo.value.TurnoId,  
+      GageId: formPrestamo.value.GageId,
+      TurnoId: formPrestamo.value.TurnoId,
       Area: formPrestamo.value.Area,
     }
 
@@ -464,9 +471,8 @@ const ActualizarPrestamo = async () => {
       message: 'Registro actualizado con éxito',
     })
 
-    cerrarFormulario(); // Función para limpiar todo
-    await obtenerPrestamos(); // Refresca la tabla
-    
+    cerrarFormulario() // Función para limpiar todo
+    await obtenerPrestamos() // Refresca la tabla
   } catch (error) {
     console.error('Error al actualizar:', error)
     $q.notify({
@@ -512,7 +518,7 @@ const cargarGagesDisponibles = async () => {
   try {
     const { data } = await api.get('/api/gages/disponibles')
     opcionesGagesRaw.value = data // La data completa para la tabla del diálogo
-    
+
     opcionesGages.value = data.map((g) => ({
       label: `${g.GageSerie} - ${g.Descripcion}`,
       value: g.GageId,
@@ -531,7 +537,7 @@ const obtenerHora = () => {
 let intervalo = null
 
 const formatearFecha = (fechaString) => {
-  if (!fechaString || fechaString === '--:--' || fechaString.startsWith('0000')){
+  if (!fechaString || fechaString === '--:--' || fechaString.startsWith('0000')) {
     return '--:--'
   }
 
@@ -562,3 +568,25 @@ onUnmounted(() => {
   clearInterval(intervalo)
 })
 </script>
+
+<style scoped>
+.my-card {
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.05);
+}
+.tabla-sticky {
+  height: 450px; /* Ajusta esta altura según prefieras */
+}
+.tabla-sticky :deep(thead tr th) {
+  position: sticky;
+  z-index: 1;
+  background-color: #f5f5f5; /* Asegura que el fondo de la cabecera sea sólido */
+}
+
+.tabla-sticky :deep(thead tr:first-child th) {
+  top: 0;
+}
+.q-table__container {
+  border-radius: 8px;
+}
+</style>

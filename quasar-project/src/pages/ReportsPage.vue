@@ -1,6 +1,6 @@
 <template>
   <div style="margin: 12px">
-    <q-btn color="primary" icon="home" label="Inicio" @click="index" />
+    <q-btn flat color="primary" icon="arrow_back" label="Volver al Inicio" @click="index" />
   </div>
   <div class="q-pa-md">
     <div class="text-h2 flex flex-center" style="font-weight: bold; margin: 20px;">Reportes</div>

@@ -1,71 +1,81 @@
 <template>
-  <div style="margin: 20px">
-    <q-btn color="primary" icon="home" label="Inicio" @click="index" />
-  </div>
-  <div class="text-h2 flex flex-center" style="font-weight: bold">Usuarios</div>
-
-  <div class="row q-col-gutter-md" style="margin-top: 20px">
-    <q-card
-      class="my-card"
-      style="max-width: 750px; width: 100%; margin: 0 auto; margin-top: 20px; padding: 20px"
-    >
-      <div class="row q-col-gutter-sm items-center q-mb-lg">
-        <div class="col-12 col-sm-auto">
-          <q-btn
-            v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
-            class="full-width"
-            color="primary"
-            icon="add"
-            label="Agregar Usuario"
-            @click="AbrirRegistro()"
-          />
-        </div>
-
-        <q-space class="gt-xs" />
-        <div class="col-12 col-sm-5">
-          <q-input v-model="search" placeholder="Buscar por nombre o rol..." outlined dense>
-            <template v-slot:append>
-              <q-icon name="search" />
-            </template>
-          </q-input>
-        </div>
+  <q-page class="bg-grey-2 q-pa-md">
+    <div style="max-width: 1200px; width: 100%" class="q-px-md q-mx-auto">
+      <div class="row items-center q-mb-xl">
+        <q-btn flat round color="primary" icon="arrow_back" @click="index" class="q-mr-md" />
+        <!-- Corregido: "Gestión de Usuarios" en lugar de Gages -->
+        <div class="text-h4 text-weight-bolder text-blue-grey-9">Gestión de Usuarios</div>
+        <q-space />
+        <q-btn
+          v-if="puedeEditar"
+          padding="sm lg"
+          color="primary"
+          icon="person_add"
+          label="Nuevo Usuario"
+          @click="AbrirRegistro()"
+        />
       </div>
 
-      <div class="col-12 col-md-12" style="margin-top: 20px">
-        <q-card-section>
-          <div v-if="loading" class="flex flex-center q-pa-lg">
-            <q-spinner-dots color="primary" size="40px" />
-          </div>
+      <q-card class="my-card shadow-1 shadow-up-1">
+        <q-table
+          :rows="usuariosFiltrados"
+          :columns="columns"
+          :loading="loading"
+          row-key="UserID"
+          flat
+          dense
+          :pagination="{ rowsPerPage: 10 }"
+        >
+          <template v-slot:top-right>
+            <q-input v-model="search" dense outlined debounce="300" placeholder="Buscar usuario...">
+              <template v-slot:append>
+                <q-icon name="search" />
+              </template>
+            </q-input>
+          </template>
 
-          <q-list bordered separator v-else>
-            <q-item
-              v-for="user in usuariosFiltrados"
-              :key="user.UserID"
-              clickable
-              v-ripple
-              @click="abrirDetalle(user)"
-            >
-              <q-item-section avatar>
-                <q-icon color="primary" name="account_circle" size="30px" />
-              </q-item-section>
-              <q-item-section>
-                <q-item-label>{{ user.Usuario }}</q-item-label>
-              </q-item-section>
-              <q-item-section>
-                <q-badge color="secondary" :label="user.Rol" style="width: 74px" />
-              </q-item-section>
-            </q-item>
+          <!-- Slot para el Rol con Badge -->
+          <template v-slot:body-cell-Rol="props">
+            <q-td :props="props">
+              <q-badge
+                :color="props.value === 'SuperAdmin' ? 'purple-7' : 'secondary'"
+                class="text-weight-bold"
+                style="min-width: 80px; justify-content: center"
+              >
+                {{ props.value }}
+              </q-badge>
+            </q-td>
+          </template>
 
-            <q-item v-if="usuariosFiltrados.length === 0">
-              <q-item-section class="text-grey text-center">
-                No se encontraron usuarios
-              </q-item-section>
-            </q-item>
-          </q-list>
-        </q-card-section>
-      </div>
-    </q-card>
-  </div>
+          <!-- Slot para Acciones -->
+          <template v-slot:body-cell-actions="props">
+            <q-td :props="props" class="q-gutter-sm">
+              <q-btn
+                outline
+                round
+                dense
+                color="warning"
+                icon="edit"
+                @click="abrirDetalle(props.row)"
+              >
+                <q-tooltip>Editar Permisos</q-tooltip>
+              </q-btn>
+              <q-btn
+                outline
+                round
+                dense
+                color="info"
+                icon="visibility"
+                @click="abrirDetalle(props.row, true)"
+              >
+                <q-tooltip>Ver Detalles</q-tooltip>
+              </q-btn>
+            </q-td>
+          </template>
+        </q-table>
+      </q-card>
+    </div>
+  </q-page>
 
   <q-dialog v-model="UserInfo" persistent>
     <q-card style="min-width: 600px">
@@ -84,14 +94,19 @@
               : 'Registrar Nuevo Usuario'
           }}
         </div>
-        <q-btn v-if="esEdicion && authStore.usuario?.Rol === 'SuperAdmin'" color="white" flat round icon="more_horiz" >
-
+        <q-btn
+          v-if="esEdicion && authStore.usuario?.Rol === 'SuperAdmin'"
+          color="white"
+          flat
+          round
+          icon="more_horiz"
+        >
           <q-menu>
             <q-list style="min-width: 100px">
               <q-item clickable v-close-popup @click="abrirReset">
                 <q-item-section avatar>
-                <q-icon color="primary" name="lock_reset" size="sm" />
-              </q-item-section>
+                  <q-icon color="primary" name="lock_reset" size="sm" />
+                </q-item-section>
                 <q-item-section>Resetear Contraseña</q-item-section>
               </q-item>
             </q-list>
@@ -173,27 +188,27 @@
   </q-dialog>
 
   <q-dialog v-model="promptReset" :backdrop-filter="'blur(4px) brightness(60%)'" persistent>
-  <q-card style="min-width: 350px">
-    <q-card-section>
-      <div class="text-h6">Nueva Contraseña para {{ usuarioSeleccionado?.Usuario }}</div>
-    </q-card-section>
+    <q-card style="min-width: 350px">
+      <q-card-section>
+        <div class="text-h6">Nueva Contraseña para {{ usuarioSeleccionado?.Usuario }}</div>
+      </q-card-section>
 
-    <q-card-section class="q-pt-none">
-      <q-input 
-        v-model="nuevaPassword" 
-        autofocus 
-        type="password" 
-        label="Escribe la nueva Contraseña"
-        @keyup.enter="ejecutarReset"
-      />
-    </q-card-section>
+      <q-card-section class="q-pt-none">
+        <q-input
+          v-model="nuevaPassword"
+          autofocus
+          type="password"
+          label="Escribe la nueva Contraseña"
+          @keyup.enter="ejecutarReset"
+        />
+      </q-card-section>
 
-    <q-card-actions align="right" class="text-primary">
-      <q-btn flat label="Cancelar" v-close-popup />
-      <q-btn flat label="Cambiar Contraseña" @click="ejecutarReset" />
-    </q-card-actions>
-  </q-card>
-</q-dialog>
+      <q-card-actions align="right" class="text-primary">
+        <q-btn flat label="Cancelar" v-close-popup />
+        <q-btn flat label="Cambiar Contraseña" @click="ejecutarReset" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
 <script setup>
@@ -216,6 +231,12 @@ const usuarioSeleccionado = ref(null)
 const authStore = useAuthStore()
 const promptReset = ref(false)
 const nuevaPassword = ref('')
+
+const columns = [
+  { name: 'Usuario', label: 'Nombre de Usuario', field: 'Usuario', align: 'left', sortable: true },
+  { name: 'Rol', label: 'Rol / Nivel', field: 'Rol', align: 'center', sortable: true },
+  { name: 'actions', label: 'Acciones', align: 'center' },
+]
 
 const formModel = ref({
   Usuario: '',
@@ -385,23 +406,23 @@ const AgregarUsuario = async () => {
 
 const ejecutarReset = async () => {
   if (nuevaPassword.value.length < 4) {
-    $q.notify({ type: 'warning', message: 'La contraseña es muy corta' });
-    return;
+    $q.notify({ type: 'warning', message: 'La contraseña es muy corta' })
+    return
   }
 
-  $q.loading.show({ message: 'Cambiando contraseña...' });
+  $q.loading.show({ message: 'Cambiando contraseña...' })
   try {
     await api.put(`/api/usuarios/${usuarioSeleccionado.value.UserID}/reset-password`, {
-      Password: nuevaPassword.value
-    });
+      Password: nuevaPassword.value,
+    })
 
-    $q.notify({ type: 'positive', message: '¡Contraseña actualizada!' });
-    promptReset.value = false;
+    $q.notify({ type: 'positive', message: '¡Contraseña actualizada!' })
+    promptReset.value = false
   } catch (error) {
     console.error('Error al resetear contraseña del usuario:', error)
-    $q.notify({ type: 'negative', message: 'No se pudo resetear' });
+    $q.notify({ type: 'negative', message: 'No se pudo resetear' })
   } finally {
-    $q.loading.hide();
+    $q.loading.hide()
   }
 }
 
@@ -410,3 +431,25 @@ onMounted(() => {
   obtenerUsuarios()
 })
 </script>
+
+<style scoped>
+.my-card {
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+.tabla-sticky {
+  height: 450px; /* Ajusta esta altura según prefieras */
+}
+.tabla-sticky :deep(thead tr th) {
+  position: sticky;
+  z-index: 1;
+  background-color: #f5f5f5; /* Asegura que el fondo de la cabecera sea sólido */
+}
+
+.tabla-sticky :deep(thead tr:first-child th) {
+  top: 0;
+}
+.q-table__container {
+  border-radius: 8px;
+}
+</style>
