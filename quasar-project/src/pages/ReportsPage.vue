@@ -9,10 +9,10 @@
 
         <!-- Marcadores de posición para exportaciones (futura funcionalidad) -->
         <div class="q-gutter-sm">
-          <q-btn flat round color="green-8" icon="description">
+          <q-btn flat color="green-8" icon="description" label="EXPORTAR EXCEL" @click="exportarExcel">
             <q-tooltip>Exportar a Excel (.xlsx)</q-tooltip>
           </q-btn>
-          <q-btn flat round color="red-8" icon="picture_as_pdf">
+          <q-btn flat  color="red-8" icon="picture_as_pdf" label="EXPORTAR PDF" @click="descargarPDF">
             <q-tooltip>Exportar a PDF</q-tooltip>
           </q-btn>
         </div>
@@ -23,13 +23,7 @@
           <!-- FILA 1: Selectores superiores -->
           <div class="row q-col-gutter-md">
             <div class="col-12 col-md-6">
-              <q-select
-                v-model="opciones"
-                :options="list"
-                label="Seleccionar Tipo de Reporte"
-                outlined
-                dense
-              />
+              <q-select v-model="opciones" :options="list" label="Seleccionar Tipo de Reporte" outlined dense />
             </div>
             <div class="col-12 col-md-6">
               <q-banner rounded class="bg-blue-1 text-blue-9 q-pa-sm" dense bordered>
@@ -88,45 +82,22 @@
 
             <!-- BOTONES -->
             <div class="row justify-end q-mt-sm q-gutter-sm">
-              <q-btn
-                v-if="gageId"
-                label="Imprimir Etiqueta"
-                color="green-8"
-                icon="print"
-                unelevated
-              />
-              <q-btn
-                label="Generar Reporte"
-                type="submit"
-                color="blue-8"
-                icon="task_alt"
-                unelevated
-              />
+              <q-btn v-if="gageId" label="Imprimir Etiqueta" color="green-8" icon="print" unelevated />
+              <q-btn label="Generar Reporte" type="submit" color="blue-8" icon="task_alt" unelevated />
             </div>
           </q-form>
         </q-card-section>
       </q-card>
       <q-card class="my-card shadow-1 shadow-up-1 q-mt-lg">
         <!-- VISTA POR DEFECTO: Cuando no hay reporte generado -->
-        <q-card-section
-          v-if="!pdfUrl"
-          class="q-pa-lg text-center text-grey-7 bg-grey-1"
-          style="min-height: 300px"
-        >
+        <q-card-section v-if="!pdfUrl" class="q-pa-lg text-center text-grey-7 bg-grey-1" style="min-height: 300px">
           <q-icon name="preview" size="5rem" class="q-mb-md" />
           <div class="text-h6">Área de Pre-visualización</div>
           <p>Una vez que generes el reporte, aparecerá aquí antes de imprimirlo o exportarlo.</p>
         </q-card-section>
-        <q-card-section
-          v-else
-          class="q-pa-none flex column"
-          style="height: 700px; overflow: hidden"
-        >
+        <q-card-section v-else class="q-pa-none flex column" style="height: 700px; overflow: hidden">
           <!-- Barra superior del visor -->
-          <div
-            class="row bg-grey-3 q-pa-sm justify-between items-center shadow-1"
-            style="z-index: 10"
-          >
+          <div class="row bg-grey-3 q-pa-sm justify-between items-center shadow-1" style="z-index: 10">
             <div class="text-subtitle2 text-grey-8 q-ml-sm">Vista Previa del Documento</div>
             <q-btn flat round color="negative" icon="close" size="sm" @click="pdfUrl = null">
               <q-tooltip>Cerrar vista previa</q-tooltip>
@@ -135,12 +106,7 @@
 
           <!-- Contenedor del Visor con Flex-Grow -->
           <div class="col full-width">
-            <iframe
-              :src="pdfUrl"
-              width="100%"
-              height="100%"
-              style="border: none; display: block"
-            ></iframe>
+            <iframe :src="pdfUrl" width="100%" height="100%" style="border: none; display: block"></iframe>
           </div>
         </q-card-section>
       </q-card>
@@ -151,12 +117,10 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { useAuthStore } from 'src/stores/auth'
 import { useQuasar } from 'quasar'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
 
-const authStore = useAuthStore()
 const router = useRouter()
 const $q = useQuasar()
 
@@ -174,10 +138,10 @@ const pdfUrl = ref(null)
 // Lista de reportes
 const list = [
   { label: 'Etiqueta de Estado de Calibración', value: 'LabelStatus' },
-  { label: 'Calibraciones Pendientes (General)', value: 'Pendientes' },
-  { label: 'Calibraciones Pendientes con Procedimiento', value: 'PendientesConProcedimiento' },
-  { label: 'Calibraciones Pendientes con Estándares', value: 'PendientesConEstandares' },
-  { label: 'Calibraciones Pendientes por Mes', value: 'PendientesPorMes' },
+  { label: 'Calibraciones (General)', value: 'General' },
+  { label: 'Calibraciones Sin Calibrar', value: 'SinCalibrar' },
+  { label: 'Calibraciones Pendientes', value: 'Pendientes' },
+  { label: 'Calibraciones Próximas a Vencer', value: 'Proximos' },
   { label: 'Historial de Calibraciones', value: 'Historial' },
 ]
 
@@ -208,11 +172,17 @@ const generarPrevisualizacion = async () => {
     if (fechaInicio.value && fechaFin.value) {
       const inicio = new Date(fechaInicio.value)
       const fin = new Date(fechaFin.value)
-      
-      datosBd = datosBd.filter(item => {
+      datosBd = datosBd.filter((item) => {
         const fechaItem = new Date(item.FechaCalibracion)
         return fechaItem >= inicio && fechaItem <= fin
       })
+    }
+
+    // NUEVO: Filtro por GageID (Afecta a todos los reportes)
+    if (gageId.value) {
+      const busqueda = gageId.value.toLowerCase()
+      datosBd = datosBd.filter((item) => 
+        (item.GageSerie?.toLowerCase().includes(busqueda)) || (item.Descripcion?.toLowerCase().includes(busqueda)))
     }
 
     let columnas = []
@@ -221,58 +191,111 @@ const generarPrevisualizacion = async () => {
 
     // --- 2. MAPEO DINÁMICO SEGÚN EL REPORTE ---
     switch (opciones.value.value) {
-      case 'Pendientes':
-      case 'PendientesPorMes': {
-        columnas = [['NID (Serie)', 'Descripción', 'Frecuencia', 'Próxima Calib.']]
+      case 'General': {
+        columnas = [['Gage NID', 'Descripción', 'Estatus', 'calibración']]
         filas = datosBd.map((item) => [
           item.GageSerie || 'N/A',
           item.Descripcion || 'N/A',
-          item.NomFreq || 'N/A',
-          item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'Vencido'
+          item.EstatusPasa === 1 ? 'Aprobado' : 'No Aprobado',
+          item.FechaCalibracion === null ? 'Nuevo' : 'Calibrado',
         ])
         break
       }
-
-      case 'PendientesConProcedimiento': {
-        columnas = [['NID', 'Procedimiento', 'Tolerancia', 'Instrucción']]
-        filas = datosBd.map((item) => [
-          item.GageSerie || 'N/A',
-          item.NombreProce || 'Sin Manual',
-          item.Tolerancia || 'N/A',
-          item.Instrucciones ? item.Instrucciones.substring(0, 50) + '...' : 'Ver manual'
-        ])
+      case 'SinCalibrar': {
+        columnas = [['Gage NID', 'Descripción', 'Estatus']]
+        filas = datosBd
+          .filter((item) => item.FechaCalibracion === null) // Solo sin calibrar
+          .map((item) => [
+            item.GageSerie || 'N/A',
+            item.Descripcion || 'N/A',
+            item.FechaCalibracion === null ? 'Nuevo' : 'Calibrado',
+          ])
+        break
+      }
+      case 'Pendientes': {
+        columnas = [
+          ['Gage NID', 'Descripción', 'Fecha de calibración', 'Fecha próxima', 'Días vencidos'],
+        ]
+        filas = datosBd
+          .filter((item) => {
+            const dias = calcularDias(item.FechaProxima)
+            return dias <= 0 && dias > -30
+          }) // Solo pendientes de calibrar
+          .map((item) => [
+            item.GageSerie || 'N/A',
+            item.Descripcion || 'N/A',
+            item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
+            item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
+            `${calcularDias(item.FechaProxima)} días`,
+          ])
+        break
+      }
+      case 'Proximos': {
+        columnas = [
+          ['Gage NID', 'Descripción', 'Fecha de calibración', 'Fecha próxima', 'Días para vencer'],
+        ]
+        filas = datosBd
+          .filter((item) => {
+            const dias = calcularDias(item.FechaProxima)
+            return dias > 0 && dias <= 7 // Vencen en la próxima semana
+          }) // Solo Proximos a vencer
+          .map((item) => [
+            item.GageSerie || 'N/A',
+            item.Descripcion || 'N/A',
+            item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
+            item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
+            `${calcularDias(item.FechaProxima)} días`,
+          ])
         break
       }
 
       case 'LabelStatus': {
         columnas = [['Propiedad', 'Valor']]
+        filas = []
         // Si hay un GageId filtrado, buscamos ese, si no, el primero de la lista
-        const itemParaEtiqueta = gageId.value 
-          ? datosBd.find(i => i.GageSerie === gageId.value) || {} 
-          : datosBd[0] || {}
+        datosBd.forEach((item, index) => {
+          // Agregamos una fila de encabezado para separar visualmente cada etiqueta
+          filas.push([
+            {
+              content: `EQUIPO: ${item.GageSerie || 'N/A'}`,
+              colSpan: 2,
+              styles: { halign: 'center', fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' }
+            }
+          ])
 
-        filas = [
-          ['Gage NID', itemParaEtiqueta.GageSerie || 'N/A'],
-          ['Resultado', itemParaEtiqueta.EstatusPasa === 1 ? 'PASA' : 'FALLA'],
-          ['Fecha Calib.', itemParaEtiqueta.FechaCalibracion ? new Date(itemParaEtiqueta.FechaCalibracion).toLocaleDateString() : 'N/A'],
-          ['Vence', itemParaEtiqueta.FechaProxima ? new Date(itemParaEtiqueta.FechaProxima).toLocaleDateString() : 'N/A'],
-          ['Certificado', itemParaEtiqueta.FolioCertificado || 'N/A']
-        ]
+          // Agregamos los datos de ese equipo
+          filas.push(['Descripción', item.Descripcion || 'N/A'])
+          filas.push(['Resultado', item.EstatusPasa === 1 ? 'PASA' : 'FALLA'])
+          filas.push([
+            'Fecha Calib.',
+            item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A'
+          ])
+          filas.push([
+            'Vence',
+            item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A'
+          ])
+          filas.push(['Certificado', item.FolioCertificado || 'N/A'])
+
+          // Si no es el último equipo, añadimos una fila vacía como separador
+          if (index < datosBd.length - 1) {
+            filas.push([{ content: '', colSpan: 2, styles: { minCellHeight: 10, fillColor: [255, 255, 255] } }])
+          }
+        })
         break
       }
 
       case 'Historial': {
         // Filtrado por GageID si se proporcionó en el input
-        if (gageId.value) {
-          datosBd = datosBd.filter((item) => item.GageSerie === gageId.value)
-        }
-        columnas = [['Gage NID','Fecha', 'Certificado', 'Realizado por', 'Resultado']]
+
+        columnas = [['Gage NID', 'Fecha', 'Certificado', 'Realizado por', 'Resultado']]
         filas = datosBd.map((item) => [
-          item.GageSerie || 'N/A',
-          item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
+          item.GageSerie,
+          item.FechaCalibracion
+            ? new Date(item.FechaCalibracion).toLocaleDateString()
+            : 'Sin Calibrar',
           item.FolioCertificado || 'N/A',
-          item.CalibracionBy || 'Sistema',
-          item.EstatusPasa === 1 ? 'PASA' : 'FALLA'
+          item.CalibracionBy || 'Sin Calibrar',
+          item.EstatusPasa === 1 ? 'PASA' : 'FALLA',
         ])
         break
       }
@@ -280,22 +303,22 @@ const generarPrevisualizacion = async () => {
       default: {
         columnas = [['Gage ID', 'Descripción', 'Estatus']]
         filas = datosBd.map((item) => [
-          item.GageSerie, 
-          item.Descripcion, 
-          item.EstatusPasa === 1 ? 'OK' : 'PENDIENTE'
+          item.GageSerie,
+          item.Descripcion,
+          item.EstatusPasa === 1 ? 'OK' : 'PENDIENTE',
         ])
       }
     }
 
     // --- 3. GENERACIÓN DEL PDF ---
     const doc = new jsPDF()
-    
+
     // Encabezado estético
-    doc.setFillColor(0, 91, 170) // Azul Nidec
+    doc.setFillColor(0, 155, 74) // Azul Nidec
     doc.rect(0, 0, 210, 15, 'F')
     doc.setTextColor(255, 255, 255)
     doc.setFontSize(14)
-    doc.text("NIDEC Q-GAGE - SISTEMA DE CONTROL DE GAGES", 14, 10)
+    doc.text('NIDEC Q-GAGE - SISTEMA DE CONTROL DE GAGES', 14, 10)
 
     doc.setTextColor(40, 40, 40)
     doc.setFontSize(18)
@@ -306,19 +329,58 @@ const generarPrevisualizacion = async () => {
       head: columnas,
       body: filas,
       theme: 'striped',
-      headStyles: { fillColor: [0, 91, 170] },
-      styles: { fontSize: 9 }
+      headStyles: { fillColor: [0, 155, 74] },
+      styles: { fontSize: 9 },
     })
 
     pdfUrl.value = doc.output('bloburl')
-
   } catch (error) {
     console.error('Error:', error)
-    $q.notify({ 
-      color: 'negative', 
-      message: 'Error al procesar datos para el reporte.' 
+    $q.notify({
+      color: 'negative',
+      message: 'Error al procesar datos para el reporte.',
     })
   }
+}
+
+const calcularDias = (fecha) => {
+  if (!fecha) return 999 // Si no hay fecha, no está vencido
+  const hoy = new Date()
+  const prox = new Date(fecha.replace(/\//g, '-'))
+  return Math.ceil((prox - hoy) / (1000 * 60 * 60 * 24))
+}
+
+const descargarPDF = () => {
+  if (!opciones.value) {
+    $q.notify({ message: 'Selecciona un reporte primero', color: 'warning' })
+    return
+  }
+
+  // Preparamos los filtros para que el servidor sepa qué data poner en el PDF
+ 
+  const params = new URLSearchParams({
+    tipo: opciones.value.value,
+    search: gageId.value || '' // Usamos gageId que es tu ref de búsqueda
+  }).toString();
+
+  window.open(`http://localhost:3000/api/reportes/pdf?${params}`, '_blank');
+};
+
+const exportarExcel = () => {
+  if (!opciones.value) {
+    $q.notify({ message: 'Selecciona un reporte primero', color: 'warning' })
+    return
+  }
+
+  // Enviamos TODO: tipo, búsqueda, y las fechas de los calendarios
+  const params = new URLSearchParams({
+    tipo: opciones.value.value,
+    search: gageId.value || '',
+    inicio: fechaInicio.value || '', // Tus refs de la página
+    fin: fechaFin.value || ''
+  }).toString();
+
+  window.open(`http://localhost:3000/api/reportes/excel?${params}`, '_blank');
 }
 </script>
 

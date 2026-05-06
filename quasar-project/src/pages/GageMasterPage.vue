@@ -458,7 +458,7 @@ const insertarGage = async () => {
       // Nombres exactos según tu tabla 'gage_master'
       GageSerie: p.GageSerie,
       Descripcion: p.Descripcion,
-      Usuario: authStore.usuario.id, // ID fijo de prueba o dinámico
+      Usuario: authStore.usuario?.UserID, // ID fijo de prueba o dinámico
       Tipo: Number(p.Tipo) || 1,
       Estado: Number(p.Estado) || 1,
       Act_Inact: 1,
