@@ -19,7 +19,7 @@ app.use("/api", authRoutes); // Manejará /api/login
 app.use("/api/usuarios", usuariosRoutes);
 app.use("/api/gages", gagesRoutes);
 app.use("/api/prestamo", prestamosRoutes);
-app.use("/api/procedimiento", procedimientoRoutes);
+app.use("/api/procedimientos", procedimientoRoutes);
 app.use("/api/calibracion", calibracionRoutes);
 app.use('/api/reportes', reportRoutes);
 

@@ -73,16 +73,14 @@
               </div>
               <div class="col-12 col-md-4">
                 <q-input outlined v-model="gageId" label="Filtrar por GageID (NID)" dense>
-                  <template v-slot:append>
-                    <q-icon name="precision_manufacturing" color="blue-grey-4" />
-                  </template>
+                  
                 </q-input>
               </div>
             </div>
 
             <!-- BOTONES -->
             <div class="row justify-end q-mt-sm q-gutter-sm">
-              <q-btn v-if="gageId" label="Imprimir Etiqueta" color="green-8" icon="print" unelevated />
+              <q-btn v-if="opciones?.value === 'LabelStatus'" label="Imprimir Etiqueta" color="green-8" icon="print" unelevated @click="imprimirEtiquetaZD621"/>
               <q-btn label="Generar Reporte" type="submit" color="blue-8" icon="task_alt" unelevated />
             </div>
           </q-form>
@@ -143,6 +141,7 @@ const list = [
   { label: 'Calibraciones Pendientes', value: 'Pendientes' },
   { label: 'Calibraciones Próximas a Vencer', value: 'Proximos' },
   { label: 'Historial de Calibraciones', value: 'Historial' },
+  { label: 'Procedimientos', value: 'Procedimiento' },
 ]
 
 // SOLUCIÓN AL WARNING: Definimos onSubmit para el q-form
@@ -192,11 +191,12 @@ const generarPrevisualizacion = async () => {
     // --- 2. MAPEO DINÁMICO SEGÚN EL REPORTE ---
     switch (opciones.value.value) {
       case 'General': {
-        columnas = [['Gage NID', 'Descripción', 'Estatus', 'calibración']]
+        columnas = [['Gage NID', 'Descripción', 'Estatus', 'Fecha de Cal.','calibración']]
         filas = datosBd.map((item) => [
           item.GageSerie || 'N/A',
           item.Descripcion || 'N/A',
           item.EstatusPasa === 1 ? 'Aprobado' : 'No Aprobado',
+          item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'Sin Calibrar',
           item.FechaCalibracion === null ? 'Nuevo' : 'Calibrado',
         ])
         break
@@ -250,38 +250,38 @@ const generarPrevisualizacion = async () => {
       }
 
       case 'LabelStatus': {
-        columnas = [['Propiedad', 'Valor']]
-        filas = []
-        // Si hay un GageId filtrado, buscamos ese, si no, el primero de la lista
+        filas = [];
         datosBd.forEach((item, index) => {
-          // Agregamos una fila de encabezado para separar visualmente cada etiqueta
+          // 1. FILA DE ENCABEZADO (ID y Técnico)
+          // Usamos dos celdas para que ID esté a la izquierda y el Técnico a la derecha
           filas.push([
-            {
-              content: `EQUIPO: ${item.GageSerie || 'N/A'}`,
-              colSpan: 2,
-              styles: { halign: 'center', fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' }
+            { 
+              content: `ID: ${item.GageSerie || 'N/A'}`, 
+              styles: { fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' } 
+            },
+            { 
+              content: `By: ${item.Tecnico || item.CalibracionBy || 'N/A'}`, 
+              styles: { fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' } 
             }
-          ])
+          ]);
 
-          // Agregamos los datos de ese equipo
-          filas.push(['Descripción', item.Descripcion || 'N/A'])
-          filas.push(['Resultado', item.EstatusPasa === 1 ? 'PASA' : 'FALLA'])
-          filas.push([
-            'Fecha Calib.',
-            item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A'
-          ])
-          filas.push([
-            'Vence',
-            item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A'
-          ])
-          filas.push(['Certificado', item.FolioCertificado || 'N/A'])
+          // 2. FILA DE DATOS (Fechas)
+          const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
+          const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
 
-          // Si no es el último equipo, añadimos una fila vacía como separador
+          filas.push([
+            { content: `Last: ${fechaUltima}`, styles: { fillColor: [245, 245, 245] } },
+            { content: `Next: ${fechaProxima}`, styles: { fillColor: [245, 245, 245] } }
+          ]);
+
+          // 3. ESPACIADOR (Para separar una etiqueta de otra en la lista)
           if (index < datosBd.length - 1) {
-            filas.push([{ content: '', colSpan: 2, styles: { minCellHeight: 10, fillColor: [255, 255, 255] } }])
+            filas.push([
+              { content: '', colSpan: 2, styles: { minCellHeight: 8, fillColor: [255, 255, 255], lineWidth: 0 } }
+            ]);
           }
-        })
-        break
+        });
+        break;
       }
 
       case 'Historial': {
@@ -296,6 +296,16 @@ const generarPrevisualizacion = async () => {
           item.FolioCertificado || 'N/A',
           item.CalibracionBy || 'Sin Calibrar',
           item.EstatusPasa === 1 ? 'PASA' : 'FALLA',
+        ])
+        break
+      }
+
+      case 'Procedimiento': {
+        columnas = [['Procedimiento', 'Gage NID', 'Descripción']]
+        filas = datosBd.map((item) => [
+          item.NombreProce || 'N/A',
+          item.GageSerie || 'N/A',
+          item.Descripcion || 'N/A',
         ])
         break
       }
@@ -382,6 +392,45 @@ const exportarExcel = () => {
 
   window.open(`http://localhost:3000/api/reportes/excel?${params}`, '_blank');
 }
+
+const imprimirEtiquetaZD621 = (item) => {
+  if (!window.BrowserPrint) {
+    $q.notify({ message: 'Zebra Browser Print no está iniciado', color: 'warning' });
+    return;
+  }
+
+  // Preparamos los datos con valores predeterminados para evitar nulos
+  const nidGage = item.GageSerie || 'N/A';
+  const tecnico = item.Tecnico || 'N/A';
+  const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
+  const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
+
+  // --- CÓDIGO ZPL QUE REPLICA TU IMAGEN ---
+  // ^XA inicia la etiqueta, ^XZ la termina. ^FO establece la posición (X,Y). ^FD es el dato. ^CF es la fuente por defecto.
+  const zpl = `
+    ^XA
+    ^CF0,24
+    ^FO50,50^FDID:^FS^FO110,50^FD${nidGage}^FS
+    ^FO280,50^FDBy:^FS^FO340,50^FD${tecnico}^FS
+    ^FO50,90^FDLast:^FS^FO130,90^FD${fechaUltima}^FS
+    ^FO280,90^FDNext:^FS^FO360,90^FD${fechaProxima}^FS
+    ^XZ
+  `;
+
+  // Enviamos el código a la impresora ZD621
+  window.BrowserPrint.getDefaultDevice("printer", (device) => {
+    if (device) {
+      device.send(zpl, () => {
+        $q.notify({ message: 'Etiqueta enviada correctamente', color: 'positive', icon: 'print' });
+      }, (error) => {
+        console.error(error);
+        $q.notify({ message: 'Error al enviar a la impresora', color: 'negative' });
+      });
+    } else {
+      $q.notify({ message: 'No se detectó la Zebra ZD621', color: 'negative' });
+    }
+  });
+};
 </script>
 
 <style scoped>

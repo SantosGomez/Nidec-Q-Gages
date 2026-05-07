@@ -8,7 +8,6 @@ const logoPath = path.join(__dirname, '../assets/Nidec Institutional Logo_Origin
 
 // Función auxiliar para obtener datos según el reporte
 const obtenerDatosReporte = async (tipo, search, inicio, fin) => {
-    // La base de la consulta: Traemos el Maestro de Gages y su última calibración
     let query = `
         SELECT 
             g.GageSerie, 
@@ -16,10 +15,11 @@ const obtenerDatosReporte = async (tipo, search, inicio, fin) => {
             c.FechaCalibracion, 
             c.FechaProxima, 
             c.EstatusPasa,
-            u.Usuario as Tecnico
+            c.FolioCertificado,
+            u.Usuario as Tecnico,
+            u.Usuario as CalibracionBy
         FROM gage_master g
         LEFT JOIN (
-            /* Obtenemos solo la última calibración de cada Gage */
             SELECT * FROM calibracion 
             WHERE CalibracionId IN (SELECT MAX(CalibracionId) FROM calibracion GROUP BY GagesId)
         ) c ON g.GageId = c.GagesId
@@ -28,25 +28,30 @@ const obtenerDatosReporte = async (tipo, search, inicio, fin) => {
     `;
     const params = [];
 
-    // 1. Filtro de Búsqueda (NID o Descripción) - Como tu buscador del front
     if (search) {
         query += " AND (g.GageSerie LIKE ? OR g.Descripcion LIKE ?)";
         params.push(`%${search}%`, `%${search}%`);
     }
 
-    // 2. Filtro por Tipo de Reporte (La lógica de tus tarjetas del front)
-    if (tipo === 'Vencidos') {
-        // Gages cuya fecha próxima ya pasó
+    // --- CAMBIO CLAVE: Sincronización con los 'value' de tu ReportsPage.vue ---
+    
+    if (tipo === 'Pendientes') {
+        // Filtra solo los que ya vencieron (FechaProxima es menor a hoy)
         query += " AND c.FechaProxima < CURDATE()";
-    } else if (tipo === 'Próximas') {
-        // Gages que vencen en los próximos 30 días (tu lógica de 'prox < 30')
-        query += " AND c.FechaProxima BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)";
-    } else if (tipo === 'Calibraciones') {
-        // Reporte general de calibraciones realizadas
+    } 
+    else if (tipo === 'Proximos') {
+        // Filtra los que vencen en los próximos 7 días (como tienes en tu front)
+        query += " AND c.FechaProxima BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)";
+    } 
+    else if (tipo === 'SinCalibrar') {
+        // Filtra equipos que nunca han sido calibrados
+        query += " AND c.FechaCalibracion IS NULL";
+    }
+    else if (tipo === 'Historial' || tipo === 'General') {
+        // Para historial o general, usualmente queremos los que sí tienen datos
         query += " AND c.FechaCalibracion IS NOT NULL";
     }
 
-    // 3. Filtro por Rango de Fechas (Si el usuario usó los calendarios)
     if (inicio && fin) {
         query += " AND c.FechaCalibracion BETWEEN ? AND ?";
         params.push(inicio, fin);
@@ -64,41 +69,110 @@ exports.getExcelReport = async (req, res) => {
         const workbook = new ExcelJS.Workbook();
         const sheet = workbook.addWorksheet('Reporte Nidec');
 
-        // 1. Insertar Logo
+        // 1. Configuración del Logo
         const imageId = workbook.addImage({
             filename: logoPath,
             extension: 'png',
         });
-        sheet.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 150, height: 85 } });
+        sheet.addImage(imageId, { tl: { col: 0, row: 0 }, ext: { width: 120, height: 70 } });
 
-        // 2. Encabezados de tabla (Fila 4 para no tapar el logo)
-        sheet.getRow(6).values = ['Gage NID', 'Descripción', 'Última Calib.', 'Próxima Calib.', 'Estatus', 'Certificado'];
-        sheet.getRow(6).font = { bold: true };
-        sheet.getRow(6).fill = { type: 'pattern', pattern:'solid', fgColor:{argb:'FF009B4A'} }; // Verde Nidec
-        sheet.getRow(6).font = { color: { argb: 'FFFFFFFF' }, bold: true };
+        // 2. Definir Encabezados según el tipo
+        let encabezados = [];
+        switch (tipo) {
+            case 'General':
+                encabezados = ['Gage NID', 'Descripción', 'Última Calib.', 'Próxima Calib.', 'Estatus', 'Certificado'];
+                break;
+            case 'Historial':
+                encabezados = ['Gage NID', 'Fecha de Cal.', 'Certificado', 'Realizado por', 'Resultado'];
+                break;
+            case 'Pendientes':
+                encabezados = ['Gage NID', 'Descripción', 'Venció el', 'Días Vencidos', 'Certificado Anterior'];
+                break;
+            case 'Proximos':
+                encabezados = ['Gage NID', 'Descripción', 'Vence el', 'Días Restantes'];
+                break;
+            case 'SinCalibrar':
+                encabezados = ['Gage NID', 'Descripción', 'Estado'];
+                break;
+            default:
+                encabezados = ['Gage NID', 'Descripción', 'Información'];
+        }
 
-        // 3. Llenar datos
-        datos.forEach((item, index) => {
-            sheet.addRow([
-                item.GageSerie,
-                item.Descripcion,
-                item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
-                item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
-                item.EstatusPasa === 1 ? 'PASA' : 'FALLA',
-                item.FolioCertificado || 'N/A'
-            ]);
+        const headerRow = sheet.getRow(6);
+        headerRow.values = encabezados;
+        
+        // Estilo del encabezado (Verde Nidec)
+        headerRow.eachCell((cell) => {
+            cell.font = { color: { argb: 'FFFFFFFF' }, bold: true };
+            cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF009B4A' } };
+            cell.alignment = { vertical: 'middle', horizontal: 'center' };
         });
 
-        sheet.getColumn(2).width = 40; // Ancho para descripción
-        sheet.getColumn(1).width = 15;
+        // 3. Llenar Datos Dinámicamente
+        datos.forEach((item) => {
+            let fila = [];
+            const hoy = new Date();
+            const prox = item.FechaProxima ? new Date(item.FechaProxima) : null;
+            const diasDiff = prox ? Math.ceil((prox - hoy) / (1000 * 60 * 60 * 24)) : 'N/A';
+
+            switch (tipo) {
+                case 'General':
+                    fila = [
+                        item.GageSerie,
+                        item.Descripcion,
+                        item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
+                        item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
+                        item.EstatusPasa === 1 ? 'PASA' : 'FALLA',
+                        item.FolioCertificado || 'N/A'
+                    ];
+                    break;
+                case 'Historial':
+                    fila = [
+                        item.GageSerie,
+                        item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A',
+                        item.FolioCertificado || 'N/A',
+                        item.Tecnico || 'N/A',
+                        item.EstatusPasa === 1 ? 'PASA' : 'FALLA'
+                    ];
+                    break;
+                case 'Pendientes':
+                    fila = [
+                        item.GageSerie,
+                        item.Descripcion,
+                        item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
+                        diasDiff < 0 ? Math.abs(diasDiff) : 0,
+                        item.FolioCertificado || 'N/A'
+                    ];
+                    break;
+                case 'Proximos':
+                    fila = [
+                        item.GageSerie,
+                        item.Descripcion,
+                        item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A',
+                        diasDiff > 0 ? diasDiff : 0
+                    ];
+                    break;
+                case 'SinCalibrar':
+                    fila = [item.GageSerie, item.Descripcion, 'NUEVO / SIN REGISTRO'];
+                    break;
+            }
+            sheet.addRow(fila);
+        });
+
+        // 4. Ajustes estéticos finales
+        sheet.getColumn(1).width = 20; // Gage NID
+        sheet.getColumn(2).width = 45; // Descripción
+        sheet.autoFilter = { from: 'A6', to: { row: 6, column: encabezados.length } };
 
         res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-        res.setHeader('Content-Disposition', `attachment; filename=Reporte_Nidec_${tipo}.xlsx`);
+        res.setHeader('Content-Disposition', `attachment; filename=Reporte_${tipo}_${new Date().getTime()}.xlsx`);
+        
         await workbook.xlsx.write(res);
         res.end();
+
     } catch (error) {
-        console.error(error);
-        res.status(500).send('Error en Excel');
+        console.error("Error en Excel:", error);
+        res.status(500).send('Error al generar el archivo Excel');
     }
 };
 
@@ -122,18 +196,48 @@ exports.getPDFReport = async (req, res) => {
         doc.fillColor('#009B4A').fontSize(10).font('Helvetica-Bold');
 
         // --- COLUMNAS DINÁMICAS ---
-        if (tipo === 'Calibraciones') {
-            // Columnas para historial de calibración
-            doc.text('Gage ID', 30, y);
-            doc.text('Fecha Calib.', 120, y);
-            doc.text('Próxima', 220, y);
-            doc.text('Técnico', 320, y);
-            doc.text('Estatus', 500, y);
-        } else {
-            // Columnas generales (como las tienes ahora)
-            doc.text('Gage ID', 30, y);
-            doc.text('Descripción', 120, y);
-            doc.text('Estatus', 500, y);
+        switch (tipo) {
+            case 'General':
+                doc.text('Gage NID', 30, y);
+                doc.text('Descripción', 150, y);
+                doc.text('Estatus', 300, y);
+                doc.text('Fecha de Calibración', 400, y);
+                doc.text('Calibración', 500, y);
+                break;
+            case 'Historial':
+                doc.text('Gage NID', 30, y);
+                doc.text('Fecha de Cal.', 110, y);
+                doc.text('Certificado', 200, y);
+                doc.text('Realizado por', 350, y);
+                doc.text('Resultado', 500, y);
+                break;
+            case 'Pendientes':
+                doc.text('Gage NID', 50, y);
+                doc.text('Descripción', 170, y);
+                doc.text('Próxima Calibración', 300, y);
+                doc.text('Días para calibrar', 450, y);
+                break;
+            case 'SinCalibrar':
+                doc.text('Gage NID', 50, y);
+                doc.text('Descripción', 170, y);
+                doc.text('Estatus', 500, y);
+                break;
+            case 'Proximos':
+                doc.text('Gage NID', 50, y);
+                doc.text('Descripción', 170, y);
+                doc.text('Próxima Calibración', 300, y);
+                doc.text('Días para calibrar', 450, y);
+                break;
+            case 'Procedimiento':
+                doc.text('Procedimiento', 30, y);
+                doc.text('Gage NID', 150, y);
+                doc.text('Descripción', 300, y);
+                break;
+
+            default:
+                doc.text('Gage NID', 50, y);
+                doc.text('Descripción', 170, y);
+                doc.text('Estatus', 500, y);
         }
 
         y += 25;
@@ -143,18 +247,55 @@ exports.getPDFReport = async (req, res) => {
         datos.forEach(item => {
             if (y > 700) { doc.addPage(); y = 50; }
 
-            if (tipo === 'Calibraciones') {
-                doc.text(item.GageSerie || '', 30, y);
-                doc.text(item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A', 120, y);
-                doc.text(item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A', 220, y);
-                doc.text(item.Tecnico || 'N/A', 320, y);
-                doc.text(item.EstatusPasa === 1 ? 'OK' : 'PENDIENTE', 500, y);
-            } else {
-                doc.text(item.GageSerie || '', 30, y);
-                doc.text(item.Descripcion ? item.Descripcion.substring(0, 60) : '', 120, y, { width: 350 });
-                doc.text(item.EstatusPasa === 1 ? 'OK' : 'PENDIENTE', 500, y);
+            const estatus = item.EstatusPasa === 1 ? 'Aprobado' : 'No Aprobado';
+            const calibStatus = item.FechaCalibracion === null ? 'Nuevo' : 'Calibrado';
+
+            switch (tipo) {
+                case 'General':
+                    doc.text(item.GageSerie || 'N/A', 30, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 150, y);
+                    doc.text(estatus, 300, y);
+                    doc.text(item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'Sin Calibrar', 400, y);
+                    doc.text(calibStatus, 500, y);
+                    break;
+                case 'Historial':
+                    doc.text(item.GageSerie || '', 30, y);
+                    doc.text(item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'Sin Calibrar', 110, y);
+                    doc.text(item.FolioCertificado || 'N/A', 200, y);
+                    doc.text(item.CalibracionBy || 'Sin Calibrar', 350, y);
+                    doc.text(item.EstatusPasa === 1 ? 'PASA' : 'FALLA', 500, y);
+                    break;
+                case 'Pendientes':
+                    doc.text(item.GageSerie || '', 50, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 170, y);
+                    doc.text(item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A', 300, y);
+                    const dias = item.FechaProxima ? Math.ceil((new Date(item.FechaProxima) - new Date()) / (1000 * 60 * 60 * 24)) : 'N/A';
+                    doc.text(dias <= 0 ? dias : 'Calibrado', 450, y);
+                    break;
+                case 'SinCalibrar':
+                    doc.text(item.GageSerie || '', 50, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 170, y);
+                    doc.text('Sin Calibrar', 500, y);
+                    break;
+                case 'Proximos':
+                    doc.text(item.GageSerie || '', 50, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 170, y);
+                    doc.text(item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A', 300, y);
+                    const diasProx = item.FechaProxima ? Math.ceil((new Date(item.FechaProxima) - new Date()) / (1000 * 60 * 60 * 24)) : 'N/A';
+                    doc.text(diasProx >= 0 ? diasProx : 'Calibrado', 450, y);
+                    break;
+                case 'Procedimiento':
+                    doc.text(item.NombreProce || '', 30, y);
+                    doc.text(item.GageSerie || '', 150, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 300, y);
+                    break;
+
+                default:
+                    doc.text(item.GageSerie || '', 50, y);
+                    doc.text((item.Descripcion || '').substring(0, 50), 170, y);
+                    doc.text(estatus, 500, y);
             }
-            y += 20;
+            y += 15;
         });
 
         doc.end();
