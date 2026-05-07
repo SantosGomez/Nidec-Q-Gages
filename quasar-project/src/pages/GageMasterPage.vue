@@ -26,20 +26,23 @@
             row-key="GageId"
             flat
             dense
+            class="tabla-sticky"
           >
             <template v-slot:top-right>
-              <q-input
-                v-model="search"
-                dense
-                outlined
-                debounce="300"
-                placeholder="Buscar por ID o Nombre"
-                style="width: 300px"
-              >
-                <template v-slot:append>
-                  <q-icon name="search" />
-                </template>
-              </q-input>
+              <div class="q-mb-md">
+                <q-input
+                  v-model="search"
+                  dense
+                  outlined
+                  debounce="300"
+                  placeholder="Buscar por ID o Nombre"
+                  style="width: 300px"
+                >
+                  <template v-slot:append>
+                    <q-icon name="search" />
+                  </template>
+                </q-input>
+              </div>
             </template>
 
             <template v-slot:body-cell-estado="props">
@@ -402,17 +405,11 @@ const cargarPlantillas = async () => {
 
 // --- CONFIGURACIÓN DE TABLA ---
 const columns = [
-  { name: 'GageId', label: '#', field: 'GageId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
-  { name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
-  {
-    name: 'description',
-    label: 'Nombre del Gage',
-    field: 'Descripcion',
-    align: 'left',
-    sortable: true,
-  }, // Era 'Descripcion', no 'description'
-  { name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true }, // 'Act_Inact' es el campo de tu DB
-  { name: 'actions', label: 'Acciones', align: 'center' },
+  {name: 'GageId', label: '#', field: 'GageId', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  {name: 'GageSerie', label: 'GageID', field: 'GageSerie', align: 'left', sortable: true }, // 'GageID' en mayúsculas
+  {name: 'description',label: 'Nombre del Gage',field: 'Descripcion',align: 'left',sortable: true,}, // Era 'Descripcion', no 'description'
+  {name: 'estado', label: 'Estado', field: 'Act_Inact', align: 'center', sortable: true }, // 'Act_Inact' es el campo de tu DB
+  {name: 'actions', label: 'Acciones', align: 'center' },
 ]
 
 // logica para el filtrado de gages en la tabla
@@ -693,11 +690,28 @@ onMounted(() => {
   border-radius: 12px;
   border: 1px solid rgba(0,0,0,0.05);
 }
-.sticky-header-table thead tr {
+/* Estilo para cabecera fija */
+.tabla-sticky {
+  height: 430px; /* Ajusta esta altura según prefieras */
+}
+
+.tabla-sticky :deep(thead tr th) {
   position: sticky;
-  top: 0;
-  background: white;
   z-index: 1;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  background-color: #f5f5f5; /* Asegura que el fondo de la cabecera sea sólido */
+}
+
+.tabla-sticky :deep(thead tr:first-child th) {
+  top: 0;
+}
+.q-table__container {
+  border-radius: 8px;
+}
+
+/* Ajuste para que los badges de estado tengan un ancho uniforme */
+.q-badge {
+  padding: 4px 8px;
+  min-width: 110px;
+  justify-content: center;
 }
 </style>
