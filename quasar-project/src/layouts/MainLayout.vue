@@ -1,6 +1,6 @@
 <template>
   <q-layout view="hHh lpR fFf" class="bg-grey-2">
-    <q-header class="bg-primary text-grey-9" height-hint="70" elevated>
+    <q-header class="bg-primary" height-hint="70" elevated>
       <q-toolbar class="q-py-sm q-px-md">
         <q-btn flat round dense icon="menu" @click="toggleLeftDrawer " color="white" />
 
@@ -21,13 +21,7 @@
         <q-space />
 
         <div class="row items-center q-gutter-sm">
-          <q-btn
-            v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
-            flat round color="white" icon="settings" @click="user"
-          />
           
-          <q-separator vertical inset class="q-mx-sm" />
-
           <q-btn flat no-caps class="text-weight-bold user-btn" >
             <q-avatar size="32px" color="white" text-color="black" class="q-mr-sm">
               {{ authStore.usuario?.Usuario?.charAt(0).toUpperCase() }}
@@ -53,8 +47,6 @@
     <q-drawer 
       v-model="leftDrawerOpen" 
       side="left" 
-      show-if-above
-      bordered
       :width="280"
       class="bg-white"
       overlay
@@ -64,7 +56,7 @@
       <q-list padding class="menu-list">
         <q-item-label header> Módulos Nidec Q-Gages </q-item-label>
 
-        <q-item v-if="authStore.usuario?.ver_gage" clickable v-ripple @click="master">
+        <q-item v-if="authStore.usuario?.ver_gage" clickable v-ripple @click="master" :active="router.currentRoute.value.path === '/GageMaster'" active-class="menu-active">
           <q-item-section top avatar>
             <q-img src="src/assets/iconosGAGES/GageMaster.png" style="width: 100%; height: auto" />
           </q-item-section>
@@ -73,7 +65,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-if="authStore.usuario?.ver_calibracion" clickable v-ripple @click="calibracion">
+        <q-item v-if="authStore.usuario?.ver_calibracion" clickable v-ripple @click="calibracion" :active="router.currentRoute.value.path === '/calibracion'" active-class="menu-active">
           <q-item-section top avatar>
             <q-img src="src/assets/iconosGAGES/calibracion.png" style="width: 100%; height: auto" />
           </q-item-section>
@@ -82,7 +74,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item v-if="authStore.usuario?.ver_reportes" clickable v-ripple @click="reportes">
+        <q-item v-if="authStore.usuario?.ver_reportes" clickable v-ripple @click="reportes" :active="router.currentRoute.value.path === '/Reports'" active-class="menu-active">
           <q-item-section top avatar>
             <q-img src="src/assets/iconosGAGES/reporte.png" style="width: 100%; height: auto" />
           </q-item-section>
@@ -96,6 +88,8 @@
           clickable
           v-ripple
           @click="procedimientos"
+          :active="router.currentRoute.value.path === '/procedimientos'"
+          active-class="menu-active"
         >
           <q-item-section top avatar>
             <q-img
@@ -108,7 +102,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple @click="checkout">
+        <q-item clickable v-ripple @click="checkout" :active="router.currentRoute.value.path === '/checkout'" active-class="menu-active">
           <q-item-section top avatar>
             <q-img src="src/assets/iconosGAGES/registro.png" style="width: 100%; height: auto" />
           </q-item-section>
@@ -117,8 +111,15 @@
           </q-item-section>
         </q-item>
       </q-list>
-      </q-scroll-area>
-    </q-drawer>
+      <q-separator  v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'" color="primary" inset />
+      <div>
+        <q-btn
+        v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'"
+        flat color="primary" label="Más Opciones" icon="settings" class="q-item menu-list q-mt-md" @click="infoApoyo"
+        />
+      </div>
+    </q-scroll-area>
+      </q-drawer>
 
     <q-page-container>
       <router-view />
@@ -141,7 +142,7 @@ const calibracion = () => router.push('calibracion')
 const reportes = () => router.push('Reports')
 const procedimientos = () => router.push('procedimientos')
 const checkout = () => router.push('checkout')
-const user = () => router.push('usuarios')
+const infoApoyo = () => router.push('InfoApoyo')
 
 function toggleLeftDrawer() {
   leftDrawerOpen.value = !leftDrawerOpen.value
@@ -154,13 +155,6 @@ const logout = () => {
 </script>
 
 <style lang="scss">
-// Color institucional Nidec
-.text-nidec-green {
-  color: #009B4A !important;
-}
-.bg-nidec-green {
-  background: #009B4A !important;
-}
 
 // Estilo del Menu Lateral
 .menu-list {
@@ -184,10 +178,24 @@ const logout = () => {
 
 // Botón de usuario
 .user-btn {
-  border-radius: 8px;
-  &:hover {
-    background: #f5f5f5;
+  border-radius: 12px;
+  padding: 4px 12px;
+  transition: all 0.3s ease;
+  
+  // Esto asegura que el texto dentro del botón sea blanco
+  color: white !important;
+
+  .q-icon {
+    color: white !important;
   }
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+  }
+}
+
+.q-avatar {
+  border: 1.5px solid rgba(255, 255, 255, 0.3);
 }
 
 // Ajustes de Toolbar
@@ -195,8 +203,5 @@ const logout = () => {
   line-height: 1.2;
 }
 
-// Sincronización con el diseño de módulos
-.q-header {
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
+
 </style>

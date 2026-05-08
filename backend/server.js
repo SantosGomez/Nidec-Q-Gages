@@ -13,6 +13,9 @@ const prestamosRoutes = require("./routes/prestamosRoutes");
 const procedimientoRoutes = require("./routes/procedimientoRoutes");
 const calibracionRoutes = require("./routes/calibracionesRoutes");
 const reportRoutes = require('./routes/reportesRoutes');
+const patronesRoutes = require('./routes/patronesRoutes');
+const frecuenciasRoutes = require('./routes/frecuenciasRoutes');
+const turnosRoutes = require('./routes/turnosRoutes');
 
 //============= RUTAS =============
 app.use("/api", authRoutes); // Manejará /api/login
@@ -22,6 +25,9 @@ app.use("/api/prestamo", prestamosRoutes);
 app.use("/api/procedimientos", procedimientoRoutes);
 app.use("/api/calibracion", calibracionRoutes);
 app.use('/api/reportes', reportRoutes);
+app.use('/api/frecuencias', frecuenciasRoutes);
+app.use('/api/turnos', turnosRoutes);
+app.use('/api/patrones', patronesRoutes);
 
 // --- ENCENDER SERVIDOR ---
 app.listen(3000, () => {

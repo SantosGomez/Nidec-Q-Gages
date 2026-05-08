@@ -37,6 +37,11 @@ const routes = [
         component: () => import('pages/ReportsPage.vue'),
         meta: { permiso: 'ver_reportes' }
       },
+      {
+        path: 'InfoApoyo',
+        component: () => import('pages/InfoApoyoPage.vue'),
+        meta: { requiereAdmin: true } // Solo para Admin/SuperAdmin
+      }
     ]
   },
   {
