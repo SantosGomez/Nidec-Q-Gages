@@ -166,7 +166,7 @@
 
     <q-dialog v-model="modalAbierto" persistent>
       <q-card style="min-width: 350px; border-radius: 15px;">
-        <q-card-section class="row items-center q-pb-none">
+        <q-card-section :class="[colorHeader, 'text-white row items-center row items-center q-pb-none']">
           <div class="text-h6">
             {{ esEdicion ? 'Editar' : 'Nuevo' }} {{ configCatalogos[tab].label }}
           </div>
@@ -212,7 +212,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
@@ -376,6 +376,11 @@ const eliminar = (item) => {
     }
   })
 }
+
+const colorHeader = computed(() => {
+  if (esEdicion.value) return 'bg-orange-8'    // Color de advertencia para edición
+  return 'bg-primary'                           // Color institucional para nuevo registro
+})
 
 onMounted(obtenerDatos)
 </script>
