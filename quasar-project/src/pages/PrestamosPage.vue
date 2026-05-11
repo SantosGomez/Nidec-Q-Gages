@@ -87,11 +87,6 @@
                 >
                   <q-tooltip>Editar registro</q-tooltip>
                 </q-btn>
-
-                <!-- Opcional: Un mensaje o icono candado si no tiene permiso -->
-                <q-icon v-else name="lock" color="grey-4">
-                  <q-tooltip>Sin permisos de edición</q-tooltip>
-                </q-icon>
               </q-td>
             </template>
             <template v-slot:body-cell-devolucion="props">
@@ -115,7 +110,7 @@
 
   <q-dialog v-model="mostrarFormulario" persistent :backdrop-filter="backdropFilter">
     <q-card style="max-width: 800px; width: 100%">
-      <q-card-section class="bg-primary text-white">
+      <q-card-section :class="[colorHeader, 'text-white']">
         <div class="text-h6">
           {{ esEdicion ? 'Editar Préstamo' : 'Nuevo Registro de Préstamo' }}
         </div>
@@ -172,7 +167,7 @@
       </q-card-section>
 
       <q-card-actions align="right" class="q-pb-md q-pr-md">
-        <q-btn flat label="Cancelar" color="grey" v-close-popup />
+        <q-btn flat label="Cancelar" color="negative" v-close-popup />
         <q-btn
           :label="esEdicion ? 'Guardar Cambios' : 'Registrar Prestamo'"
           color="primary"
@@ -200,7 +195,7 @@
       </q-card-section>
 
       <q-card-actions align="right">
-        <q-btn flat label="Cancelar" color="grey" v-close-popup />
+        <q-btn flat label="Cancelar" color="negative" v-close-popup />
         <q-btn label="Confirmar Devolución" color="primary" @click="procesarDevolucion" />
       </q-card-actions>
     </q-card>
@@ -555,6 +550,11 @@ const formatearFecha = (fechaString) => {
     hour12: false,
   }).format(fecha)
 }
+const colorHeader = computed(() => {
+  if (esEdicion.value) return 'bg-orange-8'    // Color de advertencia para edición
+  return 'bg-primary'                           // Color institucional para nuevo registro
+})
+
 
 onMounted(() => {
   obtenerPrestamos()

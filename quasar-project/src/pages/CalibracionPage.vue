@@ -201,7 +201,7 @@
   <!-- dialog de formulario para calibracion de gages -->
   <q-dialog v-model="Form" persistent :backdrop-filter="backdropFilter">
     <q-card class="my-card" style="max-width: 1200px; width: 100%; min-height: 630px">
-      <q-card-section class="bg-primary text-white q-pa-sm">
+      <q-card-section :class="[colorHeader, 'text-white q-pa-sm']">
         <div class="row items-center no-wrap">
           <div class="col">
             <div class="text-h5">
@@ -1185,6 +1185,12 @@ const obtenerClaseFila = (row) => {
   if (diff <= 7) return 'fila-proxima' // Amarillo
   return ''
 }
+
+const colorHeader = computed(() => {
+  if (soloLectura.value) return 'bg-blue-grey-9' // Color sobrio para consulta
+  if (modoEdicion.value) return 'bg-orange-8'    // Color de advertencia para edición
+  return 'bg-primary'                           // Color institucional para nuevo registro
+})
 
 onMounted(() => {
   obtenerCalibraciones()

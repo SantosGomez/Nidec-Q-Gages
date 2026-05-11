@@ -60,16 +60,6 @@
               >
                 <q-tooltip>Editar Permisos</q-tooltip>
               </q-btn>
-              <q-btn
-                outline
-                round
-                dense
-                color="info"
-                icon="visibility"
-                @click="abrirDetalle(props.row, true)"
-              >
-                <q-tooltip>Ver Detalles</q-tooltip>
-              </q-btn>
             </q-td>
           </template>
         </q-table>
