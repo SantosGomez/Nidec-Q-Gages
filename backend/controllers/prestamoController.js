@@ -42,19 +42,28 @@ exports.crearPrestamo = async (req, res) => {
 };
 
 exports.actualizarPrestamo = async (req, res) => {
-  const { id } = req.params; //[cite: 8]
-  const p = req.body; //[cite: 8]
+  const { id } = req.params;
+  const p = req.body || {}; // Aseguramos que 'p' sea al menos un objeto vacío
+  
   try {
+    // Si no viene Nombre, asumimos que es una devolución (HDevolucion)
     if (!p.Nombre) {
-      await db.query(`UPDATE prestamo SET HDevolucion = NOW() WHERE PrestamoId = ?`, [id]); //[cite: 8]
-      return res.json({ message: "Devolución exitosa" }); //[cite: 8]
+      const [result] = await db.query(
+        `UPDATE prestamo SET HDevolucion = NOW() WHERE PrestamoId = ?`, 
+        [id]
+      );
+      return res.json({ message: "Devolución exitosa" });
     }
-    const queryUpdate = `UPDATE prestamo SET NoEmpleado = ?, Nombre = ?, GageId = ?, TurnoId = ?, Area = ? WHERE PrestamoId = ?`; //[cite: 8]
-    const idGage = Array.isArray(p.GageId) ? p.GageId[0] : p.GageId; //[cite: 8]
-    const values = [Number(p.NoEmpleado), p.Nombre, Number(idGage), Number(p.TurnoId), p.Area, id]; //[cite: 8]
-    await db.query(queryUpdate, values); //[cite: 8]
-    res.json({ success: true, message: "Registro de Q-GAGE actualizado" }); //[cite: 8]
+
+    // Si SÍ viene Nombre, es una edición normal
+    const queryUpdate = `UPDATE prestamo SET NoEmpleado = ?, Nombre = ?, GageId = ?, TurnoId = ?, Area = ? WHERE PrestamoId = ?`;
+    const values = [p.NoEmpleado, p.Nombre, p.GageId, p.TurnoId, p.Area, id];
+    
+    await db.query(queryUpdate, values);
+    res.json({ message: "Préstamo actualizado correctamente" });
+
   } catch (error) {
-    res.status(500).json({ error: "Error en la base de datos", detalle: error.sqlMessage || error.message }); //[cite: 8]
+    console.error(error);
+    res.status(500).json({ error: "Error en la base de datos", detalle: error.message });
   }
 };

@@ -13,6 +13,14 @@
           color="primary"
           @click="abrirFormulario"
         />
+        <q-btn
+          padding="sm lg"
+          label="Crear Plantilla"
+          icon="settings_suggest"
+          color="secondary"
+          @click="abrirRegistroPlantilla"
+          class="q-ml-sm"
+        />
       </div>
       <q-card class="my-card shadow-1 shadow-up-1">
         <q-card-section>
@@ -36,10 +44,12 @@
                 />
                 <q-select
                   v-model="filtroTurno"
-                  :options="['Todos', 'Turno A', 'Turno B', 'Turno C', 'Turno D']"
+                  :options="opcionesTurno"
                   label="Filtrar por Turno"
                   dense
                   outlined
+                  emit-value
+                  map-options
                   style="min-width: 150px"
                 />
 
@@ -115,8 +125,21 @@
           {{ esEdicion ? 'Editar Préstamo' : 'Nuevo Registro de Préstamo' }}
         </div>
       </q-card-section>
-
-      <q-card-section class="row q-col-gutter-md q-pt-lg">
+      <q-card-section>
+        <q-select
+            v-model="plantillaSeleccionada"
+            :options="opcionesPlantillas"
+            label="Cargar desde Plantilla"
+            outlined
+            dense
+            emit-value
+            map-options
+            @update:model-value="usarPlantilla"
+            class="q-mb-md"
+          >
+        </q-select>
+      </q-card-section>
+    <q-card-section class="row q-col-gutter-md q-pt-lg">
         <div class="col-12 col-md-6">
           <q-input outlined dense v-model="formPrestamo.Nombre" label="Nombre" />
         </div>
@@ -128,7 +151,7 @@
             outlined
             dense
             v-model="formPrestamo.TurnoId"
-            :options="opcionesTurnos"
+            :options="opcionesTurno"
             label="Seleccionar Turno"
             emit-value
             map-options
@@ -233,6 +256,58 @@
       </q-card-actions>
     </q-card>
   </q-dialog>
+
+
+  <q-dialog v-model="modalPlantilla" persistent>
+  <q-card style="max-width: 600px; width: 100%;">
+    <q-card-section class="bg-secondary text-white row items-center">
+      <div class="text-h6">Nueva Plantilla de Prestamos</div>
+      <q-space />
+      <q-btn icon="close" flat round dense v-close-popup />
+    </q-card-section>
+
+    <q-card-section class="q-gutter-sm">
+      <q-input v-model="formPlantilla.NombrePlantilla" label="Nombre de la Plantilla" placeholder="(ej: Kit Motor A)" outlined dense />
+      <div class="row q-col-sm">
+        <q-input style="padding-right: 10px;" v-model="formPlantilla.Area" label="Área" class="col-6" outlined dense />
+        <q-select
+          v-model="formPlantilla.TurnoId"
+          :options="opcionesTurno" 
+          emit-value
+          map-options
+          label="Turno"
+          class="col-6"
+          outlined
+          dense
+        />
+      </div>
+
+      <div class="text-subtitle2 q-mt-md">Seleccionar Gages:</div>
+      <q-input v-model="filtroGageBusqueda" placeholder="Buscar por código..." outlined dense clearable>
+        <template v-slot:append><q-icon name="search" /></template>
+      </q-input>
+
+      <q-scroll-area style="height: 250px; border: 1px solid #ddd; border-radius: 4px;" class="q-mt-xs">
+        <q-list separator dense>
+          <q-item v-for="gage in gagesFiltrados" :key="gage.GageId" tag="label" v-ripple>
+            <q-item-section avatar>
+              <q-checkbox v-model="formPlantilla.GagesSeleccionados" :val="gage.GageId" color="secondary" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>{{ gage.GageSerie }}</q-item-label>
+              <q-item-label caption>{{ gage.Descripcion }}</q-item-label>
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-scroll-area>
+    </q-card-section>
+
+    <q-card-actions align="right">
+      <q-btn label="Cancelar" color="grey" flat v-close-popup />
+      <q-btn label="Guardar Plantilla" color="secondary" @click="guardarPlantilla" :disable="!formPlantilla.NombrePlantilla" />
+    </q-card-actions>
+  </q-card>
+</q-dialog>
 </template>
 
 <script setup>
@@ -241,6 +316,7 @@ import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
+import { data } from 'autoprefixer'
 
 const authStore = useAuthStore()
 const $q = useQuasar()
@@ -262,12 +338,24 @@ const opcionesGagesRaw = ref([])
 const backdropFilter = ref('blur(4px)')
 const esEdicion = ref(false)
 const prestamoIdParaEditar = ref(null)
-
+const modalPlantilla = ref(false)
+const filtroGageBusqueda = ref('')
+const opcionesGagesTodos = ref([])
+const opcionesTurno = ref([])
+const opcionesPlantillas = ref([])
+const plantillaSeleccionada = ref(null)
 // --- FORMULARIO ---
+const formPlantilla = ref({
+  NombrePlantilla: '',
+  Area: '', // Cambiado de AreaId: null a Area: ''
+  TurnoId: null,
+  GagesSeleccionados: []
+})
+
 const formPrestamo = ref({
   NoEmpleado: '',
   Nombre: '',
-  TurnoId: '',
+  TurnoId: null,
   GageId: [],
   Area: '',
 })
@@ -308,7 +396,7 @@ const Areas = async () => {
 const prestamoFiltrados = computed(() => {
   let lista = rows.value
   if (filtroTurno.value !== 'Todos') {
-    lista = lista.filter((row) => row.TurnoNombre === filtroTurno.value)
+    lista = lista.filter((row) => row.TurnoId === filtroTurno.value)
   }
   if (soloPendientes.value) {
     lista = lista.filter(
@@ -335,7 +423,113 @@ const prestamoFiltrados = computed(() => {
   return lista
 })
 
+const gagesFiltrados = computed(() => {
+  if (!filtroGageBusqueda.value) return opcionesGagesTodos.value
+  const busqueda = filtroGageBusqueda.value.toLowerCase()
+  return opcionesGagesTodos.value.filter(g => 
+    g.GageSerie.toLowerCase().includes(busqueda) || 
+    g.Descripcion.toLowerCase().includes(busqueda)
+  )
+})
+
 // Funciones de la API
+
+const abrirRegistroPlantilla = () => {
+  cargarTodosLosGages()
+  formPlantilla.value = { 
+    NombrePlantilla: '', 
+    Area: '', // Limpiamos como texto
+    Linea: '', 
+    GagesSeleccionados: [] 
+  }
+  modalPlantilla.value = true
+}
+
+const guardarPlantilla = async () => {
+  try {
+    $q.loading.show({ message: 'Guardando plantilla...' })
+    await api.post('/api/plantillas', formPlantilla.value)
+    $q.notify({ color: 'positive', message: '¡Plantilla creada!', icon: 'check' })
+    modalPlantilla.value = false
+    // Opcional: recargar lista de plantillas si la usas en un combo
+  } catch (error) {
+    console.error('Error al guardar datos', error)
+    $q.notify({ color: 'negative', message: 'No se pudo guardar la plantilla' })
+  } finally {
+    $q.loading.hide()
+  }
+}
+
+const resetearTodo = () => {
+  // Limpiamos el objeto principal
+  formPrestamo.value = {
+    NoEmpleado: '',
+    Nombre: '',
+    GageId: [],
+    TurnoId: null,
+    Area: ''
+  }
+  // IMPORTANTE: Esto limpia el texto del selector de plantillas
+  plantillaSeleccionada.value = null 
+  esEdicion.value = false
+}
+
+const usarPlantilla = async (id) => {
+  if (!id) return;
+  
+  try {
+    const response = await api.get(`/api/plantillas/${id}`);
+    const data = response.data;
+
+    // 1. Resetear selección de Gages para evitar duplicados
+    formPrestamo.value.GageId = [];
+
+    // 2. Asignar Área y Turno directamente
+    // Si en tu formulario el input es único para Área/Línea:
+    formPrestamo.value.Area = data.Area; 
+    formPrestamo.value.TurnoId = data.TurnoId;
+
+    // 3. Mapear los IDs de los Gages del detalle
+    if (data.detalles && Array.isArray(data.detalles)) {
+      // Extraemos solo el ID para que el q-select múltiple los reconozca
+      formPrestamo.value.GageId = data.detalles.map(d => d.GageId);
+    }
+
+    $q.notify({
+      type: 'positive',
+      message: `Plantilla "${data.NombrePlantilla}" cargada exitosamente`,
+      position: 'top'
+    });
+
+  } catch (error) {
+    console.error('Error al aplicar plantilla:', error);
+    $q.notify({ type: 'negative', message: 'No se pudo cargar la configuración de la plantilla' });
+  }
+};
+
+const cargarPlantillas = async () => {
+  try {
+    const response = await api.get('/api/plantillas')
+    // Mapeamos para que Quasar reconozca el nombre y el ID
+    opcionesPlantillas.value = response.data.map(p => ({
+      label: p.NombrePlantilla,
+      value: p.PlantillaId
+    }))
+  } catch (error) {
+    console.error('Error al cargar plantillas:', error)
+  }
+}
+
+const cargarTodosLosGages = async () => {
+  try {
+    // Un endpoint que traiga todo sin filtrar por estatus
+    const { data } = await api.get('/api/gages/') 
+    opcionesGagesTodos.value = data
+  } catch (error) {
+    console.error('Error al cargar catálogo completo:', error)
+  }
+}
+
 
 const obtenerPrestamos = async () => {
   loading.value = true
@@ -351,14 +545,13 @@ const obtenerPrestamos = async () => {
 }
 
 const abrirFormulario = () => {
-  esEdicion.value = false
-  prestamoIdParaEditar.value = null
-  formPrestamo.value = {
-    NoEmpleado: '',
-    Nombre: '',
-    TurnoId: '',
-    GageId: [],
-    Area: '',
+  if (data){
+
+    esEdicion.value = false
+    formPrestamo.value = {...data}
+  } else {
+
+    resetearTodo()
   }
   mostrarFormulario.value = true
 }
@@ -428,7 +621,7 @@ const registrarPrestamo = async () => {
       NoEmpleado: '',
       Nombre: '',
       GageId: [],
-      TurnoId: '',
+      TurnoId: null,
       Area: '',
     }
 
@@ -500,12 +693,19 @@ const procesarDevolucion = async () => {
   }
 }
 
-const opcionesTurnos = [
-  { label: 'Turno A', value: 1 },
-  { label: 'Turno B', value: 2 },
-  { label: 'Turno C', value: 3 },
-  { label: 'Turno D', value: 4 },
-]
+const Turnos = async () => {
+  try {
+    const response = await api.get('/api/turnos')
+    // Si tu controlador devuelve el array directo (res.json(rows)):
+    // Debemos mapearlo para que Quasar lo entienda (label y value)
+    opcionesTurno.value = response.data.map(t => ({
+      label: t.TurnoNombre,
+      value: t.TurnoId
+    }))
+  } catch (error) {
+    console.error('Error al obtener turnos:', error)
+  }
+}
 
 const opcionesGages = ref([])
 
@@ -560,7 +760,9 @@ onMounted(() => {
   obtenerPrestamos()
   cargarGagesDisponibles()
   obtenerHora()
+  Turnos()
   Areas()
+  cargarPlantillas()
   intervalo = setInterval(obtenerHora, 1000)
 })
 

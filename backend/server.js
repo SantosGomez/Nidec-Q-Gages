@@ -16,6 +16,7 @@ const reportRoutes = require('./routes/reportesRoutes');
 const patronesRoutes = require('./routes/patronesRoutes');
 const frecuenciasRoutes = require('./routes/frecuenciasRoutes');
 const turnosRoutes = require('./routes/turnosRoutes');
+const plantillasRoutes = require('./routes/plantillasRoutes');
 
 //============= RUTAS =============
 app.use("/api", authRoutes); // Manejará /api/login
@@ -28,6 +29,7 @@ app.use('/api/reportes', reportRoutes);
 app.use('/api/frecuencias', frecuenciasRoutes);
 app.use('/api/turnos', turnosRoutes);
 app.use('/api/patrones', patronesRoutes);
+app.use('/api/plantillas', plantillasRoutes);
 
 // --- ENCENDER SERVIDOR ---
 app.listen(3000, () => {
