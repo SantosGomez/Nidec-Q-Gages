@@ -118,7 +118,7 @@
     </div>
   </q-page>
 
-  <q-dialog v-model="mostrarFormulario" persistent :backdrop-filter="backdropFilter">
+  <q-dialog v-model="mostrarFormulario" persistent :backdrop-filter="backdropFilter" @hide="resetearTodo">
     <q-card style="max-width: 800px; width: 100%">
       <q-card-section :class="[colorHeader, 'text-white']">
         <div class="text-h6">
@@ -316,7 +316,7 @@ import { useRouter } from 'vue-router'
 import { api } from 'boot/axios'
 import { useQuasar } from 'quasar'
 import { useAuthStore } from 'src/stores/auth'
-import { data } from 'autoprefixer'
+
 
 const authStore = useAuthStore()
 const $q = useQuasar()
@@ -545,20 +545,12 @@ const obtenerPrestamos = async () => {
 }
 
 const abrirFormulario = () => {
-  if (data){
-
-    esEdicion.value = false
-    formPrestamo.value = {...data}
-  } else {
-
-    resetearTodo()
-  }
+  resetearTodo()
   mostrarFormulario.value = true
 }
 
 const cerrarFormulario = () => {
   mostrarFormulario.value = false
-  esEdicion.value = false
   prestamoIdParaEditar.value = null
 }
 
