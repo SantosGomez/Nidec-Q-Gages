@@ -107,7 +107,7 @@
             <q-img src="src/assets/iconosGAGES/registro.png" style="width: 100%; height: auto" />
           </q-item-section>
           <q-item-section>
-            <q-item-label>Gage Checkout</q-item-label>
+            <q-item-label>Prestamo de Gages</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
