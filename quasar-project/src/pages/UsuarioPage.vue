@@ -365,7 +365,7 @@ const actualizarPermisos = async () => {
   $q.loading.show({ message: 'Actualizando permisos...' })
   try {
     // Solo enviamos los campos de permisos para el PUT
-    await api.put(`/api/usuarios/${usuarioSeleccionado.value.UserID}`, formModel.value)
+    await api.put(`/api/usuarios/permisos/${usuarioSeleccionado.value.UserID}`, formModel.value)
     $q.notify({ type: 'positive', message: 'Datos y Permisos Actualizados' })
     UserInfo.value = false
     obtenerUsuarios()
@@ -380,7 +380,7 @@ const actualizarPermisos = async () => {
 const AgregarUsuario = async () => {
   $q.loading.show({ message: 'Registrando nuevo usuario...' })
   try {
-    const res = await api.post('/api/usuarios/registro', formModel.value)
+    const res = await api.post('/api/usuarios/registrar', formModel.value)
     if (res.data.success) {
       $q.notify({ type: 'positive', message: 'Usuario Creado Correctamente' })
       UserInfo.value = false
@@ -402,7 +402,7 @@ const ejecutarReset = async () => {
 
   $q.loading.show({ message: 'Cambiando contraseña...' })
   try {
-    await api.put(`/api/usuarios/${usuarioSeleccionado.value.UserID}/reset-password`, {
+    await api.put(`/api/usuarios/reset-password/${usuarioSeleccionado.value.UserID}`, {
       Password: nuevaPassword.value,
     })
 

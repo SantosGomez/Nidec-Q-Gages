@@ -842,7 +842,7 @@ const calcularDiferencia = (index) => {
 
 const prepararNuevaCalibracion = async (gageId) => {
   try {
-    const res = await api.get(`/api/preparar-calibracion/${gageId}`)
+    const res = await api.get(`/api/calibracion/preparar/${gageId}`)
 
     // Si res.data existe, intentamos mapear puntos. Si no, array vacío.
     const puntosServidor = res.data?.puntos || []
@@ -877,7 +877,7 @@ const seleccionarParaCalibrar = async (row) => {
   // CARGAR HISTORIAL AL ABRIR
   tabActual.value = 'registro' // Resetear a la primera pestaña
   try {
-    const res = await api.get(`/api/historial/${row.GageId}`)
+    const res = await api.get(`/api/calibracion/historial/${row.GageId}`)
     rowsHistorial.value = res.data
   } catch (error) {
     console.error('No se pudo cargar el historial', error)
@@ -895,7 +895,7 @@ const prepararEdicion = async (row) => {
 
   if (row.CalibracionId) {
     try {
-      const respDetalle = await api.get(`/api/calibracion/detalle/${row.CalibracionId}`)
+      const respDetalle = await api.get(`/api/calibracion/detalle/${row.GageId}`)
       mediciones.value = respDetalle.data.map((d) => ({
         ...d,
         ValorLeido: d.ValorLeido,
@@ -903,7 +903,7 @@ const prepararEdicion = async (row) => {
       }))
 
       // 3. Traer el historial de este Gage específico
-      const respHistorial = await api.get(`/api/historial/${row.GageId}`)
+      const respHistorial = await api.get(`/api/calibracion/historial/${row.GageId}`)
       rowsHistorial.value = respHistorial.data // Debes tener un ref('rowsHistorial')
     } catch (error) {
       console.error('Error cargando detalles o historial:', error)
@@ -948,7 +948,7 @@ const verDetalleCalibracion = async (row) => {
     // Guardamos la fecha formateada para el título del modal
     fechaSeleccionada.value = formatearFecha(row.FechaCalibracion)
 
-    const response = await api.get(`/api/calibracion-detalle/${row.CalibracionId}`)
+    const response = await api.get(`/api/calibracion/calibracion-detalle/${row.CalibracionId}`)
     rowsDetalle.value = response.data
     mostrarDetalle.value = true
   } catch (error) {
@@ -991,7 +991,7 @@ const insertarCalibracion = async () => {
       FechaProxima: formModel.value.FechaProxima.replace(/\//g, '-'),
     }
 
-    const res = await api.post('/api/registrar-calibracion', payload)
+    const res = await api.post('/calibracion/registrar-calibracion', payload)
 
     if (res.data.success) {
       $q.notify({ type: 'positive', message: 'Registro exitoso y Gage actualizado' })
@@ -1025,7 +1025,7 @@ const actualizarCalibracion = async () => {
       throw new Error('No se encontró el ID de la calibración')
     }
 
-    await api.put(`/api/actualizar-calibracion/${formModel.value.CalibracionId}`, bodyEnvio)
+    await api.put(`/api/calibracion/${formModel.value.CalibracionId}`, bodyEnvio)
 
     Form.value = false
     obtenerCalibraciones()
@@ -1125,9 +1125,9 @@ const obtenerCalibraciones = async () => {
   }
 }
 
-const cargarHistorialGage = async (id) => {
+const cargarHistorialGage = async (GageId) => {
   try {
-    const res = await api.get(`/api/historial/${id}`)
+    const res = await api.get(`/api/calibracion/historial/${GageId}`)
     rowsHistorial.value = res.data
   } catch (error) {
     console.error('Error al cargar historial', error)

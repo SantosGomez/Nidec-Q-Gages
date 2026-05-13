@@ -115,8 +115,9 @@
                 <div class="col-12 col-md-6">
                   <q-input
                     v-model="formModel.GageSerie"
-                    label="Gage Serie"
+                    label="Gage ID"
                     :readonly="soloLectura || (modoEdicion && !authStore.usuario?.edit_gageId)"
+                    :rules="[val => !!val || 'Se Requiere ID']"
                   />
                 </div>
                 <div class="col-12 col-md-6">
@@ -292,6 +293,7 @@
               :label="modoEdicion ? 'Guardar Cambios' : 'Registrar'"
               type="submit"
               color="primary"
+              :disable="!formModel.GageSerie"
             />
           </q-card-actions>
         </q-form>
@@ -386,7 +388,7 @@ const opcionesCalibracion = [
 ]
 const Manuales = async () => {
   try {
-    const { data } = await api.get('/api/procedimiento/manual')
+    const { data } = await api.get('/api/procedimientos/manual')
     Procedimientolista.value = [...data]
   } catch (error) {
     console.error('Error al cargar Procedimientos', error)
@@ -395,7 +397,7 @@ const Manuales = async () => {
 
 const cargarPlantillas = async () => {
   try {
-    const response = await api.get('/api/plantillas/nombres')
+    const response = await api.get('/api/gages/plantillas-nombres')
     // Mapeamos para que Quasar lea los strings directamente si es necesario
     opcionesPlantillas.value = response.data.map((p) => p.GageTipo)
   } catch (error) {
@@ -505,6 +507,7 @@ const actualizarGage = async () => {
       GageId: payload.GageId,
       GageSerie: payload.GageSerie,
       Descripcion: payload.Descripcion,
+      Usuario: authStore.usuario?.UserID,
       Vendedor: payload.Vendedor,
       FechaAlta: payload.FechaAlta,
       Informacion: payload.Informacion,
