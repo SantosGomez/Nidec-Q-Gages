@@ -18,7 +18,7 @@
             font-weight: bold;
           "               
         >
-          Q-Gages
+          Sistema Q-Gages
         </div>
       </div>
       <q-card-section class="q-pa-md">

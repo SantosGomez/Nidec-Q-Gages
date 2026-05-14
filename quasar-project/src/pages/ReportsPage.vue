@@ -118,6 +118,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { jsPDF } from 'jspdf'
 import autoTable from 'jspdf-autotable'
+import { api } from 'boot/axios'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -132,7 +133,7 @@ const fechaInicio = ref('')
 const fechaFin = ref('')
 const gageId = ref('')
 const pdfUrl = ref(null)
-
+const datosAImprimir = ref([])
 // Lista de reportes
 const list = [
   { label: 'Etiqueta de Estado de Calibración', value: 'LabelStatus' },
@@ -162,11 +163,9 @@ const generarPrevisualizacion = async () => {
   }
 
   try {
-    const response = await fetch('http://localhost:3000/api/calibracion')
-    if (!response.ok) throw new Error('Fallo al conectar con el servidor')
-
-    let datosBd = await response.json()
-
+    const response = await api.get('/api/calibracion')
+    let datosBd = response.data
+  
     // --- 1. FILTRADO POR FECHAS (Si el usuario las seleccionó) ---
     if (fechaInicio.value && fechaFin.value) {
       const inicio = new Date(fechaInicio.value)
@@ -183,6 +182,8 @@ const generarPrevisualizacion = async () => {
       datosBd = datosBd.filter((item) => 
         (item.GageSerie?.toLowerCase().includes(busqueda)) || (item.Descripcion?.toLowerCase().includes(busqueda)))
     }
+
+    datosAImprimir.value = datosBd;
 
     let columnas = []
     let filas = []
@@ -250,34 +251,43 @@ const generarPrevisualizacion = async () => {
       }
 
       case 'LabelStatus': {
+        
         filas = [];
         datosBd.forEach((item, index) => {
-          // 1. FILA DE ENCABEZADO (ID y Técnico)
-          // Usamos dos celdas para que ID esté a la izquierda y el Técnico a la derecha
+          // 1. Extraer y formatear fechas
+          const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
+          const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
+          const tecnico = item.Tecnico || item.CalibracionBy || 'N/A';
+
+          // 2. FILA DE ENCABEZADO (Verde con ID y Técnico)
           filas.push([
             { 
               content: `ID: ${item.GageSerie || 'N/A'}`, 
               styles: { fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' } 
             },
             { 
-              content: `By: ${item.Tecnico || item.CalibracionBy || 'N/A'}`, 
+              content: `By: ${tecnico}`, 
               styles: { fillColor: [0, 155, 74], textColor: [255, 255, 255], fontStyle: 'bold' } 
             }
           ]);
 
-          // 2. FILA DE DATOS (Fechas)
-          const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
-          const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
-
+          // 3. FILA DE DATOS (Gris con fechas)
+          // IMPORTANTE: Cada celda debe ser un objeto si quieres estilos individuales
           filas.push([
-            { content: `Last: ${fechaUltima}`, styles: { fillColor: [245, 245, 245] } },
-            { content: `Next: ${fechaProxima}`, styles: { fillColor: [245, 245, 245] } }
+            { 
+              content: `Last: ${fechaUltima}`, 
+              styles: { fillColor: [245, 245, 245], textColor: [40, 40, 40] } 
+            },
+            { 
+              content: `Next: ${fechaProxima}`, 
+              styles: { fillColor: [245, 245, 245], textColor: [40, 40, 40] } 
+            }
           ]);
 
-          // 3. ESPACIADOR (Para separar una etiqueta de otra en la lista)
+          // 4. ESPACIADOR (Fila vacía blanca)
           if (index < datosBd.length - 1) {
             filas.push([
-              { content: '', colSpan: 2, styles: { minCellHeight: 8, fillColor: [255, 255, 255], lineWidth: 0 } }
+              { content: '', colSpan: 2, styles: { minCellHeight: 5, fillColor: [255, 255, 255] } }
             ]);
           }
         });
@@ -373,7 +383,7 @@ const descargarPDF = () => {
     search: gageId.value || '' // Usamos gageId que es tu ref de búsqueda
   }).toString();
 
-  window.open(`http://localhost:3000/api/reportes/pdf?${params}`, '_blank');
+  window.open(`${api.defaults.baseURL}/api/reportes/pdf?${params}`, '_blank');
 };
 
 const exportarExcel = () => {
@@ -390,44 +400,51 @@ const exportarExcel = () => {
     fin: fechaFin.value || ''
   }).toString();
 
-  window.open(`http://localhost:3000/api/reportes/excel?${params}`, '_blank');
+  window.open(`${api.defaults.baseURL}/api/reportes/excel?${params}`, '_blank');
 }
 
-const imprimirEtiquetaZD621 = (item) => {
+const imprimirEtiquetaZD621 = () => {
   if (!window.BrowserPrint) {
     $q.notify({ message: 'Zebra Browser Print no está iniciado', color: 'warning' });
     return;
   }
 
-  // Preparamos los datos con valores predeterminados para evitar nulos
-  const nidGage = item.GageSerie || 'N/A';
-  const tecnico = item.Tecnico || 'N/A';
-  const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
-  const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
+  // Validamos que el usuario haya generado el reporte primero
+  if (!datosAImprimir.value || datosAImprimir.value.length === 0) {
+    $q.notify({ message: 'Primero genera el reporte para cargar los datos.', color: 'warning' });
+    return;
+  }
 
-  // --- CÓDIGO ZPL QUE REPLICA TU IMAGEN ---
-  // ^XA inicia la etiqueta, ^XZ la termina. ^FO establece la posición (X,Y). ^FD es el dato. ^CF es la fuente por defecto.
-  const zpl = `
-    ^XA
-    ^CF0,24
-    ^FO50,50^FDID:^FS^FO110,50^FD${nidGage}^FS
-    ^FO280,50^FDBy:^FS^FO340,50^FD${tecnico}^FS
-    ^FO50,90^FDLast:^FS^FO130,90^FD${fechaUltima}^FS
-    ^FO280,90^FDNext:^FS^FO360,90^FD${fechaProxima}^FS
-    ^XZ
-  `;
+  // Vamos a crear un solo string gigante con todo el código ZPL
+  let zplLote = '';
 
-  // Enviamos el código a la impresora ZD621
+  datosAImprimir.value.forEach(item => {
+    const nidGage = item.GageSerie || 'N/A';
+    const tecnico = item.Tecnico || item.CalibracionBy || 'N/A';
+    const fechaUltima = item.FechaCalibracion ? new Date(item.FechaCalibracion).toLocaleDateString() : 'N/A';
+    const fechaProxima = item.FechaProxima ? new Date(item.FechaProxima).toLocaleDateString() : 'N/A';
+
+    // Agregamos la etiqueta actual al lote (Usando tu diseño exacto)
+    zplLote += `
+      ^XA
+      ^CF0,20
+      ^FO20,35^FDID:^FS^FO70,35^FD${nidGage}^FS
+      ^FO220,35^FDBy:^FS^FO270,35^FD${tecnico}^FS
+      ^FO20,75^FDLast:^FS^FO90,75^FD${fechaUltima}^FS
+      ^FO220,75^FDNext:^FS^FO285,75^FD${fechaProxima}^FS
+      ^XZ
+    `;
+  });
+
+  // Enviamos todo el lote de golpe a la impresora
   window.BrowserPrint.getDefaultDevice("printer", (device) => {
     if (device) {
-      device.send(zpl, () => {
-        $q.notify({ message: 'Etiqueta enviada correctamente', color: 'positive', icon: 'print' });
-      }, (error) => {
-        console.error(error);
-        $q.notify({ message: 'Error al enviar a la impresora', color: 'negative' });
+      $q.notify({ message: `Enviando ${datosAImprimir.value.length} etiquetas a la ZD621...`, color: 'positive', icon: 'print' });
+      
+      device.send(zplLote, undefined, (error) => {
+        console.error('Error de Zebra:', error);
+        $q.notify({ message: 'Error de comunicación con la Zebra', color: 'negative' });
       });
-    } else {
-      $q.notify({ message: 'No se detectó la Zebra ZD621', color: 'negative' });
     }
   });
 };

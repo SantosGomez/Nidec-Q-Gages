@@ -26,7 +26,7 @@ const db = mysql
     host: "localhost",
     user: "root",
     password: "",
-    database: "nidec_gages", //
+    database: "nidec_gages", //sisgages
     timezone: reynosaOffset, //
   })
   .promise(); //[cite: 8]

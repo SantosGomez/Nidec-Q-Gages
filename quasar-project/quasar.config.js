@@ -38,15 +38,15 @@ export default defineConfig((/* ctx */) => {
         browser: 'baseline-widely-available',
         node: 'node22',
       },
-
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+      // publicPath: '/sistemaQgages/frontend',
       // vueRouterBase,
       // vueDevtools,
       // vueOptionsAPI: false,
 
       // rebuildCache: true, // rebuilds Vite/linter/etc cache on startup
 
-      // publicPath: '/',
+      
       // analyze: true,
       // env: {},
       // rawDefine: {}
