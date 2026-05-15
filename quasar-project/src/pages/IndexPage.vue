@@ -12,7 +12,7 @@
         <div v-if="authStore.usuario?.ver_gage" class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Master" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/GageMaster.png" 
+              <img src="images/iconosGAGES/GageMaster.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"
@@ -34,7 +34,7 @@
         <div v-if="authStore.usuario?.ver_calibracion" class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Calibracion" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/calibracion.png" 
+              <img src="images/iconosGAGES/calibracion.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"
@@ -52,7 +52,7 @@
         <div v-if="authStore.usuario?.ver_reportes" class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Reportes" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/Reporte.png" 
+              <img src="images/iconosGAGES/reporte.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"
@@ -70,7 +70,7 @@
         <div v-if="authStore.usuario?.ver_procedimientos" class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Procedimientos" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/Procedimiento.png" 
+              <img src="images/iconosGAGES/procedimiento.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"
@@ -88,7 +88,7 @@
         <div class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Checkout" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/registro.png" 
+              <img src="images/iconosGAGES/registro.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"
@@ -106,7 +106,7 @@
         <div v-if="authStore.usuario?.Rol === 'Admin' || authStore.usuario?.Rol === 'SuperAdmin'" class="col-12 col-sm-6 col-md-4">
           <q-card class="dashboard-card cursor-pointer text-center q-pa-md" @click="Usuario" v-ripple>
             <q-card-section class="flex flex-center">
-              <img src="src/assets/iconosGAGES/usuario.png" 
+              <img src="images/iconosGAGES/usuario.png" 
                 width="70px" 
                 height="70px" 
                 fit="contain"

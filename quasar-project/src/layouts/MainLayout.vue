@@ -6,7 +6,7 @@
 
         <div class="row items-center cursor-pointer q-ml-md" @click="index">
           <img
-            src="src/assets/ACIM Logo/PNG/Nidec Institutional Logo_White Version.png"
+            src="images/ACIM Logo/PNG/Nidec Institutional Logo_White Version.png"
             alt="Nidec App Logo"
             style="height: 50px; object-fit: contain;"
           />
@@ -58,7 +58,7 @@
 
         <q-item v-if="authStore.usuario?.ver_gage" clickable v-ripple @click="master" :active="router.currentRoute.value.path === '/GageMaster'" active-class="menu-active">
           <q-item-section top avatar>
-            <q-img src="src/assets/iconosGAGES/GageMaster.png" style="width: 100%; height: auto" />
+            <q-img src="images/iconosGAGES/GageMaster.png" style="width: 100%; height: auto" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Gage Master</q-item-label>
@@ -67,7 +67,7 @@
 
         <q-item v-if="authStore.usuario?.ver_calibracion" clickable v-ripple @click="calibracion" :active="router.currentRoute.value.path === '/calibracion'" active-class="menu-active">
           <q-item-section top avatar>
-            <q-img src="src/assets/iconosGAGES/calibracion.png" style="width: 100%; height: auto" />
+            <q-img src="images/iconosGAGES/calibracion.png" style="width: 100%; height: auto" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Calibración</q-item-label>
@@ -76,7 +76,7 @@
 
         <q-item v-if="authStore.usuario?.ver_reportes" clickable v-ripple @click="reportes" :active="router.currentRoute.value.path === '/Reports'" active-class="menu-active">
           <q-item-section top avatar>
-            <q-img src="src/assets/iconosGAGES/reporte.png" style="width: 100%; height: auto" />
+            <q-img src="images/iconosGAGES/reporte.png" style="width: 100%; height: auto" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Reportes</q-item-label>
@@ -93,7 +93,7 @@
         >
           <q-item-section top avatar>
             <q-img
-              src="src/assets/iconosGAGES/Procedimiento.png"
+              src="images/iconosGAGES/procedimiento.png"
               style="width: 100%; height: auto"
             />
           </q-item-section>
@@ -104,7 +104,7 @@
 
         <q-item clickable v-ripple @click="checkout" :active="router.currentRoute.value.path === '/checkout'" active-class="menu-active">
           <q-item-section top avatar>
-            <q-img src="src/assets/iconosGAGES/registro.png" style="width: 100%; height: auto" />
+            <q-img src="images/iconosGAGES/registro.png" style="width: 100%; height: auto" />
           </q-item-section>
           <q-item-section>
             <q-item-label>Prestamo de Gages</q-item-label>
